@@ -1,10 +1,10 @@
 {
   "_ayuda": "modo: 'ensayo' arma las notas y las muestra en el resumen de la ejecución SIN publicar. 'activo' publica. Para activar, cambiá ensayo por activo y guardá (Commit changes).",
-  "modo": "activo",
+  "modo": "ensayo",
   "sitio_url": "https://vramiroventura.github.io/ramacontable-portal/",
   "mail_aviso": "ramacontable@gmail.com",
   "max_notas_por_vuelta": 6,
-  "dias_espera_segunda_fuente": 5,
+  "dias_espera_segunda_fuente": 2,
   "gemini_modelos": ["gemini-flash-latest"],
   "gemini_pensamiento": "low",
   "fuentes": [

@@ -50,6 +50,14 @@ class Fabrica:
         return self.db.select("notas", {"select": "slug,titulo,tema,fecha,estado", "fecha": f"gte.{desde}",
                                         "order": "fecha.desc", "limit": "200"})
 
+    def fuentes_conocidas(self):
+        if not self.db:
+            return set()
+        try:
+            return {f["fuente"] for f in self.db.select("radar", {"select": "fuente", "limit": "5000"})}
+        except Exception:  # noqa
+            return set()
+
     def radar_previo(self):
         if not self.db:
             return {}
@@ -139,6 +147,14 @@ class Fabrica:
         recientes = self.notas_recientes()
         previos = self.radar_previo()
         nuevos = [it for it in self.leer_fuentes() if it["url"] not in previos]
+        conocidas = {f["fuente"] for f in previos.values()} | self.fuentes_conocidas()
+        base = [it for it in nuevos if it["fuente"] not in conocidas and not it.get("fecha")]
+        if base:
+            util.log(f"{len(base)} notas viejas sin fecha de fuentes nuevas: quedan como vistas, no se publican")
+            if self.activo and self.db:
+                self.db.upsert("radar", [{"url": it["url"], "fuente": it["fuente"], "tipo": it["tipo"], "titulo": it["titulo"][:300],
+                                          "usado": True, "tema": "ya existente al empezar"} for it in base], "url")
+            nuevos = [it for it in nuevos if it not in base]
         # novedades vistas en vueltas anteriores que siguen esperando una segunda fuente
         esperando = [{"titulo": f["titulo"], "url": f["url"], "fecha": f.get("fecha"), "texto": f.get("texto") or "",
                       "fuente": f["fuente"], "tipo": f["tipo"]} for f in previos.values() if not f.get("usado")]
@@ -164,8 +180,7 @@ class Fabrica:
                 continue
             oficial = any(m["tipo"] == "oficial" for m in miembros)
             portales = {m["fuente"] for m in miembros if m["tipo"] != "oficial"}
-            if not oficial and len(portales) < 2:
-                self.esperando.append((g.get("tema"), ", ".join(sorted(portales))))
+            if not oficial and not portales:
                 continue
             if hechas >= self.cfg.get("max_notas_por_vuelta", 6):
                 self.esperando.append((g.get("tema"), "queda para la próxima vuelta"))
