@@ -98,7 +98,10 @@ class Fabrica:
                 c = json.load(open(ruta, encoding="utf-8"))
                 convs.append({k: c[k] for k in ("slug", "nombre", "cct", "partes", "descripcion")})
             if convs:
-                self.db.insertar_si_no_existe("convenios", convs, "slug")
+                try:
+                    self.db.insertar_si_no_existe("convenios", convs, "slug")
+                except Exception as e:  # noqa
+                    util.avisar("No pude guardar los convenios (¿falta correr esquema.sql en Supabase?)", str(e))
 
     # ---------- pasos ----------
     def leer_fuentes(self):
@@ -283,11 +286,15 @@ class Fabrica:
         por_dia = int(self.cfg.get("guias_por_dia", 2))
         existentes, hoy = set(), util.ahora().date().isoformat()
         if self.db:
-            filas = self.db.select("notas", {"select": "slug,fecha", "tipo": "eq.guia", "limit": "1000"})
+            try:
+                filas = self.db.select("notas", {"select": "slug,fecha", "tipo": "eq.guia", "limit": "1000"})
+            except Exception as e:  # noqa
+                util.avisar("No pude leer las guías (¿falta correr esquema.sql en Supabase?)", str(e))
+                return
             existentes = {f["slug"] for f in filas}
             por_dia -= sum(1 for f in filas if str(f["fecha"]) == hoy)
         pendientes = [g for g in catalogo if "guia-" + g["slug"] not in existentes]
-        for g in pendientes[:max(0, min(por_dia, 1))]:  # una por vuelta, para no gastar la cuota de Gemini
+        for g in pendientes[:max(0, min(por_dia, int(self.cfg.get("guias_por_vuelta", 3))))]:
             try:
                 self.escribir_guia(g)
             except Exception as e:  # noqa
