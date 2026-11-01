@@ -1,0 +1,45 @@
+<div class="grilla"><article class="nota calc">
+<p class="ante">Herramientas | CCT 130/75 Empleados de Comercio</p>
+<h1>Calculadora de sueldo de Empleados de Comercio</h1>
+<p class="firma">Redacción Ramacontable · Con la escala vigente, antigüedad, presentismo, sumas no remunerativas y descuentos</p>
+<div class="encorto"><b>En corto</b><p>Elegí la categoría y la jornada: la calculadora arma el sueldo con antigüedad (1% por año) y presentismo (un doceavo), suma lo no remunerativo y calcula los descuentos para llegar al neto.</p></div>
+<form id="calc-sueldo" data-calc="comercio" class="form-calc" novalidate>
+<p class="ayuda" id="escala-origen"></p>
+<label>Categoría<select name="categoria"></select></label>
+<div class="fila2">
+<label>Sueldo básico de jornada completa<input name="basico" inputmode="decimal" placeholder="0,00"></label>
+<label>Suma no remunerativa del mes<input name="nr" inputmode="decimal" placeholder="0,00"></label>
+</div>
+<div class="fila2">
+<label>Horas semanales (jornada completa: 48)<input name="horas" inputmode="numeric" value="48"></label>
+<label>Años de antigüedad<input name="anios" inputmode="numeric" value="0"></label>
+</div>
+<label class="check"><input type="checkbox" name="presentismo" checked> Cobra presentismo (asistencia y puntualidad)</label>
+<details class="opciones"><summary>Sumas no remunerativas y descuentos sindicales</summary>
+<label class="check"><input type="checkbox" name="nrAdic"> La suma no remunerativa lleva antigüedad y presentismo</label>
+<label class="check"><input type="checkbox" name="osNr" checked> Se descuenta obra social sobre la suma no remunerativa</label>
+<p class="ayuda">Marcalas según lo que diga el acta del acuerdo vigente.</p>
+<div class="fila2">
+<label>Aporte FAECYS (%)<input name="faecys" inputmode="decimal" value="0,5"></label>
+<label>Cuota o aporte sindical (%)<input name="sindicato" inputmode="decimal" value="2"></label>
+</div>
+<p class="ayuda">El porcentaje sindical depende del sindicato de cada localidad y de si el trabajador está afiliado. Si no corresponde, poné 0.</p>
+</details>
+<p class="error" id="err-sueldo"></p>
+<button class="btn ancho">Calcular sueldo</button>
+</form>
+<section id="resultado-sueldo" class="resultado" hidden></section>
+<h2>¿Cómo se calcula el sueldo de comercio?</h2>
+<p>Se parte del básico de la categoría según la escala del convenio. Sobre ese básico se suma la antigüedad, que en el CCT 130/75 es del 1% por cada año trabajado, y el adicional por asistencia y puntualidad (presentismo), que equivale a un doceavo de la remuneración. Si el trabajador tiene jornada reducida, el básico se calcula en proporción a las horas trabajadas sobre la jornada completa de 48 horas semanales.</p>
+<h2>¿Y las sumas no remunerativas?</h2>
+<p>Los acuerdos salariales suelen fijar sumas no remunerativas que se pagan aparte del básico. No llevan aportes jubilatorios, pero el propio acuerdo define si generan antigüedad y presentismo y qué aportes de obra social y sindicales corresponden. Por eso la calculadora deja elegir cada opción.</p>
+<section class="faq"><h2>Preguntas frecuentes</h2>
+<details><summary>¿Cuánto es la antigüedad en comercio?</summary><p>El 1% del básico por cada año de antigüedad.</p></details>
+<details><summary>¿Cómo se calcula el presentismo?</summary><p>Es un doceavo (8,33%) de la suma del básico y la antigüedad.</p></details>
+<details><summary>¿Cómo se calcula una media jornada?</summary><p>El básico se multiplica por las horas semanales trabajadas y se divide por 48, que es la jornada completa.</p></details>
+</section>
+<p class="aviso">Herramienta de carácter general. El resultado es una estimación: verificá siempre la escala y el acuerdo homologado vigente. Cada profesional es responsable de su aplicación.</p>
+</article>
+<aside class="lateral"><a class="caja caja-calc" href="escala-comercio.html"><b>Escala de Comercio</b><span>Valores vigentes por categoría</span></a><a class="caja caja-calc" href="calculadoras.html"><b>Más calculadoras</b><span>Aguinaldo, casas particulares</span></a></aside>
+</div>
+<script src="sueldo.js?v=1"></script>

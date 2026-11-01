@@ -266,3 +266,11 @@ main.wrap{padding-top:24px;padding-bottom:40px}
 .lista-guias b{display:block;color:var(--verde);font-size:15.5px}.lista-guias span{display:block;font-size:13.5px;color:#666;margin-top:4px}
 .lista-guias li.prox{opacity:.55}.lista-guias li.prox span{font-style:italic}
 .lista-guias li a:hover{border-left:4px solid var(--bronce);padding-left:10px}
+/* calculadoras de sueldo y feriados */
+.form-calc label.check{display:flex;align-items:center;gap:8px;font-weight:500}
+.form-calc label.check input{width:auto}
+.res-top.uno{grid-template-columns:1fr}
+table.feriados tr.pasado td{color:#9a9a9a}
+table.feriados tr.prox-f td{background:var(--bronce-suave);font-weight:600}
+.tipo-f{display:inline-block;white-space:nowrap;padding:1px 8px;border-radius:10px;font-size:12.5px;background:#eee}
+.tipo-f.t-ina{background:#DDE8E0;color:var(--verde)}.tipo-f.t-tra{background:var(--bronce-suave)}.tipo-f.t-no {background:#eee;color:#555}

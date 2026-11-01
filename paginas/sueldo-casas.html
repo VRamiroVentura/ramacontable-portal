@@ -1,0 +1,39 @@
+<div class="grilla"><article class="nota calc">
+<p class="ante">Herramientas | Ley 26.844 · Personal de casas particulares</p>
+<h1>Calculadora de sueldo de empleadas domésticas (casas particulares)</h1>
+<p class="firma">Redacción Ramacontable · Mensual o por hora, con retiro o sin retiro, con antigüedad</p>
+<div class="encorto"><b>En corto</b><p>Elegí la categoría y si trabaja con o sin retiro. Podés calcular el sueldo mensual o el total del mes por horas trabajadas, sumando la antigüedad.</p></div>
+<form id="calc-sueldo" data-calc="casas" class="form-calc" novalidate>
+<p class="ayuda" id="escala-origen"></p>
+<label>Categoría<select name="categoria"></select></label>
+<div class="fila2">
+<label>Modalidad<select name="retiro"><option value="con">Con retiro</option><option value="sin">Sin retiro</option></select></label>
+<label>Cómo cobra<select name="modo"><option value="mensual">Sueldo mensual</option><option value="hora">Por hora</option></select></label>
+</div>
+<div class="fila2">
+<label>Sueldo mensual de la categoría<input name="mensual" inputmode="decimal" placeholder="0,00"></label>
+<label>Valor de la hora<input name="hora" inputmode="decimal" placeholder="0,00"></label>
+</div>
+<div data-hora hidden><label>Horas trabajadas en el mes<input name="horasMes" inputmode="numeric" placeholder="Ej.: 40"></label></div>
+<div class="fila2">
+<label>Años de antigüedad<input name="anios" inputmode="numeric" value="0"></label>
+<label>Adicional por zona desfavorable (%)<input name="zona" inputmode="decimal" value="0"></label>
+</div>
+<p class="ayuda">La zona desfavorable solo corresponde en las provincias que fija la Comisión Nacional de Trabajo en Casas Particulares: cargá el porcentaje de la resolución vigente.</p>
+<p class="error" id="err-sueldo"></p>
+<button class="btn ancho">Calcular sueldo</button>
+</form>
+<section id="resultado-sueldo" class="resultado" hidden></section>
+<h2>¿Cómo se calcula el sueldo de una empleada doméstica?</h2>
+<p>Los salarios mínimos los fija la Comisión Nacional de Trabajo en Casas Particulares (CNTCP) por categoría y modalidad, con valores por hora y mensuales. Sobre ese importe se suma la bonificación por antigüedad del 1% por cada año de servicio (Ley 26.844) y, si corresponde, el adicional por zona desfavorable.</p>
+<h2>¿Qué aportes se pagan?</h2>
+<p>En casas particulares, los aportes y contribuciones no son un porcentaje del sueldo: son importes fijos según la cantidad de horas semanales trabajadas, que el empleador paga mensualmente con el formulario 102 de ARCA.</p>
+<section class="faq"><h2>Preguntas frecuentes</h2>
+<details><summary>¿Cuánto es la antigüedad en casas particulares?</summary><p>El 1% del salario por cada año de antigüedad con el mismo empleador.</p></details>
+<details><summary>¿Qué diferencia hay entre con retiro y sin retiro?</summary><p>Sin retiro es cuando la trabajadora vive en el domicilio donde trabaja; tiene valores más altos que con retiro.</p></details>
+</section>
+<p class="aviso">Herramienta de carácter general. El resultado es una estimación: verificá siempre la resolución vigente de la CNTCP. Cada profesional es responsable de su aplicación.</p>
+</article>
+<aside class="lateral"><a class="caja caja-calc" href="escala-casas-particulares.html"><b>Escala de casas particulares</b><span>Valores vigentes</span></a><a class="caja caja-calc" href="calculadoras.html"><b>Más calculadoras</b><span>Aguinaldo, comercio</span></a></aside>
+</div>
+<script src="sueldo.js?v=1"></script>

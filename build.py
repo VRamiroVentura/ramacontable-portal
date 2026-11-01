@@ -297,7 +297,7 @@ def pagina(titulo, cuerpo, actual="", descripcion="", ruta="", extra_head=""):
 </head><body>
 <header class="cab"><div class="wrap fila">
 <a class="logo" href="index.html">{LOGO_SVG}<span>ramacontable</span></a>
-<nav class="menu">{menu}<a class="chico" href="convenios.html">Escalas</a><a class="chico2" href="aguinaldo.html">Aguinaldo</a><a class="chico2" href="herramientas.html">Vencimientos</a></nav>
+<nav class="menu">{menu}<a class="chico" href="convenios.html">Escalas</a><a class="chico2" href="calculadoras.html">Calculadoras</a><a class="chico2" href="herramientas.html">Vencimientos</a><a class="chico2" href="feriados.html">Feriados</a></nav>
 <div id="sesion" class="sesion"><button class="btn" data-ingresar>Ingresar</button></div>
 </div></header>
 <main class="wrap">{cuerpo}</main>
@@ -335,6 +335,7 @@ def lateral(notas):
 <section class="caja"><h3>Notas esperando su paso a paso</h3><ul class="esperando" id="esperando">{esperando}</ul></section>
 <section class="caja" id="destacados" hidden><h3>Destacados de la comunidad</h3><ol id="ranking"></ol></section>
 <a class="caja caja-calc" href="aguinaldo.html"><b>Calculadora de aguinaldo</b><span>Diciembre 2026 · paso a paso, con descuentos y neto</span></a>
+<a class="caja caja-calc" href="sueldo-comercio.html"><b>Calculadora de sueldo de Comercio</b><span>Con escala vigente, antigüedad, presentismo y neto</span></a>
 <section class="caja"><h3>Vencimientos que se vienen</h3><ul class="venc">
 <li><span>DDJJ Ganancias 2025 (personas humanas)</span><b>16/11</b></li>
 <li><span>Adhesión a planes de pago MiPyME y salud</span><b>30/12</b></li>
@@ -377,7 +378,7 @@ def sitemaps(notas, convenios=()):
     base = sitio_url()
     hoy = datetime.date.today().isoformat()
     urls = [f"<url><loc>{base}</loc><lastmod>{hoy}</lastmod></url>"] + [
-        f"<url><loc>{base}{k}.html</loc><lastmod>{hoy}</lastmod></url>" for k in list(SECCIONES) + ["aguinaldo", "herramientas", "convenios", "guias"]] + [
+        f"<url><loc>{base}{k}.html</loc><lastmod>{hoy}</lastmod></url>" for k in list(SECCIONES) + ["aguinaldo", "herramientas", "convenios", "guias", "calculadoras", "feriados", "sueldo-comercio", "sueldo-casas-particulares"]] + [
         f"<url><loc>{base}escala-{c['slug']}.html</loc><lastmod>{str(c.get('actualizado') or hoy)[:10]}</lastmod></url>" for c in convenios] + [
         f"<url><loc>{base}nota-{n['slug']}.html</loc><lastmod>{str(n.get('actualizado') or n['fecha'])[:10]}</lastmod></url>" for n in notas]
     mapa = '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' + "".join(urls) + "</urlset>"
@@ -499,6 +500,21 @@ def main():
     with open(os.path.join(RAIZ, "paginas", "admin.html"), encoding="utf-8") as f:
         escribir("admin.html", pagina("Administración | Ramacontable", f.read()))
     escribir("convenios.html", pagina_convenios(convenios, notas))
+    por_slug = {c["slug"]: c for c in convenios}
+    def calc_conv(archivo, salida_html, slug, titulo, desc):
+        c = por_slug.get(slug) or {}
+        datos = dict(c.get("escala") or {}, slug=slug)
+        with open(os.path.join(RAIZ, "paginas", archivo), encoding="utf-8") as f:
+            cuerpo = f.read().replace('<script src="sueldo.js', '<script>window.RC_ESCALA=' + json.dumps(datos, ensure_ascii=False).replace("</", "<\\/") + ';</script><script src="sueldo.js')
+        escribir(salida_html, pagina(titulo, cuerpo, "", desc, salida_html))
+    calc_conv("sueldo-comercio.html", "sueldo-comercio.html", "comercio", "Calculadora de sueldo Empleados de Comercio 2026: neto con antigüedad y presentismo | Ramacontable",
+              "Calculá el sueldo de comercio con la escala vigente: básico por categoría, antigüedad, presentismo, sumas no remunerativas, descuentos y neto.")
+    calc_conv("sueldo-casas.html", "sueldo-casas-particulares.html", "casas-particulares", "Calculadora de sueldo de empleadas domésticas 2026: por hora y mensual | Ramacontable",
+              "Calculá el sueldo de casas particulares por categoría, con o sin retiro, mensual o por hora, con antigüedad y zona desfavorable.")
+    for archivo, titulo, desc in [("calculadoras.html", "Calculadoras de sueldos y aguinaldo | Ramacontable", "Calculadoras gratuitas para liquidar sueldos: comercio, casas particulares y aguinaldo, con escalas vigentes."),
+                                  ("feriados.html", "Feriados 2026 Argentina: calendario completo y cómo se pagan | Ramacontable", "Calendario de feriados 2026 en Argentina: inamovibles, trasladables y días no laborables, y cómo se liquida trabajar un feriado.")]:
+        with open(os.path.join(RAIZ, "paginas", archivo), encoding="utf-8") as f:
+            escribir(archivo, pagina(titulo, f.read(), "", desc, archivo))
     for c in convenios:
         escribir(f"escala-{c['slug']}.html", pagina_convenio(c, notas, aportes.get("convenio-" + c["slug"])))
     mapa, noticias, robots = sitemaps(todas, convenios)
