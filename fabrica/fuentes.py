@@ -213,6 +213,16 @@ def buscar_portales(consulta, por_portal=3):
     return salida
 
 
+def _art(norm, marca, desde=0):
+    """Posición donde EMPIEZA un artículo (por ejemplo «Art. 158.-» o «ARTICULO 158 —»), no una simple mención."""
+    m = re.search(r"\d+", marca or "")
+    if not m:
+        return -1
+    patron = re.compile(r"\bART(?:ICULO|\.)?\s*" + m.group(0) + r"\s*(?:BIS\s*)?[º°O]?\s*[\.\-—–:]")
+    hit = patron.search(norm, desde)
+    return hit.start() if hit else -1
+
+
 def texto_oficial(ref):
     """Fragmento de una norma (por ejemplo, de ARTICULO 150 a ARTICULO 158) para que la guía se apoye en el texto legal."""
     r = _bajar(ref["url"])
@@ -220,8 +230,9 @@ def texto_oficial(ref):
         return ""
     t = _limpio(r.text)
     norm = _norm(t).upper()
-    i = norm.find(_norm(ref.get("desde", "")).upper()) if ref.get("desde") else 0
+    i = _art(norm, ref.get("desde")) if ref.get("desde") else 0
     if i < 0:
+        util.log("No encontré", ref.get("desde"), "en", ref["url"])
         return ""
-    j = norm.find(_norm(ref.get("hasta", "")).upper(), i + 10) if ref.get("hasta") else -1
-    return t[i: j if j > i else i + 15000][:15000]
+    j = _art(norm, ref.get("hasta"), i + 10) if ref.get("hasta") else -1
+    return t[i: j if j > i else i + 15000][:20000]
