@@ -43,6 +43,7 @@ class Fabrica:
         self.publicadas, self.revision, self.descartes, self.esperando = [], [], [], []
         self.convenios_act, self.convenios_rev = [], []
         self.guias = []
+        self.guias_info = ""
         self.convenios = self.cargar_convenios()
 
     # ---------- memoria ----------
@@ -294,6 +295,9 @@ class Fabrica:
             existentes = {f["slug"] for f in filas}
             por_dia -= sum(1 for f in filas if str(f["fecha"]) == hoy)
         pendientes = [g for g in catalogo if "guia-" + g["slug"] not in existentes]
+        self.guias_info = (f"{len(existentes)} escritas (publicadas o para revisar), {len(pendientes)} pendientes; "
+                           f"cupo que queda hoy: {max(0, por_dia)} (guias_por_dia en config.json)")
+        util.log("Guías:", self.guias_info)
         for g in pendientes[:max(0, min(por_dia, int(self.cfg.get("guias_por_vuelta", 3))))]:
             try:
                 self.escribir_guia(g)
@@ -309,7 +313,7 @@ class Fabrica:
                 textos.append(f"--- FUENTE OFICIAL: {ref['url']}\n{t}")
         textos += [f"--- FUENTE: {it['fuente']} (portal)\nTítulo: {it['titulo']}\nTexto: {it['texto']}" for it in items]
         if not textos:
-            util.log("Guía sin fuentes, queda para otra vuelta:", g["titulo"])
+            util.avisar("Guía sin fuentes", f"«{g['titulo']}»: los portales no devolvieron material; queda para otra vuelta.")
             return
         pedido = f"TEMA DE LA GUÍA: {g['titulo']}\nSECCIÓN: {g['seccion']}\n\nFUENTES:\n" + "\n\n".join(textos)
         nota = gemini.gemini(_prompt("guia.md"), pedido, temperatura=0.4)
@@ -367,6 +371,7 @@ class Fabrica:
             t = (c["datos"].get("escala") or {}).get("tabla") or []
             if t:
                 md.append(f"**Escala {c['nombre']} {c['periodo']}**\n\n| " + " | ".join(t[0]) + " |\n|" + "---|" * len(t[0]) + "\n" + "\n".join("| " + " | ".join(f) + " |" for f in t[1:]) + "\n")
+        md.append(f"## 📘 Guías\n{self.guias_info or 'Sin datos.'}\n")
         md.append(f"## ⏳ Esperando segunda fuente ({len(self.esperando)})\n" + "".join(f"- {t} ({d})\n" for t, d in self.esperando))
         md.append(f"## 🚫 Descartadas ({len(self.descartes)})\n" + "".join(f"- {t}: {d}\n" for t, d in self.descartes))
         util.resumen("\n".join(md))
