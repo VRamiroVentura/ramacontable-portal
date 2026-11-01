@@ -212,3 +212,10 @@ main.wrap{padding-top:24px;padding-bottom:40px}
 .editado{font-style:italic}
 .fila-btn{display:flex;gap:10px;justify-content:flex-end;margin-top:14px}
 .btn.peligro{background:#B3261E}
+/* v1.3: acciones propias en la esquina y 👎 más chico */
+.aporte{position:relative}
+.propias{position:absolute;top:8px;right:8px;display:flex;gap:14px;margin:0}
+.propias .ico{background:none;border:0;font-size:15px;cursor:pointer;opacity:.55;padding:4px;text-decoration:none}
+.propias .ico:hover{opacity:1}
+.aporte:has(.propias) .autor{padding-right:70px}
+.votos button.chico{padding:3px 8px;font-size:11.5px;opacity:.8;align-self:center}

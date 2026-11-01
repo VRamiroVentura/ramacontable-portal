@@ -141,8 +141,8 @@
   function accionesPropias(tipo, item) {
     if (!usuario || item.autor !== usuario.id) return null;
     return h('div', { class: 'propias' },
-      h('button', { type: 'button', onclick: () => tipo === 'paso' ? formPaso(item) : editarOpinion(item) }, '✏️ Editar'),
-      h('button', { type: 'button', onclick: () => borrar(tipo, item) }, '🗑️ Borrar'));
+      h('button', { type: 'button', class: 'ico', title: 'Editar', 'aria-label': 'Editar', onclick: () => tipo === 'paso' ? formPaso(item) : editarOpinion(item) }, '✏️'),
+      h('button', { type: 'button', class: 'ico borrar', title: 'Borrar', 'aria-label': 'Borrar', onclick: () => borrar(tipo, item) }, '🗑️'));
   }
   function borrar(tipo, item) {
     abrirModal(h('div', {},
@@ -151,8 +151,9 @@
       h('div', { class: 'fila-btn' },
         h('button', { class: 'btn sec', onclick: cerrarModal }, 'Cancelar'),
         h('button', { class: 'btn peligro', onclick: async () => {
-          const { error } = await sb.from(tipo === 'paso' ? 'pasos' : 'opiniones').delete().eq('id', item.id);
+          const { data, error } = await sb.from(tipo === 'paso' ? 'pasos' : 'opiniones').delete().eq('id', item.id).select('id');
           cerrarModal(); if (error) return aviso(mensajeError(error));
+          if (!data || !data.length) return aviso('No se pudo borrar. Avisale al administrador del portal.');
           aviso('Borrado.'); cargarAportes();
         } }, 'Sí, borrar'))));
   }
@@ -166,8 +167,9 @@
     f.addEventListener('submit', async ev => {
       ev.preventDefault();
       const texto = f.texto.value.trim(); const err = revisarTexto(texto); if (err) { $('.error', f).textContent = err; return; }
-      const { error } = await sb.from('opiniones').update({ texto }).eq('id', o.id);
+      const { data, error } = await sb.from('opiniones').update({ texto }).eq('id', o.id).select('id');
       if (error) { $('.error', f).textContent = mensajeError(error); return; }
+      if (!data || !data.length) { $('.error', f).textContent = 'No se pudo guardar el cambio. Avisale al administrador del portal.'; return; }
       cerrarModal(); aviso('Opinión actualizada.'); cargarAportes();
     });
     abrirModal(f);
@@ -198,6 +200,7 @@
         boton('like', '👍 Me gusta'),
         objeto === 'paso' ? boton('sirvio', '💡 Me sirvió') : null,
         boton('neg', '👎')));
+    caja.querySelector('.votos button:last-child').classList.add('chico');
     if (negs.length) caja.append(h('p', { class: 'nota-chica' }, 'Votos negativos: ',
       ...negs.map((x, i) => [i ? ' · ' : '', `"${x.motivo}" (${nombres[x.autor] || 'usuario'})`])));
     return caja;
@@ -263,18 +266,18 @@
       cont.querySelectorAll('table').forEach(t => { const w = h('div', { class: 'tabla-scroll' }); t.replaceWith(w); w.append(t); });
       cont.querySelectorAll('img').forEach(i => { i.loading = 'lazy'; i.alt = i.alt || 'Imagen del paso a paso'; i.title = 'Tocá para ampliar'; i.addEventListener('click', () => ampliar(i.src)); });
       lp.append(h('div', { class: 'aporte' },
+        accionesPropias('paso', p),
         autorBloque(p, p.creado),
         h('span', { class: 'nivel' }, NIV[p.nivel]),
         h('h4', {}, p.titulo),
         cont,
         h('div', { class: 'dato porque-caja' }, h('b', {}, '¿Por qué se hace así? '), p.porque),
         p.texto_pdf ? h('details', { class: 'texto-pdf' }, h('summary', {}, 'Ver el texto del PDF'), h('div', {}, p.texto_pdf)) : null,
-        botonesVoto('paso', p, votosDe('paso', p.id), nombres),
-        accionesPropias('paso', p)));
+        botonesVoto('paso', p, votosDe('paso', p.id), nombres)));
     });
     const lo = $('#lista-opiniones'); lo.innerHTML = '';
     if (!opiniones.length) lo.append(h('p', { class: 'ayuda' }, 'Todavía no hay opiniones.'));
-    opiniones.forEach((o, i) => lo.append(h('div', { class: 'aporte', hidden: i >= 2 && !verTodasOp }, autorBloque(o, o.creado), h('p', {}, o.texto), botonesVoto('opinion', o, votosDe('opinion', o.id), nombres), accionesPropias('opinion', o))));
+    opiniones.forEach((o, i) => lo.append(h('div', { class: 'aporte', hidden: i >= 2 && !verTodasOp }, accionesPropias('opinion', o), autorBloque(o, o.creado), h('p', {}, o.texto), botonesVoto('opinion', o, votosDe('opinion', o.id), nombres))));
     const vm = $('#ver-mas-op');
     if (vm) { vm.hidden = opiniones.length <= 2 || verTodasOp; vm.textContent = `Ver más opiniones (${opiniones.length - 2})`; }
   }
@@ -376,8 +379,9 @@
       const err = revisarTexto([fila.titulo, fila.porque, texto].join(' '));
       if (err) { $('.error', f).textContent = err; return; }
       if (existente) { delete fila.nota; }
-      const { error } = existente ? await sb.from('pasos').update(fila).eq('id', existente.id) : await sb.from('pasos').insert(fila);
+      const { data, error } = existente ? await sb.from('pasos').update(fila).eq('id', existente.id).select('id') : await sb.from('pasos').insert(fila).select('id');
       if (error) { $('.error', f).textContent = mensajeError(error); return; }
+      if (!data || (Array.isArray(data) && !data.length)) { $('.error', f).textContent = 'No se pudo guardar. Avisale al administrador del portal.'; return; }
       cerrarModal(); aviso(existente ? 'Cambios guardados.' : '¡Publicado! Gracias por aportar.'); cargarAportes();
     });
     if (existente) {
