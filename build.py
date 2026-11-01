@@ -176,7 +176,7 @@ def pagina(titulo, cuerpo, actual="", descripcion="", ruta="", extra_head=""):
 </head><body>
 <header class="cab"><div class="wrap fila">
 <a class="logo" href="index.html">{LOGO_SVG}<span>ramacontable</span></a>
-<nav class="menu">{menu}<a class="chico" href="herramientas.html">Vencimientos</a></nav>
+<nav class="menu">{menu}<a class="chico" href="aguinaldo.html">Aguinaldo</a><a class="chico2" href="herramientas.html">Vencimientos</a></nav>
 <div id="sesion" class="sesion"><button class="btn" data-ingresar>Ingresar</button></div>
 </div></header>
 <main class="wrap">{cuerpo}</main>
@@ -213,6 +213,7 @@ def lateral(notas):
     return f"""<aside class="lateral">
 <section class="caja"><h3>Notas esperando su paso a paso</h3><ul class="esperando" id="esperando">{esperando}</ul></section>
 <section class="caja" id="destacados" hidden><h3>Destacados de la comunidad</h3><ol id="ranking"></ol></section>
+<a class="caja caja-calc" href="aguinaldo.html"><b>Calculadora de aguinaldo</b><span>Diciembre 2026 · paso a paso, con descuentos y neto</span></a>
 <section class="caja"><h3>Vencimientos que se vienen</h3><ul class="venc">
 <li><span>DDJJ Ganancias 2025 (personas humanas)</span><b>16/11</b></li>
 <li><span>Adhesión a planes de pago MiPyME y salud</span><b>30/12</b></li>
@@ -255,7 +256,7 @@ def sitemaps(notas):
     base = sitio_url()
     hoy = datetime.date.today().isoformat()
     urls = [f"<url><loc>{base}</loc><lastmod>{hoy}</lastmod></url>"] + [
-        f"<url><loc>{base}{k}.html</loc><lastmod>{hoy}</lastmod></url>" for k in SECCIONES] + [
+        f"<url><loc>{base}{k}.html</loc><lastmod>{hoy}</lastmod></url>" for k in list(SECCIONES) + ["aguinaldo", "herramientas"]] + [
         f"<url><loc>{base}nota-{n['slug']}.html</loc><lastmod>{str(n.get('actualizado') or n['fecha'])[:10]}</lastmod></url>" for n in notas]
     mapa = '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' + "".join(urls) + "</urlset>"
     limite = datetime.date.today() - datetime.timedelta(days=2)
@@ -352,6 +353,10 @@ def main():
         escribir("herramientas.html", pagina("Vencimientos | Ramacontable", f.read(), "", "Vencimientos impositivos y previsionales que se vienen.", "herramientas.html"))
     with open(os.path.join(RAIZ, "paginas", "terminos.html"), encoding="utf-8") as f:
         escribir("terminos.html", pagina("Términos y privacidad | Ramacontable", f.read()))
+    with open(os.path.join(RAIZ, "paginas", "aguinaldo.html"), encoding="utf-8") as f:
+        escribir("aguinaldo.html", pagina("Calculadora de aguinaldo diciembre 2026 (SAC): cálculo paso a paso | Ramacontable", f.read(), "",
+                 "Calculá el aguinaldo de diciembre 2026: mensualizados y jornalizados, proporcional por días, descuentos y neto, con el cálculo paso a paso.",
+                 "aguinaldo.html"))
     with open(os.path.join(RAIZ, "paginas", "nota-dinamica.html"), encoding="utf-8") as f:
         escribir("nota.html", pagina("Nota | Ramacontable", f.read()))
     with open(os.path.join(RAIZ, "paginas", "admin.html"), encoding="utf-8") as f:

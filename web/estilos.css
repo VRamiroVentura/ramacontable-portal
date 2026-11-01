@@ -232,3 +232,21 @@ main.wrap{padding-top:24px;padding-bottom:40px}
 @media(max-width:620px){.fila-admin{grid-template-columns:1fr}.est{grid-row:auto}.fila-admin small{grid-column:1}}
 .faq{margin-top:24px}.faq details{border-bottom:1px solid var(--linea);padding:10px 0}.faq summary{cursor:pointer;font-weight:700;color:var(--verde)}.faq details p{margin:8px 0 0}
 .relacionadas{margin-top:26px}.relacionadas h2{font-size:18px}.relacionadas ul{padding-left:18px}.relacionadas li{margin:6px 0}
+/* calculadora */
+.cab .menu .chico2{font-weight:400;color:#9FB3A7}
+.caja-calc{display:block;text-decoration:none;background:var(--verde);color:#fff;border-top-color:var(--bronce)}
+.caja-calc b{font-family:var(--serif);display:block;font-size:17px}.caja-calc span{font-size:13.5px;color:#C4D2C8}
+.form-calc{background:var(--fondo);border:1px solid var(--linea);padding:16px;margin:18px 0}
+.form-calc label{display:grid;gap:4px;font-weight:600;font-size:14.5px;color:var(--verde);margin-top:10px}
+.fila2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.meses{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+@media(max-width:620px){.fila2{grid-template-columns:1fr}.meses{grid-template-columns:1fr 1fr}}
+.opciones{margin-top:12px;background:#fff;border:1px solid var(--linea);padding:8px 12px}.opciones summary{cursor:pointer;font-weight:700;color:var(--bronce)}
+.resultado{border:2px solid var(--verde);padding:16px;margin-bottom:22px;scroll-margin-top:110px}
+.res-top{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+.res-top div{background:var(--fondo);padding:10px;text-align:center}.res-top span{display:block;font-size:13px;color:var(--gris)}.res-top b{font-size:20px;color:var(--verde)}
+.res-top .neto{background:var(--verde)}.res-top .neto span{color:#C4D2C8}.res-top .neto b{color:#fff}
+@media(max-width:620px){.res-top{grid-template-columns:1fr}}
+.pasos-sac{padding-left:20px}.pasos-sac li{margin-bottom:12px}.pasos-sac p{margin:0}
+.tabla-desc{margin:8px 0}.tabla-desc .tot td{font-weight:700}
+.fecha-pago{background:var(--bronce-suave);padding:10px 12px;border-left:3px solid var(--bronce)}

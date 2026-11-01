@@ -1,0 +1,60 @@
+<div class="grilla"><article class="nota calc">
+<p class="ante">Herramientas | Ley 23.041 y Decreto 1078/84</p>
+<h1>Calculadora de aguinaldo (SAC) diciembre 2026</h1>
+<p class="firma">Redacción Ramacontable · Cálculo paso a paso, para mensualizados y jornalizados</p>
+<div class="encorto"><b>En corto</b><p>El aguinaldo es el 50% de la mejor remuneración mensual del semestre. Si no se trabajó el semestre completo, se paga en proporción a los días trabajados. La segunda cuota de 2026 vence el 18 de diciembre.</p></div>
+
+<form id="calc-sac" class="form-calc" novalidate>
+<div class="fila2">
+<label>Semestre<select name="semestre">
+<option value="2026-2" selected>2º semestre 2026 (julio a diciembre)</option>
+<option value="2027-1">1º semestre 2027 (enero a junio)</option>
+</select></label>
+<label>Tipo de trabajador<select name="tipo">
+<option value="mensual">Mensualizado (sueldo mensual)</option>
+<option value="jornal">Jornalizado (cobra por día u hora)</option>
+</select></label>
+</div>
+<p class="ayuda" id="ayuda-montos">Cargá la remuneración <b>remunerativa bruta</b> de cada mes (básico, antigüedad, presentismo, horas extras, comisiones, etc.). Las sumas no remunerativas no van, salvo que el acuerdo diga que se computan para el aguinaldo.</p>
+<div class="meses" id="meses"></div>
+<details class="opciones"><summary>Ingreso, egreso o licencias sin goce en el semestre</summary>
+<div class="fila2">
+<label>Fecha de ingreso (si entró en el semestre)<input type="date" name="ingreso"></label>
+<label>Fecha de egreso (si se fue en el semestre)<input type="date" name="egreso"></label>
+</div>
+<label>Días de licencia sin goce de sueldo en el semestre<input type="number" name="sinGoce" min="0" max="184" value="0" inputmode="numeric"></label>
+</details>
+<details class="opciones"><summary>Descuentos y tope de aportes</summary>
+<label>Base imponible máxima mensual del SIPA (tope de aportes)<input name="tope" inputmode="decimal" value="4.860.000"></label>
+<p class="ayuda">Valor de referencia de noviembre de 2026. ANSES lo actualiza todos los meses: verificá el vigente para diciembre. Para el aguinaldo, el tope es el 50% de este valor (proporcional si el semestre no está completo).</p>
+</details>
+<p class="error" id="err-sac"></p>
+<button class="btn ancho">Calcular aguinaldo</button>
+</form>
+
+<section id="resultado-sac" class="resultado" hidden></section>
+
+<h2>¿Cómo se calcula el aguinaldo?</h2>
+<p>El Sueldo Anual Complementario (SAC), conocido como aguinaldo, se paga en dos cuotas: la primera con vencimiento el 30 de junio y la segunda el 18 de diciembre. Cada cuota equivale al 50% de la mayor remuneración mensual devengada, por todo concepto, dentro del semestre (Ley 23.041, artículo 1).</p>
+<p>Cuando el trabajador no prestó servicios durante todo el semestre (porque ingresó o egresó en ese período, o tuvo licencias sin goce de sueldo), el aguinaldo se paga en proporción al tiempo trabajado (Decreto 1078/84, artículo 2). La calculadora lo hace por días: el 2º semestre tiene 184 días y el 1º, 181 (182 en años bisiestos).</p>
+<h2>¿Qué pasa con los jornalizados?</h2>
+<p>Se toma el mes de mayor remuneración del semestre, sumando lo efectivamente devengado en ese mes (jornales, horas, adicionales). Por eso conviene cargar el total remunerativo de cada mes.</p>
+<h2>¿Qué descuentos tiene?</h2>
+<p>El aguinaldo lleva los mismos aportes que el sueldo: jubilación 11%, Ley 19.032 (PAMI) 3% y obra social 3%. Puede tener además cuota sindical u otros descuentos de convenio, y retención de Impuesto a las Ganancias, que esta calculadora no incluye.</p>
+
+<section class="faq"><h2>Preguntas frecuentes</h2>
+<details><summary>¿Cuándo se paga el aguinaldo de diciembre 2026?</summary><p>La segunda cuota vence el 18 de diciembre de 2026.</p></details>
+<details><summary>¿Las sumas no remunerativas entran en el aguinaldo?</summary><p>En principio no, porque el aguinaldo se calcula sobre la remuneración. Algunos acuerdos salariales establecen expresamente que una suma no remunerativa se computa para el SAC: en ese caso hay que sumarla.</p></details>
+<details><summary>¿Las vacaciones y las licencias por enfermedad reducen el aguinaldo?</summary><p>No. Son períodos pagos y se computan como trabajados. Solo reducen el aguinaldo las licencias sin goce de sueldo.</p></details>
+<details><summary>¿Cómo se calcula el aguinaldo proporcional?</summary><p>Se divide la mejor remuneración del semestre por 2, se divide por la cantidad de días del semestre y se multiplica por los días trabajados.</p></details>
+</section>
+<p class="aviso">Herramienta de carácter general. El resultado es una estimación y no reemplaza el cálculo de la liquidación de cada empresa. Se recomienda verificar en la normativa y en el convenio colectivo aplicable.</p>
+</article>
+<aside class="lateral"><section class="caja"><h3>Fechas clave</h3><ul class="venc"><li><span>2ª cuota SAC 2026</span><b>18/12</b></li><li><span>1ª cuota SAC 2027</span><b>30/06</b></li></ul></section></aside>
+</div>
+<script src="aguinaldo.js?v=1"></script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
+{"@type":"Question","name":"¿Cuándo se paga el aguinaldo de diciembre 2026?","acceptedAnswer":{"@type":"Answer","text":"La segunda cuota vence el 18 de diciembre de 2026."}},
+{"@type":"Question","name":"¿Las sumas no remunerativas entran en el aguinaldo?","acceptedAnswer":{"@type":"Answer","text":"En principio no, porque el aguinaldo se calcula sobre la remuneración. Algunos acuerdos establecen que una suma no remunerativa se computa para el SAC: en ese caso hay que sumarla."}},
+{"@type":"Question","name":"¿Las vacaciones y las licencias por enfermedad reducen el aguinaldo?","acceptedAnswer":{"@type":"Answer","text":"No. Son períodos pagos y se computan como trabajados. Solo reducen el aguinaldo las licencias sin goce de sueldo."}},
+{"@type":"Question","name":"¿Cómo se calcula el aguinaldo proporcional?","acceptedAnswer":{"@type":"Answer","text":"Se divide la mejor remuneración del semestre por 2, se divide por la cantidad de días del semestre y se multiplica por los días trabajados."}}]}</script>
