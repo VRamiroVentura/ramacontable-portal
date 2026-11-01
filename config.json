@@ -4,6 +4,7 @@
   "sitio_url": "https://vramiroventura.github.io/ramacontable-portal/",
   "mail_aviso": "ramacontable@gmail.com",
   "max_notas_por_vuelta": 6,
+     "guias_por_dia": 9,
   "dias_espera_segunda_fuente": 2,
   "gemini_modelos": ["gemini-flash-latest"],
   "gemini_pensamiento": "low",
