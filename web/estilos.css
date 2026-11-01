@@ -199,3 +199,16 @@ main.wrap{padding-top:24px;padding-bottom:40px}
 .texto-pdf{margin-top:8px;font-size:14px}.texto-pdf summary{cursor:pointer;color:var(--bronce);font-weight:600}
 .texto-pdf div{white-space:pre-wrap;background:var(--fondo);padding:10px;margin-top:6px;max-height:300px;overflow:auto;color:var(--gris)}
 .ventana-ancha{max-width:1100px}.ampliada img{width:100%;height:auto;display:block}
+.estado{margin-top:10px;padding:12px 14px;border-radius:4px;font-size:15px;font-weight:600;line-height:1.4}
+.estado.cargando{background:#EEF3EF;color:var(--verde)}
+.estado.ok{background:#E6F2EA;color:#1F5C39;border-left:4px solid #2E7D4F}
+.estado.error{background:#FDECEA;color:#8C1D18;border-left:4px solid #B3261E}
+.bloque-op,.bloque-aplica{margin-top:30px;padding-top:18px;border-top:2px solid var(--linea)}
+.tit-bloque{font-size:22px!important;margin:0 0 12px!important;display:flex;align-items:center;gap:8px}
+.tit-bloque span{font:700 13px var(--sans);background:var(--fondo);border-radius:10px;padding:1px 8px;color:var(--gris)}
+.bloque-aplica{border-top:3px solid var(--bronce)}
+.propias{display:flex;gap:8px;margin-top:8px}
+.propias button{background:none;border:0;color:var(--gris);font:600 13px var(--sans);cursor:pointer;padding:2px 0;text-decoration:underline}
+.editado{font-style:italic}
+.fila-btn{display:flex;gap:10px;justify-content:flex-end;margin-top:14px}
+.btn.peligro{background:#B3261E}

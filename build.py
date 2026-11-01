@@ -180,19 +180,17 @@ def pagina_nota(n, notas, aportes=None):
 <p class="fuente"><b>Fuente:</b> {e(n['fuente'])}</p>
 <p class="aviso">Información de carácter general. Se recomienda verificar siempre en las fuentes oficiales. Cada profesional es responsable de su aplicación. {verif}</p>
 
-<div class="pestanas" role="tablist" id="aplica">
-<button role="tab" aria-selected="true" data-tab="pasos">¿Cómo se aplica? <span data-n="pasos">0</span></button>
-<button role="tab" aria-selected="false" data-tab="opiniones">Opiniones <span data-n="opiniones">0</span></button>
-</div>
-<section class="panel" data-panel="pasos">
+<section class="bloque-op" id="opiniones">
+<h2 class="tit-bloque">Opiniones <span data-n="opiniones">0</span></h2>
+<form id="form-opinion" class="form-op"><textarea name="texto" rows="3" maxlength="1500" placeholder="¿Qué opinás de esta novedad?" required></textarea><button class="btn">Publicar opinión</button></form>
+<div id="lista-opiniones" class="lista"></div>
+<button type="button" class="btn sec ancho" id="ver-mas-op" hidden>Ver más opiniones</button>
+</section>
+<section class="bloque-aplica" id="aplica">
+<h2 class="tit-bloque">¿Cómo se aplica? <span data-n="pasos">0</span></h2>
 <p class="ayuda">Mostrá cómo se liquida o se aplica esta novedad, paso a paso y explicando el porqué. Los más votados quedan arriba.</p>
 <div id="lista-pasos" class="lista">{pasos_estaticos(aportes or [])}</div>
-<button class="btn ancho" data-nuevo-paso>Subir mi paso a paso</button>
-</section>
-<section class="panel" data-panel="opiniones" hidden>
-<p class="ayuda">¿Qué opinás de esta novedad? Tu comentario lo pueden votar los demás.</p>
-<form id="form-opinion" class="form-op"><textarea name="texto" rows="3" maxlength="1500" placeholder="Escribí tu opinión" required></textarea><button class="btn">Publicar</button></form>
-<div id="lista-opiniones" class="lista"></div>
+<button class="btn ancho" data-nuevo-paso>Subir mi explicativo</button>
 </section>
 </article>{lateral(notas)}</div>"""
     return pagina(f"{n['titulo']} | Ramacontable", contenido, n["seccion"], n["encorto"])

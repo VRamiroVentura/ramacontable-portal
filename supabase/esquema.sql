@@ -46,6 +46,8 @@ create table if not exists public.opiniones (
   creado timestamptz not null default now()
 );
 create index if not exists opiniones_nota on public.opiniones(nota);
+alter table public.pasos add column if not exists editado timestamptz;
+alter table public.opiniones add column if not exists editado timestamptz;
 
 -- ===== Votos =====
 create table if not exists public.votos (
@@ -92,6 +94,12 @@ end $$;
 create or replace function public.filtrar_aporte() returns trigger
 language plpgsql as $$
 begin
+  if tg_op = 'UPDATE' and tg_table_name in ('pasos','opiniones') then
+    if new.nota <> old.nota or new.autor <> old.autor or new.creado <> old.creado or new.oculto <> old.oculto then
+      raise exception 'REGLA: Solo se puede modificar el contenido.';
+    end if;
+    new.editado := now();
+  end if;
   if tg_table_name = 'opiniones' then
     perform public.revisar_texto(new.texto);
   elsif tg_table_name = 'pasos' then
@@ -162,6 +170,8 @@ drop policy if exists "subir paso" on public.pasos;
 create policy "subir paso" on public.pasos for insert to authenticated with check (autor = auth.uid() and oculto = false);
 drop policy if exists "borrar mi paso" on public.pasos;
 create policy "borrar mi paso" on public.pasos for delete to authenticated using (autor = auth.uid());
+drop policy if exists "editar mi paso" on public.pasos;
+create policy "editar mi paso" on public.pasos for update to authenticated using (autor = auth.uid()) with check (autor = auth.uid());
 
 drop policy if exists "ver opiniones" on public.opiniones;
 create policy "ver opiniones" on public.opiniones for select using (not oculto);
@@ -169,6 +179,8 @@ drop policy if exists "opinar" on public.opiniones;
 create policy "opinar" on public.opiniones for insert to authenticated with check (autor = auth.uid() and oculto = false);
 drop policy if exists "borrar mi opinion" on public.opiniones;
 create policy "borrar mi opinion" on public.opiniones for delete to authenticated using (autor = auth.uid());
+drop policy if exists "editar mi opinion" on public.opiniones;
+create policy "editar mi opinion" on public.opiniones for update to authenticated using (autor = auth.uid()) with check (autor = auth.uid());
 
 drop policy if exists "ver votos" on public.votos;
 create policy "ver votos" on public.votos for select using (true);

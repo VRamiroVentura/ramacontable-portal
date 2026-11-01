@@ -5,7 +5,7 @@
   const $ = (s, el = document) => el.querySelector(s);
   const $$ = (s, el = document) => [...el.querySelectorAll(s)];
   const notaId = $('[data-nota]') ? $('[data-nota]').dataset.nota : null;
-  let usuario = null, perfil = null, reputaciones = {}, misVotos = new Set();
+  let usuario = null, perfil = null, reputaciones = {}, misVotos = new Set(), verTodasOp = false;
 
   // ---------- utilidades ----------
   function h(tag, attrs = {}, ...hijos) {
@@ -134,6 +134,44 @@
     const { data } = await sb.from('reputacion').select('*');
     reputaciones = {}; (data || []).forEach(r => { reputaciones[r.usuario] = r; });
   }
+  function fechaHora(iso) {
+    const d = new Date(iso);
+    return d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' }) + ' ' + d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false });
+  }
+  function accionesPropias(tipo, item) {
+    if (!usuario || item.autor !== usuario.id) return null;
+    return h('div', { class: 'propias' },
+      h('button', { type: 'button', onclick: () => tipo === 'paso' ? formPaso(item) : editarOpinion(item) }, '✏️ Editar'),
+      h('button', { type: 'button', onclick: () => borrar(tipo, item) }, '🗑️ Borrar'));
+  }
+  function borrar(tipo, item) {
+    abrirModal(h('div', {},
+      h('h2', {}, tipo === 'paso' ? '¿Borrar tu explicativo?' : '¿Borrar tu opinión?'),
+      h('p', {}, 'Se borra para siempre, junto con sus votos.'),
+      h('div', { class: 'fila-btn' },
+        h('button', { class: 'btn sec', onclick: cerrarModal }, 'Cancelar'),
+        h('button', { class: 'btn peligro', onclick: async () => {
+          const { error } = await sb.from(tipo === 'paso' ? 'pasos' : 'opiniones').delete().eq('id', item.id);
+          cerrarModal(); if (error) return aviso(mensajeError(error));
+          aviso('Borrado.'); cargarAportes();
+        } }, 'Sí, borrar'))));
+  }
+  function editarOpinion(o) {
+    const f = h('form', {},
+      h('h2', {}, 'Editar tu opinión'),
+      h('textarea', { name: 'texto', rows: 4, maxlength: 1500, required: true }),
+      h('p', { class: 'nota-chica' }, 'Se va a mostrar que la editaste y a qué hora.'),
+      h('p', { class: 'error' }), h('button', { class: 'btn ancho' }, 'Guardar cambios'));
+    f.texto.value = o.texto;
+    f.addEventListener('submit', async ev => {
+      ev.preventDefault();
+      const texto = f.texto.value.trim(); const err = revisarTexto(texto); if (err) { $('.error', f).textContent = err; return; }
+      const { error } = await sb.from('opiniones').update({ texto }).eq('id', o.id);
+      if (error) { $('.error', f).textContent = mensajeError(error); return; }
+      cerrarModal(); aviso('Opinión actualizada.'); cargarAportes();
+    });
+    abrirModal(f);
+  }
   function autorBloque(p, cuando) {
     const r = reputaciones[p.autor] || {};
     const per = p.perfiles || {};
@@ -143,7 +181,7 @@
       tipoTexto(per) ? h('span', { class: 'sello' }, tipoTexto(per)) : null,
       n ? h('span', { class: 'sello' }, n) : null,
       r.negativos > r.positivos ? h('span', { class: 'rep-neg' }, `(reputación negativa: ${r.positivos - r.negativos})`) : null,
-      h('span', { class: 'cuando' }, hace(cuando)));
+      h('span', { class: 'cuando' }, hace(cuando), p.editado ? h('em', { class: 'editado' }, ` · editado el ${fechaHora(p.editado)}`) : null));
   }
   function botonesVoto(objeto, item, votos, nombres) {
     const cuenta = v => votos.filter(x => x.valor === v).length;
@@ -198,7 +236,7 @@
       sb.from('pasos').select('*, perfiles(nombre,tipo,avance)').eq('nota', notaId),
       sb.from('opiniones').select('*, perfiles(nombre,tipo,avance)').eq('nota', notaId).order('creado', { ascending: false }),
     ]);
-    const pasos = ps.data || [], opiniones = os.data || [];
+    const pasos = ps.data || [], opiniones = (os.data || []).sort((a, b) => new Date(b.creado) - new Date(a.creado));
     const ids = { paso: pasos.map(p => p.id), opinion: opiniones.map(o => o.id) };
     let votos = [];
     if (ids.paso.length || ids.opinion.length) {
@@ -231,11 +269,14 @@
         cont,
         h('div', { class: 'dato porque-caja' }, h('b', {}, '¿Por qué se hace así? '), p.porque),
         p.texto_pdf ? h('details', { class: 'texto-pdf' }, h('summary', {}, 'Ver el texto del PDF'), h('div', {}, p.texto_pdf)) : null,
-        botonesVoto('paso', p, votosDe('paso', p.id), nombres)));
+        botonesVoto('paso', p, votosDe('paso', p.id), nombres),
+        accionesPropias('paso', p)));
     });
     const lo = $('#lista-opiniones'); lo.innerHTML = '';
     if (!opiniones.length) lo.append(h('p', { class: 'ayuda' }, 'Todavía no hay opiniones.'));
-    opiniones.forEach(o => lo.append(h('div', { class: 'aporte' }, autorBloque(o, o.creado), h('p', {}, o.texto), botonesVoto('opinion', o, votosDe('opinion', o.id), nombres))));
+    opiniones.forEach((o, i) => lo.append(h('div', { class: 'aporte', hidden: i >= 2 && !verTodasOp }, autorBloque(o, o.creado), h('p', {}, o.texto), botonesVoto('opinion', o, votosDe('opinion', o.id), nombres), accionesPropias('opinion', o))));
+    const vm = $('#ver-mas-op');
+    if (vm) { vm.hidden = opiniones.length <= 2 || verTodasOp; vm.textContent = `Ver más opiniones (${opiniones.length - 2})`; }
   }
 
   function ampliar(src) {
@@ -243,12 +284,17 @@
     modal.querySelector('.ventana').classList.add('ventana-ancha');
   }
 
-  function formPaso() {
+  function formPaso(existente) {
     if (!exigirSesion()) return;
     const ed = window.RCEditor; ed.configurar(cfg.url);
-    let imgs = 0, textoPdf = '';
+    let imgs = 0, textoPdf = existente && existente.texto_pdf || '';
     const editor = h('div', { class: 'editor', contenteditable: 'true', 'data-vacio': 'Pegá acá tu liquidación o explicación (desde Excel o Word, mantiene el formato) o escribila directamente.' });
-    const estado = h('p', { class: 'nota-chica', 'aria-live': 'polite' });
+    const estado = h('div', { class: 'estado', 'aria-live': 'polite', hidden: true });
+    let procesando = false;
+    const mostrar = (txt, tipo) => {
+      estado.hidden = !txt; estado.className = 'estado ' + (tipo || ''); estado.textContent = txt || '';
+      if (txt) estado.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    };
     const alFinal = html => { editor.insertAdjacentHTML('beforeend', html + '<p><br></p>'); editor.scrollTop = editor.scrollHeight; };
     const insertar = html => {
       editor.focus();
@@ -270,8 +316,10 @@
       return sb.storage.from('pasos').getPublicUrl(ruta).data.publicUrl;
     };
     const conAviso = async (txt, fn) => {
-      estado.textContent = txt;
-      try { await fn(); estado.textContent = ''; } catch (e) { estado.textContent = (e && e.message && !e.message.includes('Failed')) ? e.message : 'No se pudo procesar. Probá copiando y pegando el contenido.'; }
+      mostrar('⏳ ' + txt, 'cargando'); procesando = true;
+      try { await fn(); mostrar('✅ Listo, ya está en tu paso a paso. Revisalo abajo antes de publicar.', 'ok'); }
+      catch (e) { mostrar('⚠️ ' + ((e && e.message && !/Failed|fetch|import/i.test(e.message)) ? e.message : 'No se pudo procesar el archivo. Probá exportarlo de nuevo a PDF o copiá y pegá el contenido.'), 'error'); }
+      finally { procesando = false; }
     };
     editor.addEventListener('paste', ev => {
       ev.preventDefault();
@@ -285,7 +333,7 @@
     editor.addEventListener('drop', ev => { if (ev.dataTransfer.files.length) { ev.preventDefault(); procesarArchivo(ev.dataTransfer.files[0]); } });
     const procesarArchivo = archivo => {
       const n = archivo.name.toLowerCase();
-      if (archivo.size > 15 * 1024 * 1024) { estado.textContent = 'El archivo es muy grande (máximo 15 MB).'; return; }
+      if (archivo.size > 15 * 1024 * 1024) { mostrar('⚠️ El archivo es muy grande (máximo 15 MB).', 'error'); return; }
       if (n.endsWith('.xlsx')) return conAviso('Convirtiendo la planilla…', async () => alFinal(await ed.xlsxAHtml(archivo)));
       if (n.endsWith('.docx')) return conAviso('Convirtiendo el documento…', async () => alFinal(await ed.docxAHtml(archivo)));
       if (n.endsWith('.pdf')) return conAviso('Convirtiendo el PDF en imágenes…', async () => {
@@ -297,38 +345,47 @@
         if (total > canvases.length) aviso(`Se agregaron las primeras ${canvases.length} páginas de ${total}.`);
       });
       if (/\.(png|jpe?g|webp)$/.test(n)) return conAviso('Subiendo la imagen…', async () => alFinal(ed.limpiar(`<p><img src="${await subirCanvas(await ed.canvasDeArchivo(archivo))}"></p>`)));
-      estado.textContent = 'Formato no admitido. Usá Excel (.xlsx), Word (.docx), PDF o una imagen. Los .xls, .xlsm y .doc no se aceptan por seguridad: abrilos, copiá y pegá.';
+      mostrar('⚠️ Formato no admitido. Usá Excel (.xlsx), Word (.docx), PDF o una imagen. Los .xls, .xlsm y .doc no se aceptan por seguridad: abrilos, copiá y pegá.', 'error');
     };
     const selector = h('input', { type: 'file', accept: '.xlsx,.docx,.pdf,.png,.jpg,.jpeg,.webp', hidden: true, onchange: () => { if (selector.files[0]) procesarArchivo(selector.files[0]); selector.value = ''; } });
     const selPdf = h('input', { type: 'file', accept: '.pdf', hidden: true, onchange: () => { if (selPdf.files[0]) procesarArchivo(selPdf.files[0]); selPdf.value = ''; } });
     const f = h('form', {},
-      h('h2', {}, 'Mostrá cómo se aplica'),
+      h('h2', {}, existente ? 'Editar tu explicativo' : 'Mostrá cómo se aplica'),
+      existente ? h('p', { class: 'nota-chica' }, 'Se va a mostrar que lo editaste y a qué hora.') : null,
       h('label', {}, 'Título del caso', h('input', { name: 'titulo', required: true, minlength: 5, maxlength: 140, placeholder: 'Ej.: Vendedor B, 5 años de antigüedad, octubre 2026' })),
       h('label', {}, 'Nivel', h('select', { name: 'nivel' }, h('option', { value: 'basico' }, 'Básico'), h('option', { value: 'intermedio' }, 'Intermedio'), h('option', { value: 'avanzado' }, 'Avanzado'))),
       h('label', {}, 'Tu paso a paso'),
       h('div', { class: 'subir-pdf' },
         h('button', { type: 'button', class: 'btn', onclick: () => selPdf.click() }, '📄 Subir PDF'),
         h('span', {}, 'Lo más fácil: guardá tu Excel o Word como PDF y subilo. Se ve en la página tal cual.'), selPdf),
+      estado,
       h('p', { class: 'nota-chica o-bien' }, 'O bien, pegá abajo desde Excel o Word (mantiene el formato), escribí directamente, o ',
         h('a', { href: '#', onclick: e => { e.preventDefault(); selector.click(); } }, 'elegí un Excel, Word o imagen'), '.', selector),
       editor,
-      estado,
       h('label', {}, '¿Por qué se hace así? (obligatorio)', h('textarea', { name: 'porque', required: true, rows: 3, minlength: 20, maxlength: 2000, placeholder: 'Explicá la lógica: qué norma se aplica y por qué se calcula de esa forma. Así le sirve también a estudiantes.' })),
       h('label', { class: 'check' }, h('input', { type: 'checkbox', name: 'sindatos', required: true }), 'Confirmo que no tiene datos reales de personas ni clientes (nombres, CUIL, DNI, sueldos reales).'),
       h('p', { class: 'error' }),
       h('button', { class: 'btn ancho' }, 'Publicar'));
     f.addEventListener('submit', async ev => {
       ev.preventDefault();
+      if (procesando) { $('.error', f).textContent = 'Esperá a que termine de procesar el archivo.'; return; }
       const contenido = ed.limpiar(editor.innerHTML);
       const texto = editor.innerText.trim();
       if (texto.length < 10 && !contenido.includes('<img')) { $('.error', f).textContent = 'Falta el paso a paso: pegá o escribí el contenido.'; return; }
       const fila = { nota: notaId, titulo: f.titulo.value.trim(), nivel: f.nivel.value, contenido, porque: f.porque.value.trim(), sin_datos_reales: f.sindatos.checked, texto_pdf: textoPdf || null };
       const err = revisarTexto([fila.titulo, fila.porque, texto].join(' '));
       if (err) { $('.error', f).textContent = err; return; }
-      const { error } = await sb.from('pasos').insert(fila);
+      if (existente) { delete fila.nota; }
+      const { error } = existente ? await sb.from('pasos').update(fila).eq('id', existente.id) : await sb.from('pasos').insert(fila);
       if (error) { $('.error', f).textContent = mensajeError(error); return; }
-      cerrarModal(); aviso('¡Publicado! Gracias por aportar.'); cargarAportes();
+      cerrarModal(); aviso(existente ? 'Cambios guardados.' : '¡Publicado! Gracias por aportar.'); cargarAportes();
     });
+    if (existente) {
+      f.titulo.value = existente.titulo; f.nivel.value = existente.nivel; f.porque.value = existente.porque;
+      editor.innerHTML = ed.limpiar(existente.contenido); imgs = (existente.contenido.match(/<img/g) || []).length;
+      f.sindatos.checked = true;
+      $('button.btn.ancho', f).textContent = 'Guardar cambios';
+    }
     abrirModal(f);
   }
 
@@ -356,7 +413,8 @@
     $$('[data-tab]').forEach(x => x.setAttribute('aria-selected', x === b));
     $$('[data-panel]').forEach(p => { p.hidden = p.dataset.panel !== b.dataset.tab; });
   }));
-  const bp = $('[data-nuevo-paso]'); if (bp) bp.addEventListener('click', formPaso);
+  const vmo = $('#ver-mas-op'); if (vmo) vmo.addEventListener('click', () => { verTodasOp = true; $$('#lista-opiniones .aporte').forEach(x => { x.hidden = false; }); vmo.hidden = true; });
+  const bp = $('[data-nuevo-paso]'); if (bp) bp.addEventListener('click', () => formPaso());
   const fo = $('#form-opinion');
   if (fo) fo.addEventListener('submit', async ev => {
     ev.preventDefault();
