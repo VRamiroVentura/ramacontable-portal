@@ -1,0 +1,262 @@
+[
+ {
+  "slug": "liquidar-sueldo-paso-a-paso",
+  "titulo": "Cómo liquidar un sueldo paso a paso",
+  "seccion": "sueldos",
+  "buscar": "liquidacion de sueldo paso a paso",
+  "oficial": [
+   {
+    "url": "https://servicios.infoleg.gob.ar/infolegInternet/anexos/25000-29999/25552/texact.htm",
+    "desde": "ARTICULO 103",
+    "hasta": "ARTICULO 150"
+   }
+  ]
+ },
+ {
+  "slug": "vacaciones",
+  "titulo": "Vacaciones: días que corresponden, cálculo y plus vacacional",
+  "seccion": "sueldos",
+  "buscar": "vacaciones liquidacion",
+  "oficial": [
+   {
+    "url": "https://servicios.infoleg.gob.ar/infolegInternet/anexos/25000-29999/25552/texact.htm",
+    "desde": "ARTICULO 150",
+    "hasta": "ARTICULO 158"
+   }
+  ]
+ },
+ {
+  "slug": "licencias-especiales",
+  "titulo": "Licencias especiales: nacimiento, matrimonio, fallecimiento y examen",
+  "seccion": "sueldos",
+  "buscar": "licencias especiales",
+  "oficial": [
+   {
+    "url": "https://servicios.infoleg.gob.ar/infolegInternet/anexos/25000-29999/25552/texact.htm",
+    "desde": "ARTICULO 158",
+    "hasta": "ARTICULO 162"
+   }
+  ]
+ },
+ {
+  "slug": "enfermedad-inculpable",
+  "titulo": "Licencia por enfermedad inculpable: plazos y cómo se paga",
+  "seccion": "sueldos",
+  "buscar": "enfermedad inculpable",
+  "oficial": [
+   {
+    "url": "https://servicios.infoleg.gob.ar/infolegInternet/anexos/25000-29999/25552/texact.htm",
+    "desde": "ARTICULO 208",
+    "hasta": "ARTICULO 214"
+   }
+  ]
+ },
+ {
+  "slug": "liquidacion-final",
+  "titulo": "Liquidación final: renuncia, despido e indemnización",
+  "seccion": "sueldos",
+  "buscar": "liquidacion final despido indemnizacion",
+  "oficial": [
+   {
+    "url": "https://servicios.infoleg.gob.ar/infolegInternet/anexos/25000-29999/25552/texact.htm",
+    "desde": "ARTICULO 231",
+    "hasta": "ARTICULO 256"
+   }
+  ]
+ },
+ {
+  "slug": "sac-aguinaldo",
+  "titulo": "Aguinaldo (SAC): cómo se calcula y cuándo se paga",
+  "seccion": "sueldos",
+  "buscar": "aguinaldo sac calculo",
+  "oficial": [
+   {
+    "url": "https://servicios.infoleg.gob.ar/infolegInternet/anexos/25000-29999/25552/texact.htm",
+    "desde": "ARTICULO 121",
+    "hasta": "ARTICULO 124"
+   }
+  ]
+ },
+ {
+  "slug": "horas-extras",
+  "titulo": "Horas extras: recargos y cómo se liquidan",
+  "seccion": "sueldos",
+  "buscar": "horas extras",
+  "oficial": []
+ },
+ {
+  "slug": "sumas-no-remunerativas",
+  "titulo": "Sumas no remunerativas: qué son y cómo tributan",
+  "seccion": "sueldos",
+  "buscar": "sumas no remunerativas aportes",
+  "oficial": []
+ },
+ {
+  "slug": "libro-sueldos-digital",
+  "titulo": "Libro de sueldos digital: cómo funciona",
+  "seccion": "sueldos",
+  "buscar": "libro de sueldos digital",
+  "oficial": []
+ },
+ {
+  "slug": "asignaciones-familiares",
+  "titulo": "Asignaciones familiares: quiénes cobran y montos",
+  "seccion": "sueldos",
+  "buscar": "asignaciones familiares",
+  "oficial": []
+ },
+ {
+  "slug": "art-contribuciones",
+  "titulo": "ART y contribuciones patronales",
+  "seccion": "sueldos",
+  "buscar": "contribuciones patronales art",
+  "oficial": []
+ },
+ {
+  "slug": "casas-particulares",
+  "titulo": "Personal de casas particulares: registro, aportes y recibo",
+  "seccion": "sueldos",
+  "buscar": "casas particulares aportes",
+  "oficial": []
+ },
+ {
+  "slug": "categorias-comercio",
+  "titulo": "Categorías de Empleados de Comercio (CCT 130/75)",
+  "seccion": "sueldos",
+  "buscar": "categorias empleados de comercio",
+  "oficial": []
+ },
+ {
+  "slug": "reforma-laboral",
+  "titulo": "Reforma laboral: qué cambió para liquidar sueldos",
+  "seccion": "sueldos",
+  "buscar": "reforma laboral",
+  "oficial": []
+ },
+ {
+  "slug": "ganancias-cuarta-categoria",
+  "titulo": "Ganancias cuarta categoría: retenciones a empleados",
+  "seccion": "impuestos",
+  "buscar": "ganancias cuarta categoria retencion",
+  "oficial": []
+ },
+ {
+  "slug": "siradig",
+  "titulo": "SIRADIG: cómo cargar deducciones",
+  "seccion": "impuestos",
+  "buscar": "siradig deducciones",
+  "oficial": []
+ },
+ {
+  "slug": "ganancias-personas-humanas",
+  "titulo": "Ganancias personas humanas: declaración jurada anual",
+  "seccion": "impuestos",
+  "buscar": "ganancias personas humanas declaracion jurada",
+  "oficial": []
+ },
+ {
+  "slug": "ganancias-sociedades",
+  "titulo": "Ganancias sociedades: alícuotas y anticipos",
+  "seccion": "impuestos",
+  "buscar": "ganancias sociedades alicuotas",
+  "oficial": []
+ },
+ {
+  "slug": "bienes-personales",
+  "titulo": "Bienes Personales: mínimo, alícuotas y cómo presentar",
+  "seccion": "impuestos",
+  "buscar": "bienes personales",
+  "oficial": []
+ },
+ {
+  "slug": "iva",
+  "titulo": "IVA: liquidación mensual y Libro IVA Digital",
+  "seccion": "impuestos",
+  "buscar": "iva libro iva digital",
+  "oficial": []
+ },
+ {
+  "slug": "monotributo",
+  "titulo": "Monotributo: categorías, recategorización y exclusión",
+  "seccion": "impuestos",
+  "buscar": "monotributo recategorizacion",
+  "oficial": []
+ },
+ {
+  "slug": "autonomos",
+  "titulo": "Autónomos: categorías y aportes",
+  "seccion": "impuestos",
+  "buscar": "autonomos categorias aportes",
+  "oficial": []
+ },
+ {
+  "slug": "ingresos-brutos-arba",
+  "titulo": "Ingresos Brutos ARBA: inscripción, alícuotas y declaraciones",
+  "seccion": "impuestos",
+  "buscar": "ingresos brutos arba",
+  "oficial": []
+ },
+ {
+  "slug": "convenio-multilateral",
+  "titulo": "Convenio Multilateral: cómo distribuir la base",
+  "seccion": "impuestos",
+  "buscar": "convenio multilateral",
+  "oficial": []
+ },
+ {
+  "slug": "retenciones-percepciones",
+  "titulo": "Retenciones y percepciones: regímenes principales",
+  "seccion": "impuestos",
+  "buscar": "regimen de retencion percepcion",
+  "oficial": []
+ },
+ {
+  "slug": "planes-de-pago-arca",
+  "titulo": "Planes de pago de ARCA: cómo adherir",
+  "seccion": "impuestos",
+  "buscar": "plan de pagos arca",
+  "oficial": []
+ },
+ {
+  "slug": "ajuste-inflacion-impositivo",
+  "titulo": "Ajuste por inflación impositivo",
+  "seccion": "impuestos",
+  "buscar": "ajuste por inflacion impositivo",
+  "oficial": []
+ },
+ {
+  "slug": "ajuste-inflacion-contable",
+  "titulo": "Ajuste por inflación contable (RT 6)",
+  "seccion": "profesion",
+  "buscar": "ajuste por inflacion contable",
+  "oficial": []
+ },
+ {
+  "slug": "certificacion-ingresos",
+  "titulo": "Certificación de ingresos: requisitos y modelo",
+  "seccion": "profesion",
+  "buscar": "certificacion de ingresos",
+  "oficial": []
+ },
+ {
+  "slug": "constitucion-sas",
+  "titulo": "Constitución de una SAS paso a paso",
+  "seccion": "profesion",
+  "buscar": "sociedad por acciones simplificada sas",
+  "oficial": []
+ },
+ {
+  "slug": "facturacion-electronica",
+  "titulo": "Facturación electrónica: tipos de comprobante y requisitos",
+  "seccion": "profesion",
+  "buscar": "factura electronica",
+  "oficial": []
+ },
+ {
+  "slug": "intimaciones-arca",
+  "titulo": "Intimaciones de ARCA: cómo responder",
+  "seccion": "profesion",
+  "buscar": "intimacion arca descargo",
+  "oficial": []
+ }
+]

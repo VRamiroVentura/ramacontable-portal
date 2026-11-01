@@ -515,10 +515,115 @@
     const { data } = await sb.from('notas').select('slug,titulo,estado,fecha,seccion,motivo_revision').order('fecha', { ascending: false }).limit(200);
     const filas = (data || []).sort((a, b) => (a.estado === 'revision' ? -1 : 0) - (b.estado === 'revision' ? -1 : 0));
     caja.innerHTML = '';
+    const cv = await sb.from('convenios').select('slug,nombre,motivo_propuesta,propuesta').not('propuesta', 'is', null);
+    (cv.data || []).forEach(c => caja.append(h('a', { class: 'fila-admin', href: `escala-${c.slug}.html` },
+      h('span', { class: 'est est-revision' }, '🟡 Escala para revisar'), h('b', {}, c.nombre), h('small', {}, c.motivo_propuesta || ''))));
     if (!filas.length) { caja.append(h('p', { class: 'ayuda' }, 'Todavía no hay notas en la base.')); return; }
     const EST = { publicada: '✅ Publicada', revision: '🟡 Para revisar', borrada: '🗑️ Borrada' };
     filas.forEach(n => caja.append(h('a', { class: 'fila-admin', href: n.estado === 'publicada' ? `nota-${n.slug}.html` : `nota.html?n=${n.slug}` },
       h('span', { class: 'est est-' + n.estado }, EST[n.estado]), h('b', {}, n.titulo), h('small', {}, `${fechaLarga(n.fecha)} · ${SECC[n.seccion] || ''}`))));
+  }
+
+  // ---------- convenios: escala al día y edición del administrador ----------
+  const convSlug = $('[data-convenio]') ? $('[data-convenio]').dataset.convenio : null;
+  function tablaHtml(t) {
+    if (!t || !t.length) return '';
+    const E = RCEditor.esc;
+    return '<div class="tabla"><table><thead><tr>' + t[0].map(c => `<th>${E(c)}</th>`).join('') + '</tr></thead><tbody>' +
+      t.slice(1).map(f => '<tr>' + f.map(c => `<td>${E(c)}</td>`).join('') + '</tr>').join('') + '</tbody></table></div>';
+  }
+  function pintarConvenio(c) {
+    const caja = $('.nota-contenido'); if (!caja) return;
+    const E = RCEditor.esc, esc = c.escala || {};
+    const sec = (t, b) => (b && b.length) ? `<h2>${t}</h2>` + bloquesAHtml(b) : '';
+    const escala = (esc.tabla && esc.tabla.length) || esc.aclaraciones
+      ? `<p class="periodo"><b>Período:</b> ${E(esc.periodo || '')}${esc.vigencia ? ` · <b>Vigencia:</b> ${E(esc.vigencia)}` : ''}</p>` + tablaHtml(esc.tabla) + (esc.aclaraciones ? `<p class="ayuda">${E(esc.aclaraciones)}</p>` : '')
+      : '<div class="vacio-caja"><b>Escala pendiente de carga</b>Se actualiza automáticamente con el próximo acuerdo salarial publicado.</div>';
+    const qs = (c.preguntas || []).length ? '<section class="faq"><h2>Preguntas frecuentes</h2>' + c.preguntas.map(q => `<details><summary>${E(q.p)}</summary><p>${E(q.r)}</p></details>`).join('') + '</section>' : '';
+    const hist = (c.historial || []).length ? '<h2>Historial de escalas</h2><ul class="historial">' + c.historial.slice().reverse().map(h => `<li><b>${E(h.periodo || '')}</b>${h.nota ? ` · <a href="nota-${E(h.nota)}.html">ver nota</a>` : ''}</li>`).join('') + '</ul>' : '';
+    const html = `<p class="miga"><a href="sueldos.html">Sueldos</a> / <a href="convenios.html">Convenios</a></p>
+      <p class="ante">${E(c.cct)} | ${E(c.partes)}</p><h1>Escala salarial ${E(c.nombre)}${esc.periodo ? ' ' + E(esc.periodo) : ''}</h1>
+      <p class="firma">Redacción Ramacontable · Actualizado ${fechaLarga(String(c.actualizado).slice(0, 10))}</p>
+      <div class="encorto"><b>Quiénes están comprendidos</b><p>${E(c.descripcion || '')}</p></div>
+      <h2>Escala vigente</h2>${escala}${sec('Qué cambió con el último acuerdo', c.novedades)}${sec('Cómo se calcula', c.calculo)}
+      ${sec('Sumas no remunerativas: aportes y contribuciones', c.nr)}${sec('Cómo figura en el recibo', c.recibo)}${qs}${hist}
+      ${c.fuente ? `<p class="fuente"><b>Fuente:</b> ${E(c.fuente)}</p>` : ''}
+      <p class="aviso">Información de carácter general. Se recomienda verificar siempre en el acuerdo homologado y en las fuentes oficiales. Cada profesional es responsable de su aplicación.</p>`;
+    caja.innerHTML = DOMPurify.sanitize(html, { ALLOWED_TAGS: ['p','a','b','strong','i','em','h1','h2','h3','ul','ol','li','div','section','details','summary','table','thead','tbody','tr','th','td','br','small','span'], ALLOWED_ATTR: ['class','href'], ALLOWED_URI_REGEXP: /^(?:https:\/\/|[a-z0-9-]+\.html)/i });
+  }
+  function editorTabla(t) {
+    const tabla = h('table', { class: 'tabla-edit' });
+    const filas = (t && t.length) ? t : [['Categoría', 'Básico'], ['', '']];
+    filas.forEach((f, i) => { const tr = h('tr', {}); f.forEach(c => tr.append(h(i ? 'td' : 'th', { contenteditable: 'true' }, c))); tabla.append(tr); });
+    tabla.addEventListener('paste', ev => {
+      const txt = ev.clipboardData.getData('text/plain');
+      if (!txt.includes('\t')) return;
+      ev.preventDefault();
+      const nuevas = txt.replace(/\r/g, '').split('\n').filter(Boolean).map(f => f.split('\t'));
+      tabla.innerHTML = '';
+      nuevas.forEach((f, i) => { const tr = h('tr', {}); f.forEach(c => tr.append(h(i ? 'td' : 'th', { contenteditable: 'true' }, c.trim()))); tabla.append(tr); });
+    });
+    return tabla;
+  }
+  const leerTabla = tabla => [...tabla.querySelectorAll('tr')].map(tr => [...tr.children].map(td => td.textContent.trim())).filter(f => f.some(Boolean));
+  function editarConvenio(c) {
+    const esc = c.escala || {};
+    const tabla = editorTabla(esc.tabla);
+    const nov = h('div', { class: 'editor', contenteditable: 'true' }); nov.innerHTML = RCEditor.limpiar(bloquesAHtml(c.novedades));
+    const f = h('form', {},
+      h('h2', {}, `Editar escala · ${c.nombre}`),
+      h('label', {}, 'Período', h('input', { name: 'periodo', maxlength: 80, placeholder: 'Ej.: Noviembre 2026' })),
+      h('label', {}, 'Vigencia', h('input', { name: 'vigencia', maxlength: 120 })),
+      h('label', {}, 'Escala (podés pegar una tabla copiada de Excel)'),
+      h('div', { class: 'tabla-scroll' }, tabla),
+      h('div', { class: 'fila-btn', style: 'justify-content:flex-start' },
+        h('button', { type: 'button', class: 'btn sec', onclick: () => { const n = tabla.rows[0] ? tabla.rows[0].cells.length : 2; const tr = h('tr', {}); for (let i = 0; i < n; i++) tr.append(h('td', { contenteditable: 'true' }, '')); tabla.append(tr); } }, '+ Fila'),
+        h('button', { type: 'button', class: 'btn sec', onclick: () => [...tabla.rows].forEach((tr, i) => tr.append(h(i ? 'td' : 'th', { contenteditable: 'true' }, ''))) }, '+ Columna')),
+      h('label', {}, 'Aclaraciones de la escala', h('textarea', { name: 'aclaraciones', rows: 2, maxlength: 800 })),
+      h('label', {}, 'Qué cambió con el último acuerdo'), nov,
+      h('label', {}, 'Fuente', h('input', { name: 'fuente', maxlength: 300 })),
+      h('p', { class: 'error' }), h('button', { class: 'btn ancho' }, 'Guardar'));
+    f.periodo.value = esc.periodo || ''; f.vigencia.value = esc.vigencia || ''; f.aclaraciones.value = esc.aclaraciones || ''; f.fuente.value = c.fuente || '';
+    f.addEventListener('submit', async ev => {
+      ev.preventDefault();
+      const cambios = { escala: { periodo: f.periodo.value.trim(), vigencia: f.vigencia.value.trim(), tabla: leerTabla(tabla), aclaraciones: f.aclaraciones.value.trim() },
+        novedades: [{ html: RCEditor.limpiar(nov.innerHTML) }], fuente: f.fuente.value.trim() };
+      const hist = (c.historial || []).slice();
+      if (cambios.escala.periodo && !hist.some(x => x.periodo === cambios.escala.periodo)) hist.push({ periodo: cambios.escala.periodo, fecha: new Date().toISOString().slice(0, 10), nota: null });
+      cambios.historial = hist;
+      const { data, error } = await sb.from('convenios').update(cambios).eq('slug', c.slug).select('*');
+      if (error || !data || !data.length) { $('.error', f).textContent = 'No se pudo guardar. ' + (error ? mensajeError(error) : ''); return; }
+      cerrarModal(); aviso('Escala guardada. Ya se ve en esta página.'); cargarConvenio();
+    });
+    abrirModal(f);
+    modal.querySelector('.ventana').classList.add('ventana-ancha');
+  }
+  async function decidirPropuesta(c, aplicar) {
+    const cambios = aplicar ? Object.assign({}, c.propuesta, { propuesta: null, motivo_propuesta: null }) : { propuesta: null, motivo_propuesta: null };
+    const { data, error } = await sb.from('convenios').update(cambios).eq('slug', c.slug).select('*');
+    if (error || !data || !data.length) return aviso('No se pudo guardar. ' + (error ? mensajeError(error) : ''));
+    aviso(aplicar ? 'Actualización aplicada.' : 'Propuesta descartada.'); cargarConvenio();
+  }
+  async function cargarConvenio() {
+    if (!sb || !convSlug) return;
+    const { data } = await sb.from('convenios').select('*').eq('slug', convSlug).maybeSingle();
+    if (!data) return;
+    if (new Date(data.actualizado) > new Date(cfg.build || 0) || esAdmin) pintarConvenio(data);
+    if (!esAdmin) return;
+    const caja = $('.nota-contenido');
+    const barra = h('div', { class: 'barra-admin' },
+      h('span', {}, h('b', {}, 'Administrador · '), 'Convenio', data.editado_por ? ` · editado por ${data.editado_por}` : ''),
+      h('div', {}, h('button', { class: 'btn sec', onclick: () => editarConvenio(data) }, '✏️ Editar escala')));
+    if (data.propuesta) {
+      const p = data.propuesta, pe = (p.escala || {});
+      barra.append(h('div', { class: 'propuesta' },
+        h('p', { class: 'motivo' }, `La fábrica propone actualizar a «${pe.periodo || 'nuevo período'}», pero encontró dudas: ${data.motivo_propuesta || ''}`),
+        (() => { const d = h('div', {}); d.innerHTML = RCEditor.limpiar(tablaHtml(pe.tabla)); return d; })(),
+        h('div', { class: 'fila-btn' },
+          h('button', { class: 'btn sec', onclick: () => decidirPropuesta(data, false) }, 'Descartar'),
+          h('button', { class: 'btn', onclick: () => decidirPropuesta(data, true) }, '✅ Aplicar actualización'))));
+    }
+    caja.prepend(barra);
   }
 
   // ---------- eventos ----------
@@ -554,7 +659,7 @@
     await cargarReputaciones();
     pintarSesion();
     if (usuario && !perfil) pedirPerfil();
-    contadoresPortada(); ranking(); cargarNota(); cargarAportes(); panelAdmin();
+    contadoresPortada(); ranking(); cargarNota(); cargarConvenio(); cargarAportes(); panelAdmin();
     if (esAdmin) { const s = $('#sesion'); if (s && !$('#link-admin')) s.prepend(h('a', { id: 'link-admin', class: 'link-admin', href: 'admin.html' }, 'Administración')); }
   }
   iniciar();

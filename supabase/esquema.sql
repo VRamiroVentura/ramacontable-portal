@@ -284,3 +284,39 @@ grant execute on function public.slugs_no_publicados() to anon, authenticated;
 alter table public.notas add column if not exists seo_titulo text;
 alter table public.notas add column if not exists descripcion_seo text;
 alter table public.notas add column if not exists preguntas jsonb not null default '[]'::jsonb;
+
+-- ===== Convenios y escalas salariales =====
+create table if not exists public.convenios (
+  slug text primary key check (slug ~ '^[a-z0-9-]{2,60}$'),
+  nombre text not null,
+  cct text not null default '',
+  partes text not null default '',
+  descripcion text not null default '',
+  escala jsonb,              -- {"periodo": "...", "vigencia": "...", "tabla": [[...],[...]], "aclaraciones": "..."}
+  novedades jsonb not null default '[]'::jsonb,   -- bloques {h|p|tabla|html}
+  calculo jsonb not null default '[]'::jsonb,
+  nr jsonb not null default '[]'::jsonb,
+  recibo jsonb not null default '[]'::jsonb,
+  preguntas jsonb not null default '[]'::jsonb,
+  historial jsonb not null default '[]'::jsonb,   -- [{"periodo","fecha","nota"}]
+  fuente text not null default '',
+  propuesta jsonb,           -- actualización que la fábrica no pudo verificar (espera al administrador)
+  motivo_propuesta text,
+  actualizado timestamptz not null default now(),
+  editado_por text
+);
+drop trigger if exists tocar on public.convenios;
+create trigger tocar before update on public.convenios for each row execute function public.tocar_nota();
+alter table public.convenios enable row level security;
+drop policy if exists "ver convenios" on public.convenios;
+create policy "ver convenios" on public.convenios for select using (true);
+drop policy if exists "admin edita convenios" on public.convenios;
+create policy "admin edita convenios" on public.convenios for update to authenticated using (public.es_admin()) with check (public.es_admin());
+alter table public.notas add column if not exists convenio text;
+
+-- ===== v5: guías prácticas (se guardan como notas de tipo 'guia') =====
+alter table public.notas add column if not exists tipo text not null default 'nota';
+do $$ begin
+  alter table public.notas add constraint notas_tipo_ok check (tipo in ('nota','guia'));
+exception when duplicate_object then null; end $$;
+create index if not exists notas_tipo on public.notas(tipo);

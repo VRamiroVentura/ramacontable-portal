@@ -23,6 +23,9 @@ REDES = {
     "TikTok": "https://www.tiktok.com/@ramacontable",
 }
 MAIL = "ramacontable@gmail.com"
+MENU = {"sueldos": "Sueldos", "impuestos": "Impuestos", "guias": "Guías", "economia": "Economía"}
+RAMAS_GUIAS = {"sueldos": "Guías de sueldos", "impuestos": "Guías de impuestos", "profesion": "Guías contables y de la profesión"}
+es_guia = lambda n: n.get("tipo") == "guia"
 
 
 def sitio_url():
@@ -136,6 +139,124 @@ def cargar_notas():
     return notas
 
 
+def cargar_convenios():
+    locales = {}
+    for ruta in glob.glob(os.path.join(RAIZ, "convenios", "*.json")):
+        with open(ruta, encoding="utf-8") as f:
+            c = json.load(f)
+        locales[c["slug"]] = c
+    url = os.environ.get("SUPABASE_URL", "").strip().rstrip("/")
+    key = os.environ.get("SUPABASE_PUBLISHABLE_KEY", "").strip()
+    if url and key:
+        try:
+            req = urllib.request.Request(url + "/rest/v1/convenios?select=*", headers={"apikey": key, "Authorization": "Bearer " + key})
+            for c in json.load(urllib.request.urlopen(req, timeout=30)):
+                locales[c["slug"]] = c
+        except Exception as ex:
+            print("Aviso: no se pudieron leer los convenios:", ex)
+    return sorted(locales.values(), key=lambda c: c["nombre"])
+
+
+def tabla_html(t):
+    if not t:
+        return ""
+    cab = "".join(f"<th>{e(str(x))}</th>" for x in t[0])
+    filas = "".join("<tr>" + "".join(f"<td>{e(str(x))}</td>" for x in f) + "</tr>" for f in t[1:])
+    return f'<div class="tabla"><table><thead><tr>{cab}</tr></thead><tbody>{filas}</tbody></table></div>'
+
+
+def pagina_convenio(c, notas, aportes=None):
+    esc = c.get("escala") or {}
+    periodo = esc.get("periodo") or ""
+    seccion = lambda titulo, bloques: (f"<h2>{titulo}</h2>" + "".join(bloque(x) for x in bloques)) if bloques else ""
+    if esc.get("tabla"):
+        escala = (f'<p class="periodo"><b>Período:</b> {e(periodo)}' + (f' · <b>Vigencia:</b> {e(esc.get("vigencia",""))}' if esc.get("vigencia") else "") + "</p>"
+                  + tabla_html(esc["tabla"]) + (f'<p class="ayuda">{e(esc.get("aclaraciones",""))}</p>' if esc.get("aclaraciones") else ""))
+    else:
+        escala = '<div class="vacio-caja"><b>Escala pendiente de carga</b>Se actualiza automáticamente con el próximo acuerdo salarial publicado.</div>'
+    relacionadas_c = [n for n in notas if n.get("convenio") == c["slug"]][:8]
+    hist = c.get("historial") or []
+    hist_html = ("<h2>Historial de escalas</h2><ul class='historial'>" + "".join(
+        f'<li><b>{e(h.get("periodo",""))}</b>' + (f' · <a href="nota-{e(h["nota"])}.html">ver nota</a>' if h.get("nota") else "") + "</li>" for h in hist[::-1]) + "</ul>") if hist else ""
+    notas_html = ("<h2>Notas sobre este convenio</h2><ul class='historial'>" + "".join(
+        f'<li><a href="nota-{n["slug"]}.html">{e(n["titulo"])}</a> <small>{fecha_larga(n["fecha"])}</small></li>' for n in relacionadas_c) + "</ul>") if relacionadas_c else ""
+    falsa_nota = {"preguntas": c.get("preguntas") or []}
+    slug = "convenio-" + c["slug"]
+    titulo_vis = f"Escala salarial {c['nombre']}" + (f" {periodo}" if periodo else "")
+    contenido = f"""<div class="grilla"><article class="nota convenio" data-nota="{slug}" data-convenio="{e(c['slug'])}" data-actualizado="{e(str(c.get('actualizado') or ''))}">
+<div class="nota-contenido">
+<p class="miga"><a href="sueldos.html">Sueldos</a> / <a href="convenios.html">Convenios</a></p>
+<p class="ante">{e(c['cct'])} | {e(c['partes'])}</p>
+<h1>{e(titulo_vis)}</h1>
+<p class="firma">Redacción Ramacontable · Actualizado {fecha_larga(str(c.get('actualizado') or datetime.date.today().isoformat())[:10])}</p>
+<div class="encorto"><b>Quiénes están comprendidos</b><p>{e(c.get('descripcion',''))}</p></div>
+<h2>Escala vigente</h2>{escala}
+{seccion("Qué cambió con el último acuerdo", c.get("novedades"))}
+{seccion("Cómo se calcula", c.get("calculo"))}
+{seccion("Sumas no remunerativas: aportes y contribuciones", c.get("nr"))}
+{seccion("Cómo figura en el recibo", c.get("recibo"))}
+{preguntas_html(falsa_nota)}
+{hist_html}{notas_html}
+{f'<p class="fuente"><b>Fuente:</b> {e(c["fuente"])}</p>' if c.get("fuente") else ""}
+<p class="aviso">Información de carácter general. Se recomienda verificar siempre en el acuerdo homologado y en las fuentes oficiales. Cada profesional es responsable de su aplicación.</p>
+</div>
+<section class="bloque-op" id="opiniones">
+<h2 class="tit-bloque">Opiniones <span data-n="opiniones">0</span></h2>
+<form id="form-opinion" class="form-op"><textarea name="texto" rows="3" maxlength="1500" placeholder="¿Qué opinás de esta escala?" required></textarea><button class="btn">Publicar opinión</button></form>
+<div id="lista-opiniones" class="lista"></div>
+<button type="button" class="btn sec ancho" id="ver-mas-op" hidden>Ver más opiniones</button>
+</section>
+<section class="bloque-aplica" id="aplica">
+<h2 class="tit-bloque">¿Cómo se liquida? <span data-n="pasos">0</span></h2>
+<p class="ayuda">Mostrá cómo se liquida este convenio, paso a paso y explicando el porqué. Los más votados quedan arriba.</p>
+<div id="lista-pasos" class="lista">{pasos_estaticos(aportes or [])}</div>
+<button class="btn ancho" data-nuevo-paso>Subir mi explicativo</button>
+</section>
+</article>{lateral(notas)}</div>"""
+    seo_t = f"Escala {c['nombre']} {periodo} ({c['cct']}): básicos, NR y cómo liquidar".replace("  ", " ")
+    desc = f"Escala salarial vigente de {c['nombre']} ({c['cct']}): valores por categoría, sumas no remunerativas, aportes y cómo se liquida."
+    ld = {"@context": "https://schema.org", "@type": "Article", "headline": titulo_vis[:110], "description": desc,
+          "dateModified": str(c.get("actualizado") or datetime.date.today().isoformat()), "inLanguage": "es-AR",
+          "author": {"@type": "Organization", "name": "Redacción Ramacontable"}, "mainEntityOfPage": f"{sitio_url()}escala-{c['slug']}.html"}
+    head = f'<script type="application/ld+json">{json.dumps(ld, ensure_ascii=False).replace("</", "<\\/")}</script>'
+    if c.get("preguntas"):
+        head += '<script type="application/ld+json">' + json.dumps({"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [
+            {"@type": "Question", "name": q["p"], "acceptedAnswer": {"@type": "Answer", "text": q["r"]}} for q in c["preguntas"]]}, ensure_ascii=False).replace("</", "<\\/") + "</script>"
+    return pagina(seo_t + " | Ramacontable", contenido, "sueldos", desc, f"escala-{c['slug']}.html", head)
+
+
+def pagina_convenios(convenios, notas):
+    items = "".join(
+        f'<a class="tarjeta conv" href="escala-{c["slug"]}.html"><div class="tx"><p class="ante">{e(c["cct"])}</p><h2>{e(c["nombre"])}</h2>'
+        f'<p class="meta">{e((c.get("escala") or {}).get("periodo") or "Escala pendiente de carga")}</p></div></a>' for c in convenios)
+    cuerpo = f'<div class="grilla"><section><h1 class="titsec">Convenios y escalas salariales</h1><p class="ayuda">Escalas vigentes, novedades de cada acuerdo, tratamiento de las sumas no remunerativas y cómo se liquida cada convenio.</p><div class="tarjetas">{items}</div></section>{lateral(notas)}</div>'
+    return pagina("Escalas salariales por convenio 2026: Comercio, UOCRA, UOM, Sanidad y más | Ramacontable", cuerpo, "sueldos",
+                  "Escalas salariales vigentes por convenio colectivo, con novedades, sumas no remunerativas y cómo liquidar.", "convenios.html")
+
+
+def tira_guias(guias, seccion):
+    lista = [g for g in guias if g["seccion"] == seccion]
+    if not lista:
+        return ""
+    return (f'<div class="conv-chips guias-chips"><b>{e(RAMAS_GUIAS[seccion])}:</b> ' + " ".join(
+        f'<a href="nota-{g["slug"]}.html">{e(g["titulo"].split(":")[0])}</a>' for g in lista[:12]) + ' <a href="guias.html">Ver todas →</a></div>')
+
+
+def pagina_guias(guias, notas, catalogo):
+    hechas = {g["slug"] for g in guias}
+    bloques = ""
+    for k, titulo in RAMAS_GUIAS.items():
+        lista = sorted([g for g in guias if g["seccion"] == k], key=lambda g: g["titulo"])
+        prox = [c for c in catalogo if c["seccion"] == k and "guia-" + c["slug"] not in hechas]
+        items = "".join(f'<li><a href="nota-{g["slug"]}.html"><b>{e(g["titulo"])}</b><span>{e(g.get("encorto", "")[:140])}</span></a></li>' for g in lista)
+        items += "".join(f'<li class="prox"><b>{e(c["titulo"])}</b><span>Próximamente</span></li>' for c in prox)
+        bloques += f'<section class="rama-guias" id="{k}"><h2>{e(titulo)}</h2><ul class="lista-guias">{items}</ul></section>'
+    otras = '<p class="ayuda">¿Buscás novedades de la profesión? <a href="profesion.html">Ver notas de Profesión →</a></p>'
+    cuerpo = f'<div class="grilla"><section><h1 class="titsec">Guías prácticas</h1><p class="ayuda">Guías completas de sueldos, impuestos y temas contables, basadas en la norma oficial y actualizadas cuando cambia algo. Debajo de cada una, la comunidad suma su explicación paso a paso.</p>{bloques}{otras}</section>{lateral(notas)}</div>'
+    return pagina("Guías prácticas de sueldos, impuestos y contabilidad | Ramacontable", cuerpo, "guias",
+                  "Guías prácticas para contadores y liquidadores: vacaciones, liquidación final, Ganancias, IVA, Monotributo, Ingresos Brutos y más.", "guias.html")
+
+
 def html_admin(h):
     """HTML que escribió el administrador al editar: se quitan scripts y atributos peligrosos."""
     h = re.sub(r"(?is)<(script|style|iframe|object|embed|form)\b[^>]*>.*?</\1\s*>", "", h or "")
@@ -154,7 +275,7 @@ ICONOS = {
 def pagina(titulo, cuerpo, actual="", descripcion="", ruta="", extra_head=""):
     menu = "".join(
         f'<a href="{k}.html"{" aria-current=page" if k == actual else ""}>{v}</a>'
-        for k, v in SECCIONES.items())
+        for k, v in list(MENU.items()))
     redes = "".join(
         f'<a href="{u}" target="_blank" rel="noopener" aria-label="{n}">{ICONOS[n]}</a>'
         for n, u in REDES.items())
@@ -176,7 +297,7 @@ def pagina(titulo, cuerpo, actual="", descripcion="", ruta="", extra_head=""):
 </head><body>
 <header class="cab"><div class="wrap fila">
 <a class="logo" href="index.html">{LOGO_SVG}<span>ramacontable</span></a>
-<nav class="menu">{menu}<a class="chico" href="aguinaldo.html">Aguinaldo</a><a class="chico2" href="herramientas.html">Vencimientos</a></nav>
+<nav class="menu">{menu}<a class="chico" href="convenios.html">Escalas</a><a class="chico2" href="aguinaldo.html">Aguinaldo</a><a class="chico2" href="herramientas.html">Vencimientos</a></nav>
 <div id="sesion" class="sesion"><button class="btn" data-ingresar>Ingresar</button></div>
 </div></header>
 <main class="wrap">{cuerpo}</main>
@@ -245,22 +366,23 @@ def preguntas_html(n):
 
 
 def relacionadas(n, notas):
-    otras = [x for x in notas if x["slug"] != n["slug"] and x["seccion"] == n["seccion"]][:4]
+    otras = [x for x in notas if x["slug"] != n["slug"] and x["seccion"] == n["seccion"] and es_guia(x) == es_guia(n)][:4]
     if not otras:
         return ""
-    return '<section class="relacionadas"><h2>Más sobre ' + e(SECCIONES[n["seccion"]]) + "</h2><ul>" + "".join(
+    return '<section class="relacionadas"><h2>' + (e(RAMAS_GUIAS.get(n["seccion"], "Otras guías")) if es_guia(n) else 'Más sobre ' + e(SECCIONES[n["seccion"]])) + "</h2><ul>" + "".join(
         f'<li><a href="nota-{x["slug"]}.html">{e(x["titulo"])}</a></li>' for x in otras) + "</ul></section>"
 
 
-def sitemaps(notas):
+def sitemaps(notas, convenios=()):
     base = sitio_url()
     hoy = datetime.date.today().isoformat()
     urls = [f"<url><loc>{base}</loc><lastmod>{hoy}</lastmod></url>"] + [
-        f"<url><loc>{base}{k}.html</loc><lastmod>{hoy}</lastmod></url>" for k in list(SECCIONES) + ["aguinaldo", "herramientas"]] + [
+        f"<url><loc>{base}{k}.html</loc><lastmod>{hoy}</lastmod></url>" for k in list(SECCIONES) + ["aguinaldo", "herramientas", "convenios", "guias"]] + [
+        f"<url><loc>{base}escala-{c['slug']}.html</loc><lastmod>{str(c.get('actualizado') or hoy)[:10]}</lastmod></url>" for c in convenios] + [
         f"<url><loc>{base}nota-{n['slug']}.html</loc><lastmod>{str(n.get('actualizado') or n['fecha'])[:10]}</lastmod></url>" for n in notas]
     mapa = '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' + "".join(urls) + "</urlset>"
     limite = datetime.date.today() - datetime.timedelta(days=2)
-    recientes = [n for n in notas if str(n["fecha"])[:10] >= limite.isoformat()]
+    recientes = [n for n in notas if str(n["fecha"])[:10] >= limite.isoformat() and not es_guia(n)]
     noticias = ('<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" '
                 'xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">' + "".join(
         f"<url><loc>{base}nota-{n['slug']}.html</loc><news:news><news:publication><news:name>Ramacontable</news:name>"
@@ -280,10 +402,10 @@ def pagina_nota(n, notas, aportes=None):
         previa = f'<p class="actualiza">Esta nota actualiza a: <a href="nota-{e(n["actualiza"])}.html">la nota anterior sobre el tema</a></p>'
     contenido = f"""<div class="grilla"><article class="nota" data-nota="{n['slug']}" data-actualizado="{e(str(n.get('actualizado') or ''))}">
 <div class="nota-contenido">
-<p class="miga"><a href="{n['seccion']}.html">{sec}</a></p>
+<p class="miga">{f'<a href="guias.html">Guías</a> / <a href="guias.html#{n["seccion"]}">{RAMAS_GUIAS.get(n["seccion"], sec)}</a>' if es_guia(n) else f'<a href="{n["seccion"]}.html">{sec}</a>'}</p>
 <p class="ante">{e(n['antetitulo'])}</p>
 <h1>{e(n['titulo'])}</h1>
-<p class="firma">Redacción Ramacontable · {fecha_larga(n['fecha'])}</p>
+<p class="firma">Redacción Ramacontable · {('Guía actualizada al ' + fecha_larga(str(n.get('actualizado') or n['fecha'])[:10])) if es_guia(n) else fecha_larga(n['fecha'])}</p>
 {previa}
 <div class="encorto"><b>En corto</b><p>{e(n['encorto'])}</p></div>
 {cuerpo}
@@ -295,7 +417,7 @@ def pagina_nota(n, notas, aportes=None):
 {relacionadas(n, notas)}
 <section class="bloque-op" id="opiniones">
 <h2 class="tit-bloque">Opiniones <span data-n="opiniones">0</span></h2>
-<form id="form-opinion" class="form-op"><textarea name="texto" rows="3" maxlength="1500" placeholder="¿Qué opinás de esta novedad?" required></textarea><button class="btn">Publicar opinión</button></form>
+<form id="form-opinion" class="form-op"><textarea name="texto" rows="3" maxlength="1500" placeholder="{'¿Algo para sumar o corregir en esta guía?' if es_guia(n) else '¿Qué opinás de esta novedad?'}" required></textarea><button class="btn">Publicar opinión</button></form>
 <div id="lista-opiniones" class="lista"></div>
 <button type="button" class="btn sec ancho" id="ver-mas-op" hidden>Ver más opiniones</button>
 </section>
@@ -307,7 +429,7 @@ def pagina_nota(n, notas, aportes=None):
 </section>
 </article>{lateral(notas)}</div>"""
     url = f"{sitio_url()}nota-{n['slug']}.html"
-    ld = [{"@context": "https://schema.org", "@type": "NewsArticle", "headline": n["titulo"][:110],
+    ld = [{"@context": "https://schema.org", "@type": "Article" if es_guia(n) else "NewsArticle", "headline": n["titulo"][:110],
            "description": n.get("descripcion_seo") or n["encorto"], "datePublished": str(n["fecha"]),
            "dateModified": str(n.get("actualizado") or n["fecha"]), "inLanguage": "es-AR",
            "mainEntityOfPage": url, "articleSection": SECCIONES[n["seccion"]],
@@ -322,13 +444,13 @@ def pagina_nota(n, notas, aportes=None):
                   n.get("descripcion_seo") or n["encorto"], f"nota-{n['slug']}.html", head)
 
 
-def portada(notas, titulo_pag="Ramacontable | Comunidad contable", actual="", encabezado=""):
+def portada(notas, titulo_pag="Ramacontable | Comunidad contable", actual="", encabezado="", extra=""):
     if not notas:
         lista = '<p class="vacio">Todavía no hay notas en esta sección.</p>'
     else:
         lista = tarjeta(notas[0], grande=True) + '<div class="tarjetas">' + "".join(tarjeta(n) for n in notas[1:]) + "</div>"
     cab = f'<h1 class="titsec">{e(encabezado)}</h1>' if encabezado else ""
-    return pagina(titulo_pag, f'<div class="grilla"><section>{cab}{lista}</section>{lateral(notas)}</div>', actual, "", f"{actual}.html" if actual else "")
+    return pagina(titulo_pag, f'<div class="grilla"><section>{cab}{extra}{lista}</section>{lateral(notas)}</div>', actual, "", f"{actual}.html" if actual else "")
 
 
 def main():
@@ -343,12 +465,27 @@ def main():
             "build": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         }) + ";")
     escribir = lambda nombre, txt: open(os.path.join(SALIDA, nombre), "w", encoding="utf-8").write(txt)
+    convenios = cargar_convenios()
+    todas = notas
+    guias = [n for n in todas if es_guia(n)]
+    notas = [n for n in todas if not es_guia(n)]
+    try:
+        catalogo = json.load(open(os.path.join(RAIZ, "guias", "catalogo.json"), encoding="utf-8"))
+    except Exception:
+        catalogo = []
     escribir("index.html", portada(notas))
+    escribir("guias.html", pagina_guias(guias, notas, catalogo))
     for k, v in SECCIONES.items():
-        escribir(f"{k}.html", portada([n for n in notas if n["seccion"] == k], f"{v} | Ramacontable", k, v))
+        extra = ""
+        if k == "sueldos":
+            extra = ('<div class="conv-chips"><b>Escalas por convenio:</b> ' + " ".join(
+                f'<a href="escala-{c["slug"]}.html">{e(c["nombre"])}</a>' for c in convenios) + ' <a href="convenios.html">Ver todos →</a></div>')
+        if k in RAMAS_GUIAS:
+            extra += tira_guias(guias, k)
+        escribir(f"{k}.html", portada([n for n in notas if n["seccion"] == k], f"{v} | Ramacontable", k, v, extra))
     aportes = cargar_aportes()
-    for n in notas:
-        escribir(f"nota-{n['slug']}.html", pagina_nota(n, notas, aportes.get(n['slug'])))
+    for n in todas:
+        escribir(f"nota-{n['slug']}.html", pagina_nota(n, guias if es_guia(n) else notas, aportes.get(n['slug'])))
     with open(os.path.join(RAIZ, "paginas", "herramientas.html"), encoding="utf-8") as f:
         escribir("herramientas.html", pagina("Vencimientos | Ramacontable", f.read(), "", "Vencimientos impositivos y previsionales que se vienen.", "herramientas.html"))
     with open(os.path.join(RAIZ, "paginas", "terminos.html"), encoding="utf-8") as f:
@@ -361,7 +498,10 @@ def main():
         escribir("nota.html", pagina("Nota | Ramacontable", f.read()))
     with open(os.path.join(RAIZ, "paginas", "admin.html"), encoding="utf-8") as f:
         escribir("admin.html", pagina("Administración | Ramacontable", f.read()))
-    mapa, noticias, robots = sitemaps(notas)
+    escribir("convenios.html", pagina_convenios(convenios, notas))
+    for c in convenios:
+        escribir(f"escala-{c['slug']}.html", pagina_convenio(c, notas, aportes.get("convenio-" + c["slug"])))
+    mapa, noticias, robots = sitemaps(todas, convenios)
     escribir("sitemap.xml", mapa)
     escribir("sitemap-noticias.xml", noticias)
     escribir("robots.txt", robots)

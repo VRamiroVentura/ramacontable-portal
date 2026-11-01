@@ -189,3 +189,39 @@ def leer(fuente, dias=3, maximo=25):
         salida.append(dict(it, fuente=fuente["nombre"], tipo=fuente.get("tipo", "portal"),
                            fecha=it["fecha"].isoformat() if it["fecha"] else None))
     return salida
+
+
+# ---------- Guías: buscar material de referencia ----------
+
+PORTALES_WP = [("Ignacio Online", "https://www.ignacioonline.com.ar"), ("Contadores en Red", "https://contadoresenred.com")]
+
+
+def buscar_portales(consulta, por_portal=3):
+    """Busca notas en los portales WordPress (API pública de búsqueda). Devuelve [{fuente, titulo, url, texto}]."""
+    salida = []
+    for nombre, base in PORTALES_WP:
+        r = _bajar(f"{base}/wp-json/wp/v2/posts?search={consulta.replace(' ', '+')}&per_page={por_portal}&_fields=title,link,content")
+        try:
+            posts = r.json() if r is not None else []
+        except Exception:  # noqa
+            posts = []
+        for p in posts if isinstance(posts, list) else []:
+            texto = _limpio((p.get("content") or {}).get("rendered", ""))
+            if len(texto) > 300:
+                salida.append({"fuente": nombre, "tipo": "portal", "titulo": _limpio((p.get("title") or {}).get("rendered", "")),
+                               "url": p.get("link", ""), "texto": texto[:7000]})
+    return salida
+
+
+def texto_oficial(ref):
+    """Fragmento de una norma (por ejemplo, de ARTICULO 150 a ARTICULO 158) para que la guía se apoye en el texto legal."""
+    r = _bajar(ref["url"])
+    if r is None:
+        return ""
+    t = _limpio(r.text)
+    norm = _norm(t).upper()
+    i = norm.find(_norm(ref.get("desde", "")).upper()) if ref.get("desde") else 0
+    if i < 0:
+        return ""
+    j = norm.find(_norm(ref.get("hasta", "")).upper(), i + 10) if ref.get("hasta") else -1
+    return t[i: j if j > i else i + 15000][:15000]

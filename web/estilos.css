@@ -250,3 +250,19 @@ main.wrap{padding-top:24px;padding-bottom:40px}
 .pasos-sac{padding-left:20px}.pasos-sac li{margin-bottom:12px}.pasos-sac p{margin:0}
 .tabla-desc{margin:8px 0}.tabla-desc .tot td{font-weight:700}
 .fecha-pago{background:var(--bronce-suave);padding:10px 12px;border-left:3px solid var(--bronce)}
+.conv-chips{background:#fff;border:1px solid var(--linea);border-left:4px solid var(--bronce);padding:10px 12px;margin-bottom:16px;font-size:14.5px;line-height:2}
+.conv-chips a{display:inline-block;background:var(--bronce-suave);color:var(--verde);text-decoration:none;padding:0 10px;border-radius:12px;margin:0 2px;font-weight:600}
+.periodo{background:var(--fondo);padding:8px 12px;border-left:3px solid var(--verde);font-size:15px}
+.historial{padding-left:18px}.historial li{margin:6px 0}.historial small{color:var(--gris)}
+.tarjeta.conv h2{font-size:18px}
+.tabla-edit{border-collapse:collapse;font-size:14px}.tabla-edit td,.tabla-edit th{border:1px solid #cfd6d0;padding:4px 8px;min-width:80px;background:#fff}.tabla-edit th{background:var(--fondo);color:var(--verde)}
+.propuesta{width:100%;background:#fff;border:1px dashed var(--bronce);padding:10px;margin-top:6px}
+/* guías */
+.rama-guias{margin-top:22px}.rama-guias h2{font-family:Georgia,serif;color:var(--verde);border-bottom:2px solid var(--bronce);padding-bottom:6px}
+.lista-guias{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:620px){.lista-guias{grid-template-columns:1fr}}
+.lista-guias li{background:#fff;border:1px solid var(--linea)}
+.lista-guias li a,.lista-guias li.prox{display:block;padding:12px 14px;text-decoration:none;color:inherit}
+.lista-guias b{display:block;color:var(--verde);font-size:15.5px}.lista-guias span{display:block;font-size:13.5px;color:#666;margin-top:4px}
+.lista-guias li.prox{opacity:.55}.lista-guias li.prox span{font-style:italic}
+.lista-guias li a:hover{border-left:4px solid var(--bronce);padding-left:10px}

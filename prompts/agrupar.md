@@ -10,7 +10,9 @@ Tu tarea:
    - "repetido": true si Ramacontable ya publicó una nota sobre ese mismo tema y la novedad NO trae nada nuevo.
    - "actualiza": si Ramacontable ya publicó sobre el tema pero la novedad trae un cambio real (prórroga, modificación, nueva escala, nuevo mes, homologación, reglamentación), poné el slug de esa nota. Si no, null. Las escalas salariales de un nuevo período siempre son actualización.
    - "tema": un título corto y neutro del tema.
+   - "convenio": si el tema es de un convenio colectivo de la lista CONVENIOS, poné su slug; si no, null.
+   - "escala": true si el tema es un acuerdo salarial, una escala nueva, un aumento o una suma no remunerativa de ese convenio.
 
 Respondé SOLO con JSON con esta forma:
-{"grupos": [{"tema": "...", "items": [ids], "profesion": true, "seccion": "sueldos", "repetido": false, "actualiza": null, "motivo": "una línea"}]}
+{"grupos": [{"tema": "...", "items": [ids], "profesion": true, "seccion": "sueldos", "repetido": false, "actualiza": null, "convenio": null, "escala": false, "motivo": "una línea"}]}
 Cada id de novedad tiene que aparecer en un solo grupo.

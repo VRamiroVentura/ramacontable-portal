@@ -41,6 +41,9 @@ class Fabrica:
         self.activo = self.cfg.get("modo") == "activo"
         self.db = db
         self.publicadas, self.revision, self.descartes, self.esperando = [], [], [], []
+        self.convenios_act, self.convenios_rev = [], []
+        self.guias = []
+        self.convenios = self.cargar_convenios()
 
     # ---------- memoria ----------
     def notas_recientes(self):
@@ -65,6 +68,19 @@ class Fabrica:
         filas = self.db.select("radar", {"select": "*", "visto": f"gte.{desde}", "limit": "1000"})
         return {f["url"]: f for f in filas}
 
+    def cargar_convenios(self):
+        base = {}
+        for ruta in glob.glob(str(util.RAIZ / "convenios" / "*.json")):
+            c = json.load(open(ruta, encoding="utf-8"))
+            base[c["slug"]] = c
+        if self.db:
+            try:
+                for c in self.db.select("convenios", {"select": "*"}):
+                    base[c["slug"]] = c
+            except Exception as e:  # noqa
+                util.log("No pude leer convenios:", util.ocultar(str(e)))
+        return base
+
     def sembrar(self):
         """Sube a Supabase las notas iniciales del repo (carpeta notas/) para poder editarlas desde la web."""
         filas = []
@@ -76,6 +92,13 @@ class Fabrica:
                           "estado": "publicada", "tema": n["titulo"]})
         if filas and self.db and self.activo:
             self.db.insertar_si_no_existe("notas", filas, "slug")
+        if self.db and self.activo:
+            convs = []
+            for ruta in glob.glob(str(util.RAIZ / "convenios" / "*.json")):
+                c = json.load(open(ruta, encoding="utf-8"))
+                convs.append({k: c[k] for k in ("slug", "nombre", "cct", "partes", "descripcion")})
+            if convs:
+                self.db.insertar_si_no_existe("convenios", convs, "slug")
 
     # ---------- pasos ----------
     def leer_fuentes(self):
@@ -93,6 +116,7 @@ class Fabrica:
         lista = [{"id": i, "fuente": it["fuente"], "tipo": it["tipo"], "titulo": it["titulo"],
                   "resumen": (it.get("texto") or "")[:500]} for i, it in enumerate(items)]
         pedido = ("NOVEDADES:\n" + json.dumps(lista, ensure_ascii=False) +
+                  "\n\nCONVENIOS:\n" + json.dumps([{"slug": c["slug"], "nombre": c["nombre"], "cct": c["cct"]} for c in self.convenios.values()], ensure_ascii=False) +
                   "\n\nNOTAS YA PUBLICADAS POR RAMACONTABLE (últimos 30 días):\n" +
                   json.dumps([{k: n.get(k) for k in ("slug", "titulo", "tema", "fecha")} for n in recientes if n.get("estado") != "borrada"],
                              ensure_ascii=False))
@@ -117,7 +141,39 @@ class Fabrica:
         control = gemini.gemini(_prompt("verificar.md"),
                                 "NOTA:\n" + json.dumps(nota, ensure_ascii=False) + "\n\nFUENTES:\n" + "\n\n".join(textos),
                                 temperatura=0.1)
+        self._textos = textos
         return nota, control
+
+    def actualizar_convenio(self, grupo, nota_slug):
+        c = self.convenios.get(grupo.get("convenio"))
+        if not c:
+            return
+        actual = {k: c.get(k) for k in ("nombre", "cct", "escala", "novedades", "calculo", "nr", "recibo", "preguntas", "fuente")}
+        pedido = "PÁGINA ACTUAL DEL CONVENIO:\n" + json.dumps(actual, ensure_ascii=False) + "\n\nFUENTES DEL NUEVO ACUERDO:\n" + "\n\n".join(self._textos)
+        nuevo = gemini.gemini(_prompt("convenio.md"), pedido, temperatura=0.3)
+        control = gemini.gemini(_prompt("verificar.md"), "NOTA:\n" + json.dumps(nuevo, ensure_ascii=False) + "\n\nFUENTES:\n" + "\n\n".join(self._textos), temperatura=0.1)
+        esc = nuevo.get("escala") if isinstance(nuevo.get("escala"), dict) else None
+        if esc:
+            tabla = esc.get("tabla") if isinstance(esc.get("tabla"), list) else []
+            esc = {"periodo": str(esc.get("periodo") or "")[:80], "vigencia": str(esc.get("vigencia") or "")[:120],
+                   "tabla": [[str(x)[:80] for x in f][:10] for f in tabla[:80] if isinstance(f, list)], "aclaraciones": str(esc.get("aclaraciones") or "")[:800]}
+        datos = {"escala": esc or c.get("escala"), "novedades": _bloques_ok(nuevo.get("novedades")), "calculo": _bloques_ok(nuevo.get("calculo")) or c.get("calculo") or [],
+                 "nr": _bloques_ok(nuevo.get("nr")) or c.get("nr") or [], "recibo": _bloques_ok(nuevo.get("recibo")) or c.get("recibo") or [],
+                 "preguntas": [{"p": str(q.get("p"))[:200], "r": str(q.get("r"))[:500]} for q in (nuevo.get("preguntas") or []) if isinstance(q, dict) and q.get("p") and q.get("r")][:6],
+                 "fuente": str(nuevo.get("fuente") or c.get("fuente") or "")[:300]}
+        hist = list(c.get("historial") or [])
+        per = str(nuevo.get("periodo_historial") or (esc or {}).get("periodo") or grupo.get("tema"))[:80]
+        if not any(h.get("periodo") == per for h in hist):
+            hist.append({"periodo": per, "fecha": util.ahora().date().isoformat(), "nota": nota_slug})
+        ok = bool(control.get("ok")) and not nuevo.get("dudas") and not control.get("agrega_ejemplos")
+        motivo = "; ".join(list(control.get("problemas") or []) + [f"Duda: {d}" for d in (nuevo.get("dudas") or [])])[:600]
+        registro = {"slug": c["slug"], "nombre": c["nombre"], "periodo": per, "motivo": motivo, "datos": datos}
+        (self.convenios_act if ok else self.convenios_rev).append(registro)
+        if self.activo and self.db:
+            if ok:
+                self.db.update("convenios", {"slug": f"eq.{c['slug']}"}, dict(datos, historial=hist, propuesta=None, motivo_propuesta=None))
+            else:
+                self.db.update("convenios", {"slug": f"eq.{c['slug']}"}, {"propuesta": dict(datos, historial=hist), "motivo_propuesta": motivo})
 
     def armar_fila(self, grupo, items, nota, control, usados):
         base = _slug(nota.get("slug") or nota.get("titulo"))
@@ -138,6 +194,7 @@ class Fabrica:
             "fuentes": [{"nombre": it["fuente"], "url": it["url"], "titulo": it["titulo"]} for it in items],
             "verificada": oficial and ok, "estado": "publicada" if ok else "revision", "tema": grupo.get("tema"),
             "actualiza": grupo.get("actualiza"),
+            "convenio": grupo.get("convenio") if grupo.get("convenio") in self.convenios else None,
             "seo_titulo": str(nota.get("seo_titulo") or "")[:70] or None,
             "descripcion_seo": str(nota.get("descripcion_seo") or "")[:170] or None,
             "preguntas": [{"p": str(q.get("p", ""))[:200], "r": str(q.get("r", ""))[:500]} for q in (nota.get("preguntas") or [])
@@ -168,7 +225,8 @@ class Fabrica:
             self.db.upsert("radar", [{"url": it["url"], "fuente": it["fuente"], "tipo": it["tipo"], "titulo": it["titulo"][:300],
                                       "texto": (it.get("texto") or "")[:4000], "fecha": it.get("fecha")} for it in nuevos], "url")
         if not items:
-            self.informe()
+            self.escribir_guias()
+            self.cierre()
             return
         grupos = self.agrupar(items, recientes)
         usados_slug = {n["slug"] for n in recientes}
@@ -200,11 +258,64 @@ class Fabrica:
             if self.activo and self.db:
                 self.db.upsert("notas", [fila], "slug")
                 self.marcar(urls, g.get("tema"), fila["slug"])
+            if g.get("escala") and fila.get("convenio"):
+                try:
+                    self.actualizar_convenio(g, fila["slug"] if fila["estado"] == "publicada" else None)
+                except Exception as e:  # noqa
+                    util.avisar(f"No pude actualizar el convenio {fila['convenio']}", str(e))
+        self.escribir_guias()
+        self.cierre()
+
+    def cierre(self):
         if self.activo:
-            if self.publicadas:
+            if self.publicadas or self.convenios_act:
                 self.republicar_web()
-            mail.avisar(self.publicadas + self.revision, self.cfg.get("sitio_url", ""), self.cfg.get("mail_aviso"))
+            mail.avisar(self.publicadas + self.revision, self.cfg.get("sitio_url", ""), self.cfg.get("mail_aviso"), self.convenios_act, self.convenios_rev)
         self.informe()
+
+    # ---------- guías ----------
+    def escribir_guias(self):
+        """Escribe de a poco las guías del catálogo que todavía no existen (máximo guias_por_dia)."""
+        try:
+            catalogo = json.loads((util.RAIZ / "guias" / "catalogo.json").read_text(encoding="utf-8"))
+        except Exception:  # noqa
+            return
+        por_dia = int(self.cfg.get("guias_por_dia", 2))
+        existentes, hoy = set(), util.ahora().date().isoformat()
+        if self.db:
+            filas = self.db.select("notas", {"select": "slug,fecha", "tipo": "eq.guia", "limit": "1000"})
+            existentes = {f["slug"] for f in filas}
+            por_dia -= sum(1 for f in filas if str(f["fecha"]) == hoy)
+        pendientes = [g for g in catalogo if "guia-" + g["slug"] not in existentes]
+        for g in pendientes[:max(0, min(por_dia, 1))]:  # una por vuelta, para no gastar la cuota de Gemini
+            try:
+                self.escribir_guia(g)
+            except Exception as e:  # noqa
+                util.avisar(f"No pude escribir la guía «{g['titulo']}»", str(e))
+
+    def escribir_guia(self, g):
+        items = fuentes.buscar_portales(g["buscar"])
+        textos = []
+        for ref in g.get("oficial") or []:
+            t = fuentes.texto_oficial(ref)
+            if t:
+                textos.append(f"--- FUENTE OFICIAL: {ref['url']}\n{t}")
+        textos += [f"--- FUENTE: {it['fuente']} (portal)\nTítulo: {it['titulo']}\nTexto: {it['texto']}" for it in items]
+        if not textos:
+            util.log("Guía sin fuentes, queda para otra vuelta:", g["titulo"])
+            return
+        pedido = f"TEMA DE LA GUÍA: {g['titulo']}\nSECCIÓN: {g['seccion']}\n\nFUENTES:\n" + "\n\n".join(textos)
+        nota = gemini.gemini(_prompt("guia.md"), pedido, temperatura=0.4)
+        control = gemini.gemini(_prompt("verificar.md"), "NOTA:\n" + json.dumps(nota, ensure_ascii=False) + "\n\nFUENTES:\n" + "\n\n".join(textos), temperatura=0.1)
+        nota["slug"] = "guia-" + g["slug"]
+        oficiales = [{"nombre": "Norma oficial", "url": r["url"], "titulo": g["titulo"]} for r in g.get("oficial") or []]
+        fila = self.armar_fila({"seccion": g["seccion"], "tema": "guía: " + g["titulo"]}, items + [dict(x, tipo="oficial", fuente=x["nombre"]) for x in oficiales], nota, control, set())
+        fila["slug"], fila["tipo"] = "guia-" + g["slug"], "guia"
+        fila["fuentes"] = [{"nombre": it["fuente"], "url": it["url"], "titulo": it["titulo"]} for it in items] + oficiales
+        self.guias.append(fila)
+        (self.publicadas if fila["estado"] == "publicada" else self.revision).append(fila)
+        if self.activo and self.db:
+            self.db.upsert("notas", [fila], "slug")
 
     def marcar(self, urls, tema, slug):
         if self.activo and self.db and urls:
@@ -243,6 +354,12 @@ class Fabrica:
         md += [nota_md(n) for n in self.publicadas] or ["Ninguna.\n"]
         md.append(f"## 🟡 Para revisar ({len(self.revision)})\n")
         md += [nota_md(n) for n in self.revision] or ["Ninguna.\n"]
+        md.append(f"## 📊 Convenios actualizados ({len(self.convenios_act)})\n" + "".join(f"- {c['nombre']}: {c['periodo']}\n" for c in self.convenios_act))
+        md.append(f"## 🟡 Convenios para revisar ({len(self.convenios_rev)})\n" + "".join(f"- {c['nombre']}: {c['periodo']} — {c['motivo']}\n" for c in self.convenios_rev))
+        for c in self.convenios_act + self.convenios_rev:
+            t = (c["datos"].get("escala") or {}).get("tabla") or []
+            if t:
+                md.append(f"**Escala {c['nombre']} {c['periodo']}**\n\n| " + " | ".join(t[0]) + " |\n|" + "---|" * len(t[0]) + "\n" + "\n".join("| " + " | ".join(f) + " |" for f in t[1:]) + "\n")
         md.append(f"## ⏳ Esperando segunda fuente ({len(self.esperando)})\n" + "".join(f"- {t} ({d})\n" for t, d in self.esperando))
         md.append(f"## 🚫 Descartadas ({len(self.descartes)})\n" + "".join(f"- {t}: {d}\n" for t, d in self.descartes))
         util.resumen("\n".join(md))
