@@ -199,3 +199,83 @@ on conflict (id) do update set public = true, file_size_limit = 1048576, allowed
 drop policy if exists "subir mis imagenes" on storage.objects;
 create policy "subir mis imagenes" on storage.objects for insert to authenticated
   with check (bucket_id = 'pasos' and (storage.foldername(name))[1] = auth.uid()::text);
+
+-- =====================================================================
+-- ===== Notas del portal, administradores y radar de la fábrica =====
+-- =====================================================================
+create table if not exists public.admins (email text primary key);
+insert into public.admins(email) values ('ramacontable@gmail.com'), ('rventrura95@gmail.com') on conflict do nothing;
+alter table public.admins enable row level security;
+
+create or replace function public.es_admin() returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (select 1 from public.admins where email = lower(coalesce(auth.jwt() ->> 'email', '')));
+$$;
+grant execute on function public.es_admin() to anon, authenticated;
+
+create table if not exists public.notas (
+  slug text primary key check (slug ~ '^[a-z0-9-]{3,90}$'),
+  fecha date not null default current_date,
+  seccion text not null check (seccion in ('sueldos','impuestos','profesion','economia')),
+  antetitulo text not null default '',
+  titulo text not null check (char_length(titulo) between 5 and 200),
+  dato text,
+  encorto text not null default '',
+  cuerpo jsonb not null default '[]'::jsonb,
+  fuente text not null default '',
+  fuentes jsonb not null default '[]'::jsonb,
+  verificada boolean not null default false,
+  estado text not null default 'publicada' check (estado in ('publicada','revision','borrada')),
+  tema text,
+  actualiza text,
+  motivo_revision text,
+  creado timestamptz not null default now(),
+  actualizado timestamptz not null default now(),
+  editado_por text
+);
+create index if not exists notas_fecha on public.notas(fecha desc);
+
+create or replace function public.tocar_nota() returns trigger language plpgsql as $$
+begin
+  new.actualizado := now();
+  if auth.uid() is not null then new.editado_por := auth.jwt() ->> 'email'; end if;
+  return new;
+end $$;
+drop trigger if exists tocar on public.notas;
+create trigger tocar before update on public.notas for each row execute function public.tocar_nota();
+
+alter table public.notas enable row level security;
+drop policy if exists "ver notas" on public.notas;
+create policy "ver notas" on public.notas for select using (estado = 'publicada' or public.es_admin());
+drop policy if exists "admin edita notas" on public.notas;
+create policy "admin edita notas" on public.notas for update to authenticated using (public.es_admin()) with check (public.es_admin());
+drop policy if exists "admin borra notas" on public.notas;
+create policy "admin borra notas" on public.notas for delete to authenticated using (public.es_admin());
+
+-- El administrador puede moderar aportes de la comunidad
+drop policy if exists "admin borra pasos" on public.pasos;
+create policy "admin borra pasos" on public.pasos for delete to authenticated using (public.es_admin());
+drop policy if exists "admin borra opiniones" on public.opiniones;
+create policy "admin borra opiniones" on public.opiniones for delete to authenticated using (public.es_admin());
+
+-- Memoria del radar (solo la usa la fábrica con la clave secreta; nadie la ve desde la web)
+create table if not exists public.radar (
+  url text primary key,
+  fuente text not null,
+  tipo text not null default 'portal',
+  titulo text not null,
+  texto text,
+  fecha timestamptz,
+  visto timestamptz not null default now(),
+  usado boolean not null default false,
+  tema text,
+  nota text
+);
+alter table public.radar enable row level security;
+
+-- Slugs que existen pero no están publicados (para que la web no muestre notas retiradas)
+create or replace function public.slugs_no_publicados() returns setof text
+language sql stable security definer set search_path = public as $$
+  select slug from public.notas where estado <> 'publicada';
+$$;
+grant execute on function public.slugs_no_publicados() to anon, authenticated;

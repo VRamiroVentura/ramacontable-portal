@@ -1,0 +1,19 @@
+{
+  "_ayuda": "modo: 'ensayo' arma las notas y las muestra en el resumen de la ejecución SIN publicar. 'activo' publica. Para activar, cambiá ensayo por activo y guardá (Commit changes).",
+  "modo": "ensayo",
+  "sitio_url": "https://vramiroventura.github.io/ramacontable-portal/",
+  "mail_aviso": "ramacontable@gmail.com",
+  "max_notas_por_vuelta": 6,
+  "dias_espera_segunda_fuente": 5,
+  "gemini_modelos": ["gemini-flash-latest"],
+  "gemini_pensamiento": "low",
+  "fuentes": [
+    {"nombre": "Boletín Oficial", "tipo": "oficial", "url": "https://www.boletinoficial.gob.ar/seccion/primera",
+     "filtro": ["arca", "administracion federal", "ingresos publicos", "anses", "seguridad social", "riesgos del trabajo",
+                "comision nacional de valores", "banco central", "secretaria de trabajo", "inspeccion general de justicia",
+                "impuesto", "monotributo", "convenio colectivo", "homologa", "salario minimo", "asignaciones familiares"]},
+    {"nombre": "Ignacio Online", "tipo": "portal", "url": "https://www.ignacioonline.com.ar/feed/"},
+    {"nombre": "Contadores en Red", "tipo": "portal", "url": "https://contadoresenred.com/feed/"},
+    {"nombre": "Blog del Contador", "tipo": "portal", "url": "https://blogdelcontador.com.ar/"}
+  ]
+}

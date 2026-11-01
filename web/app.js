@@ -4,7 +4,8 @@
   const sb = (cfg.url && cfg.key && window.supabase) ? window.supabase.createClient(cfg.url, cfg.key) : null;
   const $ = (s, el = document) => el.querySelector(s);
   const $$ = (s, el = document) => [...el.querySelectorAll(s)];
-  const notaId = $('[data-nota]') ? $('[data-nota]').dataset.nota : null;
+  let notaId = $('[data-nota]') ? $('[data-nota]').dataset.nota : null;
+  if ($('[data-dinamica]')) { notaId = new URLSearchParams(location.search).get('n') || null; $('[data-nota]').dataset.nota = notaId || ''; }
   let usuario = null, perfil = null, reputaciones = {}, misVotos = new Set(), verTodasOp = false;
 
   // ---------- utilidades ----------
@@ -406,9 +407,118 @@
     await cargarReputaciones();
     const top = Object.values(reputaciones).filter(r => r.positivos > 0).sort((a, b) => b.positivos - a.positivos).slice(0, 5);
     if (!top.length) return;
-    const ol = $('#ranking'); ol.innerHTML = '';
+    const ol = $('#ranking'); if (!ol) return; ol.innerHTML = '';
     top.forEach(r => ol.append(h('li', {}, h('b', {}, r.nombre), ` · ${nivel(r)} · ${r.positivos} pts`)));
     $('#destacados').hidden = false;
+  }
+
+  // ---------- notas: versión al día y herramientas del administrador ----------
+  let esAdmin = false;
+  const SECC = { sueldos: 'Sueldos', impuestos: 'Impuestos', profesion: 'Profesión', economia: 'Economía' };
+  const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+  const fechaLarga = iso => { const [a, m, d] = String(iso).slice(0, 10).split('-').map(Number); return `${d} de ${MESES[m - 1]} de ${a}`; };
+  function bloquesAHtml(cuerpo) {
+    const E = window.RCEditor ? RCEditor.esc : (s => s);
+    return (cuerpo || []).map(b => {
+      if (b.h) return `<h2>${E(b.h)}</h2>`;
+      if (b.p) return `<p>${E(b.p)}</p>`;
+      if (b.tabla && b.tabla.length) return '<table><thead><tr>' + b.tabla[0].map(c => `<th>${E(c)}</th>`).join('') + '</tr></thead><tbody>' +
+        b.tabla.slice(1).map(f => '<tr>' + f.map(c => `<td>${E(c)}</td>`).join('') + '</tr>').join('') + '</tbody></table>';
+      if (b.html) return b.html;
+      return '';
+    }).join('');
+  }
+  function pintarNota(n) {
+    const caja = $('.nota-contenido'); if (!caja) return;
+    caja.innerHTML = '';
+    if (n.estado === 'borrada' && !esAdmin) { caja.append(h('div', { class: 'vacio-caja' }, h('b', {}, 'Esta nota fue retirada'), 'Ya no está disponible.')); return; }
+    const cuerpo = h('div', {}); cuerpo.innerHTML = RCEditor.limpiar(bloquesAHtml(n.cuerpo));
+    cuerpo.querySelectorAll('table').forEach(t => { const w = h('div', { class: 'tabla' }); t.replaceWith(w); w.append(t); });
+    caja.append(...[
+      h('p', { class: 'miga' }, h('a', { href: `${n.seccion}.html` }, SECC[n.seccion] || '')),
+      h('p', { class: 'ante' }, n.antetitulo || ''),
+      h('h1', {}, n.titulo),
+      h('p', { class: 'firma' }, `Redacción Ramacontable · ${fechaLarga(n.fecha)}`),
+      n.actualiza ? h('p', { class: 'actualiza' }, 'Esta nota actualiza a: ', h('a', { href: `nota-${n.actualiza}.html` }, 'la nota anterior sobre el tema')) : null,
+      h('div', { class: 'encorto' }, h('b', {}, 'En corto'), h('p', {}, n.encorto || '')),
+      cuerpo,
+      n.fuente ? h('p', { class: 'fuente' }, h('b', {}, 'Fuente: '), n.fuente) : null,
+      h('p', { class: 'aviso' }, 'Información de carácter general. Se recomienda verificar siempre en las fuentes oficiales. Cada profesional es responsable de su aplicación. ' +
+        (n.verificada ? 'Elaborada con fuentes oficiales.' : 'Pendiente de verificación con fuente oficial.'))].filter(Boolean));
+    document.title = `${n.titulo} | Ramacontable`;
+  }
+  function barraAdmin(n) {
+    const caja = $('.nota-contenido'); if (!caja || !esAdmin) return;
+    const est = { publicada: 'Publicada', revision: 'Para revisar (no publicada)', borrada: 'Borrada (no se ve)' }[n.estado];
+    const barra = h('div', { class: 'barra-admin' },
+      h('span', {}, h('b', {}, 'Administrador · '), est, n.editado_por ? ` · editada por ${n.editado_por}` : ''),
+      h('div', {},
+        n.estado !== 'publicada' ? h('button', { class: 'btn', onclick: () => cambiarEstado(n, 'publicada') }, '✅ Publicar') : null,
+        h('button', { class: 'btn sec', onclick: () => editarNota(n) }, '✏️ Editar'),
+        n.estado !== 'borrada' ? h('button', { class: 'btn sec', onclick: () => confirmarBorrar(n) }, '🗑️ Borrar') : null));
+    if (n.motivo_revision && n.estado === 'revision') barra.append(h('p', { class: 'motivo' }, 'Motivo de revisión: ' + n.motivo_revision));
+    caja.prepend(barra);
+  }
+  async function cambiarEstado(n, estado) {
+    const { data, error } = await sb.from('notas').update({ estado }).eq('slug', n.slug).select('*');
+    if (error || !data || !data.length) return aviso('No se pudo guardar. ' + (error ? mensajeError(error) : ''));
+    aviso(estado === 'publicada' ? 'Nota publicada. Aparece en la portada en la próxima actualización (hasta 1 hora).' : 'Nota borrada.');
+    cargarNota();
+  }
+  function confirmarBorrar(n) {
+    abrirModal(h('div', {}, h('h2', {}, '¿Borrar esta nota?'), h('p', {}, 'Deja de verse en el portal. Si te arrepentís, la podés volver a publicar desde Administración.'),
+      h('div', { class: 'fila-btn' }, h('button', { class: 'btn sec', onclick: cerrarModal }, 'Cancelar'),
+        h('button', { class: 'btn peligro', onclick: () => { cerrarModal(); cambiarEstado(n, 'borrada'); } }, 'Sí, borrar'))));
+  }
+  function editarNota(n) {
+    const editor = h('div', { class: 'editor', contenteditable: 'true' });
+    editor.innerHTML = RCEditor.limpiar(bloquesAHtml(n.cuerpo));
+    editor.addEventListener('paste', ev => { ev.preventDefault(); document.execCommand('insertHTML', false, RCEditor.desdePegado(ev.clipboardData)); });
+    const f = h('form', {},
+      h('h2', {}, 'Editar nota'),
+      h('label', {}, 'Sección', h('select', { name: 'seccion' }, Object.entries(SECC).map(([k, v]) => h('option', { value: k }, v)))),
+      h('label', {}, 'Antetítulo', h('input', { name: 'antetitulo', maxlength: 120 })),
+      h('label', {}, 'Título', h('input', { name: 'titulo', required: true, minlength: 5, maxlength: 200 })),
+      h('label', {}, 'Dato destacado (opcional)', h('input', { name: 'dato', maxlength: 40 })),
+      h('label', {}, 'En corto', h('textarea', { name: 'encorto', rows: 3, maxlength: 600 })),
+      h('label', {}, 'Cuerpo de la nota'), editor,
+      h('label', {}, 'Fuente', h('input', { name: 'fuente', maxlength: 300 })),
+      h('p', { class: 'error' }), h('button', { class: 'btn ancho' }, 'Guardar cambios'));
+    ['seccion', 'antetitulo', 'titulo', 'dato', 'encorto', 'fuente'].forEach(k => { f[k].value = n[k] || ''; });
+    f.addEventListener('submit', async ev => {
+      ev.preventDefault();
+      const cambios = { seccion: f.seccion.value, antetitulo: f.antetitulo.value.trim(), titulo: f.titulo.value.trim(), dato: f.dato.value.trim() || null,
+        encorto: f.encorto.value.trim(), fuente: f.fuente.value.trim(), cuerpo: [{ html: RCEditor.limpiar(editor.innerHTML) }] };
+      const { data, error } = await sb.from('notas').update(cambios).eq('slug', n.slug).select('*');
+      if (error || !data || !data.length) { $('.error', f).textContent = 'No se pudo guardar. ' + (error ? mensajeError(error) : ''); return; }
+      cerrarModal(); aviso('Nota actualizada. El cambio ya se ve en esta página.'); cargarNota();
+    });
+    abrirModal(f);
+  }
+  async function cargarNota() {
+    if (!sb || !notaId) return;
+    const art = $('[data-nota]');
+    const { data } = await sb.from('notas').select('*').eq('slug', notaId).maybeSingle();
+    const dinamica = art && art.dataset.dinamica;
+    if (!data) {
+      if (dinamica) $('.nota-contenido').innerHTML = '<div class="vacio-caja"><b>No encontramos esta nota</b>Puede que se haya retirado.</div>';
+      return;
+    }
+    const construida = new Date(cfg.build || 0);
+    if (dinamica || data.estado !== 'publicada' || new Date(data.actualizado) > construida || esAdmin) pintarNota(data);
+    barraAdmin(data);
+    if (dinamica && (data.estado === 'publicada' || esAdmin)) { $('#opiniones').hidden = false; $('#aplica').hidden = false; }
+  }
+  async function panelAdmin() {
+    const caja = $('#admin-lista'); if (!caja) return;
+    if (!esAdmin) { caja.innerHTML = '<p class="ayuda">Ingresá con tu cuenta de administrador para ver esta página.</p>'; return; }
+    const { data } = await sb.from('notas').select('slug,titulo,estado,fecha,seccion,motivo_revision').order('fecha', { ascending: false }).limit(200);
+    const filas = (data || []).sort((a, b) => (a.estado === 'revision' ? -1 : 0) - (b.estado === 'revision' ? -1 : 0));
+    caja.innerHTML = '';
+    if (!filas.length) { caja.append(h('p', { class: 'ayuda' }, 'Todavía no hay notas en la base.')); return; }
+    const EST = { publicada: '✅ Publicada', revision: '🟡 Para revisar', borrada: '🗑️ Borrada' };
+    filas.forEach(n => caja.append(h('a', { class: 'fila-admin', href: n.estado === 'publicada' ? `nota-${n.slug}.html` : `nota.html?n=${n.slug}` },
+      h('span', { class: 'est est-' + n.estado }, EST[n.estado]), h('b', {}, n.titulo), h('small', {}, `${fechaLarga(n.fecha)} · ${SECC[n.seccion] || ''}`))));
   }
 
   // ---------- eventos ----------
@@ -440,10 +550,12 @@
       const r = await sb.from('perfiles').select('*').eq('id', usuario.id).maybeSingle();
       perfil = r.data || null;
     }
+    if (usuario) { const ra = await sb.rpc('es_admin'); esAdmin = !!ra.data; }
     await cargarReputaciones();
     pintarSesion();
     if (usuario && !perfil) pedirPerfil();
-    contadoresPortada(); ranking(); cargarAportes();
+    contadoresPortada(); ranking(); cargarNota(); cargarAportes(); panelAdmin();
+    if (esAdmin) { const s = $('#sesion'); if (s && !$('#link-admin')) s.prepend(h('a', { id: 'link-admin', class: 'link-admin', href: 'admin.html' }, 'Administración')); }
   }
   iniciar();
 })();

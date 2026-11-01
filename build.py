@@ -8,7 +8,7 @@ SUPABASE_URL y SUPABASE_PUBLISHABLE_KEY (en GitHub vienen de los Secrets).
 import html, json, os, re, shutil, glob, datetime, urllib.request
 
 RAIZ = os.path.dirname(os.path.abspath(__file__))
-VERSION = datetime.datetime.utcnow().strftime("%Y%m%d%H%M")  # evita que el navegador muestre archivos viejos
+VERSION = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%d%H%M")  # evita que el navegador muestre archivos viejos
 SALIDA = os.path.join(RAIZ, "sitio")
 
 SECCIONES = {
@@ -73,14 +73,67 @@ def pasos_estaticos(lista):
     return "".join(items)
 
 
+def notas_supabase():
+    """Notas publicadas en Supabase (las escribe la fábrica y las edita el administrador)."""
+    url = os.environ.get("SUPABASE_URL", "").strip().rstrip("/")
+    key = os.environ.get("SUPABASE_PUBLISHABLE_KEY", "").strip()
+    if not url or not key:
+        return None
+    try:
+        req = urllib.request.Request(url + "/rest/v1/notas?select=*&estado=eq.publicada&order=fecha.desc&limit=2000",
+                                     headers={"apikey": key, "Authorization": "Bearer " + key})
+        return json.load(urllib.request.urlopen(req, timeout=30))
+    except Exception as ex:
+        print("Aviso: no se pudieron leer las notas de Supabase:", ex)
+        return None
+
+
+_NO_PUBLICADAS = None
+
+
+def no_publicada(slug):
+    """True si la nota existe en Supabase pero no está publicada (borrada o en revisión)."""
+    global _NO_PUBLICADAS
+    if _NO_PUBLICADAS is None:
+        _NO_PUBLICADAS = set()
+        url = os.environ.get("SUPABASE_URL", "").strip().rstrip("/")
+        key = os.environ.get("SUPABASE_PUBLISHABLE_KEY", "").strip()
+        if url and key:
+            try:
+                req = urllib.request.Request(url + "/rest/v1/rpc/slugs_no_publicados", data=b"{}", method="POST",
+                                             headers={"apikey": key, "Authorization": "Bearer " + key, "Content-Type": "application/json"})
+                _NO_PUBLICADAS = set(json.load(urllib.request.urlopen(req, timeout=30)) or [])
+            except Exception as ex:
+                print("Aviso: no se pudo consultar notas retiradas:", ex)
+    return slug in _NO_PUBLICADAS
+
+
 def cargar_notas():
-    notas = []
+    locales = {}
     for ruta in glob.glob(os.path.join(RAIZ, "notas", "*.json")):
         with open(ruta, encoding="utf-8") as f:
             n = json.load(f)
-        notas.append(n)
-    notas.sort(key=lambda n: (n["fecha"], n["slug"]), reverse=True)
+        locales[n["slug"]] = n
+    remotas = notas_supabase()
+    if remotas is None:
+        notas = list(locales.values())
+    else:
+        # Supabase manda: si una nota se editó o se borró allá, vale lo de allá
+        todas = {r["slug"]: r for r in remotas}
+        for s, n in locales.items():
+            if s not in todas and not no_publicada(s):
+                todas[s] = n
+        notas = list(todas.values())
+    notas.sort(key=lambda n: (str(n["fecha"]), n["slug"]), reverse=True)
     return notas
+
+
+def html_admin(h):
+    """HTML que escribió el administrador al editar: se quitan scripts y atributos peligrosos."""
+    h = re.sub(r"(?is)<(script|style|iframe|object|embed|form)\b[^>]*>.*?</\1\s*>", "", h or "")
+    h = re.sub(r"(?is)</?(script|style|iframe|object|embed|form|link|meta|base)\b[^>]*>", "", h)
+    h = re.sub(r"(?i)\son[a-z]+\s*=\s*(\"[^\"]*\"|'[^']*'|[^\s>]+)", "", h)
+    return re.sub(r"(?i)javascript:", "", h)
 
 
 ICONOS = {
@@ -163,6 +216,8 @@ def bloque(b):
         cab = "".join(f"<th>{e(c)}</th>" for c in filas[0])
         resto = "".join("<tr>" + "".join(f"<td>{e(c)}</td>" for c in f) + "</tr>" for f in filas[1:])
         return f'<div class="tabla"><table><thead><tr>{cab}</tr></thead><tbody>{resto}</tbody></table></div>'
+    if "html" in b:
+        return html_admin(b["html"])
     return ""
 
 
@@ -171,15 +226,21 @@ def pagina_nota(n, notas, aportes=None):
              else "Pendiente de verificación con fuente oficial.")
     cuerpo = "".join(bloque(b) for b in n["cuerpo"])
     sec = SECCIONES[n["seccion"]]
-    contenido = f"""<div class="grilla"><article class="nota" data-nota="{n['slug']}">
+    previa = ""
+    if n.get("actualiza"):
+        previa = f'<p class="actualiza">Esta nota actualiza a: <a href="nota-{e(n["actualiza"])}.html">la nota anterior sobre el tema</a></p>'
+    contenido = f"""<div class="grilla"><article class="nota" data-nota="{n['slug']}" data-actualizado="{e(str(n.get('actualizado') or ''))}">
+<div class="nota-contenido">
 <p class="miga"><a href="{n['seccion']}.html">{sec}</a></p>
 <p class="ante">{e(n['antetitulo'])}</p>
 <h1>{e(n['titulo'])}</h1>
 <p class="firma">Redacción Ramacontable · {fecha_larga(n['fecha'])}</p>
+{previa}
 <div class="encorto"><b>En corto</b><p>{e(n['encorto'])}</p></div>
 {cuerpo}
 <p class="fuente"><b>Fuente:</b> {e(n['fuente'])}</p>
 <p class="aviso">Información de carácter general. Se recomienda verificar siempre en las fuentes oficiales. Cada profesional es responsable de su aplicación. {verif}</p>
+</div>
 
 <section class="bloque-op" id="opiniones">
 <h2 class="tit-bloque">Opiniones <span data-n="opiniones">0</span></h2>
@@ -215,6 +276,7 @@ def main():
         f.write("window.RC_CONFIG=" + json.dumps({
             "url": os.environ.get("SUPABASE_URL", "").strip().rstrip("/"),
             "key": os.environ.get("SUPABASE_PUBLISHABLE_KEY", "").strip(),
+            "build": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         }) + ";")
     escribir = lambda nombre, txt: open(os.path.join(SALIDA, nombre), "w", encoding="utf-8").write(txt)
     escribir("index.html", portada(notas))
@@ -227,6 +289,10 @@ def main():
         escribir("herramientas.html", pagina("Vencimientos | Ramacontable", f.read()))
     with open(os.path.join(RAIZ, "paginas", "terminos.html"), encoding="utf-8") as f:
         escribir("terminos.html", pagina("Términos y privacidad | Ramacontable", f.read()))
+    with open(os.path.join(RAIZ, "paginas", "nota-dinamica.html"), encoding="utf-8") as f:
+        escribir("nota.html", pagina("Nota | Ramacontable", f.read()))
+    with open(os.path.join(RAIZ, "paginas", "admin.html"), encoding="utf-8") as f:
+        escribir("admin.html", pagina("Administración | Ramacontable", f.read()))
     escribir(".nojekyll", "")
     print(f"Listo: {len(notas)} notas en {SALIDA}")
 
