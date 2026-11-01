@@ -8,6 +8,7 @@ SUPABASE_URL y SUPABASE_PUBLISHABLE_KEY (en GitHub vienen de los Secrets).
 import html, json, os, re, shutil, glob, datetime, urllib.request
 
 RAIZ = os.path.dirname(os.path.abspath(__file__))
+VERSION = datetime.datetime.utcnow().strftime("%Y%m%d%H%M")  # evita que el navegador muestre archivos viejos
 SALIDA = os.path.join(RAIZ, "sitio")
 
 SECCIONES = {
@@ -103,7 +104,7 @@ def pagina(titulo, cuerpo, actual="", descripcion=""):
 <meta name="description" content="{e(descripcion or 'Novedades contables, impositivas y laborales explicadas claro, y una comunidad que muestra cómo se aplican.')}">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Source+Sans+3:wght@400;600;700&display=swap">
-<link rel="stylesheet" href="estilos.css">
+<link rel="stylesheet" href="estilos.css?v={VERSION}">
 <link rel="icon" href="logo.svg" type="image/svg+xml">
 </head><body>
 <header class="cab"><div class="wrap fila">
@@ -124,8 +125,8 @@ def pagina(titulo, cuerpo, actual="", descripcion=""):
 <script src="vendor/purify.min.js"></script>
 <script src="vendor/jszip.min.js"></script>
 <script src="config.js"></script>
-<script src="editor.js"></script>
-<script src="app.js"></script>
+<script src="editor.js?v={VERSION}"></script>
+<script src="app.js?v={VERSION}"></script>
 </body></html>"""
 
 
