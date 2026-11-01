@@ -1,0 +1,189 @@
+-- Ramacontable · base de datos del portal
+-- Se pega UNA vez en Supabase → SQL Editor → New query → Run.
+-- Se puede volver a correr sin romper nada.
+
+-- ===== Perfiles (públicos: nombre y tipo) =====
+create table if not exists public.perfiles (
+  id uuid primary key references auth.users(id) on delete cascade,
+  nombre text not null check (char_length(nombre) between 2 and 60),
+  tipo text not null check (tipo in ('recibido','estudiante','otro')),
+  avance int check (avance between 0 and 100),
+  creado timestamptz not null default now()
+);
+
+-- ===== Preferencias (privadas: solo las ve cada uno) =====
+create table if not exists public.preferencias (
+  id uuid primary key references auth.users(id) on delete cascade,
+  email text,
+  newsletter boolean not null default false,
+  actualizado timestamptz not null default now()
+);
+
+-- ===== Paso a paso (contenido pegado o convertido: texto, tablas e imágenes) =====
+create table if not exists public.pasos (
+  id bigint generated always as identity primary key,
+  nota text not null,
+  autor uuid not null default auth.uid() references public.perfiles(id) on delete cascade,
+  titulo text not null check (char_length(titulo) between 5 and 140),
+  nivel text not null check (nivel in ('basico','intermedio','avanzado')),
+  contenido text not null check (char_length(contenido) between 10 and 200000),
+  porque text not null check (char_length(porque) between 20 and 2000),
+  sin_datos_reales boolean not null check (sin_datos_reales),
+  texto_pdf text check (char_length(texto_pdf) <= 60000),
+  oculto boolean not null default false,
+  creado timestamptz not null default now()
+);
+alter table public.pasos add column if not exists texto_pdf text check (char_length(texto_pdf) <= 60000);
+create index if not exists pasos_nota on public.pasos(nota);
+
+-- ===== Opiniones =====
+create table if not exists public.opiniones (
+  id bigint generated always as identity primary key,
+  nota text not null,
+  autor uuid not null default auth.uid() references public.perfiles(id) on delete cascade,
+  texto text not null check (char_length(texto) between 2 and 1500),
+  oculto boolean not null default false,
+  creado timestamptz not null default now()
+);
+create index if not exists opiniones_nota on public.opiniones(nota);
+
+-- ===== Votos =====
+create table if not exists public.votos (
+  id bigint generated always as identity primary key,
+  autor uuid not null default auth.uid() references public.perfiles(id) on delete cascade,
+  objeto text not null check (objeto in ('paso','opinion')),
+  objeto_id bigint not null,
+  valor text not null check (valor in ('like','sirvio','neg')),
+  motivo text check (char_length(motivo) <= 300),
+  creado timestamptz not null default now(),
+  unique (autor, objeto, objeto_id, valor),
+  check (valor <> 'neg' or char_length(coalesce(motivo,'')) >= 5)
+);
+create index if not exists votos_obj on public.votos(objeto, objeto_id);
+
+-- ===== Filtro de reglas: sin mails, teléfonos, CUIT/CBU, redes ni links no oficiales =====
+create or replace function public.revisar_texto(t text) returns void
+language plpgsql immutable as $$
+declare
+  m text[];
+  host text;
+begin
+  if t is null then return; end if;
+  if t ~* '[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}' then
+    raise exception 'REGLA: No se pueden publicar direcciones de mail.';
+  end if;
+  if t ~* '(^|[^a-z0-9])@[a-z0-9_.]{3,}' then
+    raise exception 'REGLA: No se pueden publicar usuarios de redes sociales.';
+  end if;
+  if t ~* '(whats ?app|wsp|wpp|instagram|telegram|facebook|linkedin|tiktok|wa\.me)' then
+    raise exception 'REGLA: No se pueden publicar redes sociales ni medios de contacto.';
+  end if;
+  if t ~ '\d{10,}' or t ~ '\m\d{2}-\d{8}-\d\M' or t ~ '\m\d{2,4}[ -]\d{3,4}[ -]\d{4}\M' then
+    raise exception 'REGLA: No se pueden publicar teléfonos, CUIT, DNI ni cuentas bancarias.';
+  end if;
+  for m in select regexp_matches(t, '(?:https?://)?(?:www\.)?((?:[a-z0-9-]+\.)+(?:com|net|org|ar|io|me|ly|info|co|app|xyz|site|online|store|link|gob|gov)(?:\.ar)?)(?![a-z0-9])', 'gi') loop
+    host := lower(m[1]);
+    if not (host ~ '\.(gob|gov)\.ar$' or host in ('consejo.org.ar','cpba.com.ar','facpce.org.ar')) then
+      raise exception 'REGLA: Solo se permiten links de organismos oficiales (.gob.ar / .gov.ar) y consejos profesionales.';
+    end if;
+  end loop;
+end $$;
+
+create or replace function public.filtrar_aporte() returns trigger
+language plpgsql as $$
+begin
+  if tg_table_name = 'opiniones' then
+    perform public.revisar_texto(new.texto);
+  elsif tg_table_name = 'pasos' then
+    if new.contenido ~* '<\s*/?\s*(script|iframe|object|embed|form|input|button|link|meta|style|svg|math|base)' or new.contenido ~* '\son[a-z]+\s*=' or new.contenido ~* 'javascript:' or new.contenido ~* '<a[\s>]' then
+      raise exception 'REGLA: El contenido tiene elementos no permitidos.';
+    end if;
+    if new.contenido ~* 'src\s*=\s*"(?!https://[a-z0-9]+\.supabase\.co/storage/v1/object/public/pasos/)' then
+      raise exception 'REGLA: Solo se permiten imágenes subidas al portal.';
+    end if;
+    perform public.revisar_texto(new.titulo || ' ' || new.porque || ' ' || regexp_replace(new.contenido, '<[^>]*>', ' ', 'g') || ' ' || coalesce(new.texto_pdf, ''));
+  elsif tg_table_name = 'votos' then
+    perform public.revisar_texto(new.motivo);
+    if (new.objeto = 'paso' and exists (select 1 from public.pasos where id = new.objeto_id and autor = new.autor))
+       or (new.objeto = 'opinion' and exists (select 1 from public.opiniones where id = new.objeto_id and autor = new.autor)) then
+      raise exception 'REGLA: No podés votar tus propios aportes.';
+    end if;
+  elsif tg_table_name = 'perfiles' then
+    perform public.revisar_texto(new.nombre);
+  end if;
+  return new;
+end $$;
+
+drop trigger if exists filtro on public.opiniones;
+create trigger filtro before insert or update on public.opiniones for each row execute function public.filtrar_aporte();
+drop trigger if exists filtro on public.pasos;
+create trigger filtro before insert or update on public.pasos for each row execute function public.filtrar_aporte();
+drop trigger if exists filtro on public.votos;
+create trigger filtro before insert or update on public.votos for each row execute function public.filtrar_aporte();
+drop trigger if exists filtro on public.perfiles;
+create trigger filtro before insert or update on public.perfiles for each row execute function public.filtrar_aporte();
+
+-- ===== Reputación: votos recibidos por cada usuario =====
+create or replace view public.reputacion with (security_invoker = true) as
+select p.id as usuario, p.nombre, p.tipo,
+  coalesce(sum(case when v.valor in ('like','sirvio') then 1 else 0 end),0)::int as positivos,
+  coalesce(sum(case when v.valor = 'neg' then 1 else 0 end),0)::int as negativos,
+  ((select count(*) from public.pasos x where x.autor = p.id and not x.oculto)
+   + (select count(*) from public.opiniones y where y.autor = p.id and not y.oculto))::int as aportes
+from public.perfiles p
+left join (
+  select v.valor, coalesce(pa.autor, op.autor) as duenio
+  from public.votos v
+  left join public.pasos pa on v.objeto = 'paso' and pa.id = v.objeto_id and not pa.oculto
+  left join public.opiniones op on v.objeto = 'opinion' and op.id = v.objeto_id and not op.oculto
+) v on v.duenio = p.id
+group by p.id, p.nombre, p.tipo;
+
+-- ===== Seguridad (RLS) =====
+alter table public.perfiles enable row level security;
+alter table public.preferencias enable row level security;
+alter table public.pasos enable row level security;
+alter table public.opiniones enable row level security;
+alter table public.votos enable row level security;
+
+drop policy if exists "ver perfiles" on public.perfiles;
+create policy "ver perfiles" on public.perfiles for select using (true);
+drop policy if exists "crear mi perfil" on public.perfiles;
+create policy "crear mi perfil" on public.perfiles for insert to authenticated with check (id = auth.uid());
+drop policy if exists "editar mi perfil" on public.perfiles;
+create policy "editar mi perfil" on public.perfiles for update to authenticated using (id = auth.uid()) with check (id = auth.uid());
+
+drop policy if exists "mis preferencias" on public.preferencias;
+create policy "mis preferencias" on public.preferencias for all to authenticated using (id = auth.uid()) with check (id = auth.uid());
+
+drop policy if exists "ver pasos" on public.pasos;
+create policy "ver pasos" on public.pasos for select using (not oculto);
+drop policy if exists "subir paso" on public.pasos;
+create policy "subir paso" on public.pasos for insert to authenticated with check (autor = auth.uid() and oculto = false);
+drop policy if exists "borrar mi paso" on public.pasos;
+create policy "borrar mi paso" on public.pasos for delete to authenticated using (autor = auth.uid());
+
+drop policy if exists "ver opiniones" on public.opiniones;
+create policy "ver opiniones" on public.opiniones for select using (not oculto);
+drop policy if exists "opinar" on public.opiniones;
+create policy "opinar" on public.opiniones for insert to authenticated with check (autor = auth.uid() and oculto = false);
+drop policy if exists "borrar mi opinion" on public.opiniones;
+create policy "borrar mi opinion" on public.opiniones for delete to authenticated using (autor = auth.uid());
+
+drop policy if exists "ver votos" on public.votos;
+create policy "ver votos" on public.votos for select using (true);
+drop policy if exists "votar" on public.votos;
+create policy "votar" on public.votos for insert to authenticated with check (autor = auth.uid());
+drop policy if exists "sacar mi voto" on public.votos;
+create policy "sacar mi voto" on public.votos for delete to authenticated using (autor = auth.uid());
+
+grant select on public.reputacion to anon, authenticated;
+
+-- ===== Imágenes de los paso a paso (capturas y páginas de PDF ya convertidas) =====
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('pasos', 'pasos', true, 1048576, array['image/jpeg','image/png','image/webp'])
+on conflict (id) do update set public = true, file_size_limit = 1048576, allowed_mime_types = array['image/jpeg','image/png','image/webp'];
+
+drop policy if exists "subir mis imagenes" on storage.objects;
+create policy "subir mis imagenes" on storage.objects for insert to authenticated
+  with check (bucket_id = 'pasos' and (storage.foldername(name))[1] = auth.uid()::text);

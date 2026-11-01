@@ -1,0 +1,28 @@
+{
+  "slug": "comercio-acuerdo-octubre-2026",
+  "fecha": "2026-10-31",
+  "seccion": "sueldos",
+  "antetitulo": "Paritaria mercantil | CCT 130/75",
+  "titulo": "Empleados de Comercio: cómo queda el aumento del 5,7% y la suma no remunerativa de $50.000",
+  "dato": "5,7% + $50.000",
+  "encorto": "El aumento es de 1,9% en octubre, otro 1,9% en noviembre y otro 1,9% en diciembre (5,7% en total). Además se pagan $50.000 no remunerativos en dos cuotas de $25.000, con los sueldos de octubre y noviembre.",
+  "cuerpo": [
+    {"h": "Qué se firmó"},
+    {"p": "El 27 de octubre de 2026, el gremio de los empleados de comercio (FAECYS) y las cámaras empresarias CAC, CAME y UDECA firmaron el acuerdo salarial para el último trimestre del año. Rige para todos los trabajadores del convenio colectivo 130/75."},
+    {"h": "Cómo se calcula el aumento"},
+    {"p": "El aumento total es del 5,7% y se aplica en tres partes iguales. Es \"nominal y no acumulativo\": eso quiere decir que cada 1,9% se calcula siempre sobre la misma base (septiembre) y no sobre el sueldo del mes anterior ya aumentado."},
+    {"p": "La base son los básicos de convenio de septiembre de 2026 más las sumas no remunerativas que estaban vigentes en ese momento."},
+    {"tabla": [["Mes", "Aumento acumulado sobre septiembre", "Suma no remunerativa"], ["Octubre 2026", "1,9%", "$25.000"], ["Noviembre 2026", "3,8%", "$25.000"], ["Diciembre 2026", "5,7%", "—"]]},
+    {"h": "La suma no remunerativa de $50.000"},
+    {"p": "Una suma no remunerativa (NR) es un monto que se paga junto con el sueldo pero que, según lo que diga el acuerdo, no forma parte de la base para todos los aportes y contribuciones. En este caso se pagan $50.000 en dos cuotas de $25.000, con los sueldos de octubre y noviembre."},
+    {"p": "En el recibo tiene que figurar con este nombre: \"Suma No Remunerativa Única – Revisión octubre 2026\". Es proporcional a la jornada en los casos que prevé el acuerdo (por ejemplo, trabajadores a tiempo parcial)."},
+    {"h": "Qué se puede descontar (absorber)"},
+    {"p": "Solo se pueden compensar los montos que el empleador ya haya dado por su cuenta desde el 1 de julio de 2026 \"a cuenta\" de estos aumentos. No se pueden compensar las gratificaciones de fin de año, Navidad o fiestas."},
+    {"h": "Lo que sigue vigente de acuerdos anteriores"},
+    {"p": "Se mantiene la incorporación al básico de la suma fija no remunerativa de $120.000, que se suma en seis cuotas de $20.000 desde diciembre de 2026 hasta mayo de 2027."},
+    {"h": "Homologación y próxima revisión"},
+    {"p": "El acuerdo fue presentado para que el Gobierno lo homologue (lo apruebe oficialmente). Si al momento de pagar todavía no está homologado, los montos se pagan igual \"a cuenta\" y después se reemplazan por los conceptos definitivos. Las partes se vuelven a reunir en enero de 2027."}
+  ],
+  "fuente": "Texto del acuerdo FAECYS – CAC, CAME y UDECA del 27/10/2026.",
+  "verificada": false
+}
