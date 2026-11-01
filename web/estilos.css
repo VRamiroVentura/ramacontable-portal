@@ -230,3 +230,5 @@ main.wrap{padding-top:24px;padding-bottom:40px}
 .est-revision{color:#9a6a00}.est-borrada{color:#8C1D18}.est-publicada{color:#1F5C39}
 .actualiza{font-size:14px;background:var(--fondo);padding:8px 12px;border-left:3px solid var(--verde)}
 @media(max-width:620px){.fila-admin{grid-template-columns:1fr}.est{grid-row:auto}.fila-admin small{grid-column:1}}
+.faq{margin-top:24px}.faq details{border-bottom:1px solid var(--linea);padding:10px 0}.faq summary{cursor:pointer;font-weight:700;color:var(--verde)}.faq details p{margin:8px 0 0}
+.relacionadas{margin-top:26px}.relacionadas h2{font-size:18px}.relacionadas ul{padding-left:18px}.relacionadas li{margin:6px 0}

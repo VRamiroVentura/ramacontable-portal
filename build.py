@@ -23,6 +23,14 @@ REDES = {
     "TikTok": "https://www.tiktok.com/@ramacontable",
 }
 MAIL = "ramacontable@gmail.com"
+
+
+def sitio_url():
+    try:
+        u = json.load(open(os.path.join(RAIZ, "config.json"), encoding="utf-8")).get("sitio_url", "")
+    except Exception:
+        u = ""
+    return (u or "https://vramiroventura.github.io/ramacontable-portal/").rstrip("/") + "/"
 MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio",
          "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
 
@@ -143,7 +151,7 @@ ICONOS = {
 }
 
 
-def pagina(titulo, cuerpo, actual="", descripcion=""):
+def pagina(titulo, cuerpo, actual="", descripcion="", ruta="", extra_head=""):
     menu = "".join(
         f'<a href="{k}.html"{" aria-current=page" if k == actual else ""}>{v}</a>'
         for k, v in SECCIONES.items())
@@ -155,6 +163,12 @@ def pagina(titulo, cuerpo, actual="", descripcion=""):
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{e(titulo)}</title>
 <meta name="description" content="{e(descripcion or 'Novedades contables, impositivas y laborales explicadas claro, y una comunidad que muestra cómo se aplican.')}">
+<link rel="canonical" href="{sitio_url()}{ruta}">
+<meta property="og:site_name" content="Ramacontable"><meta property="og:locale" content="es_AR">
+<meta property="og:title" content="{e(titulo)}"><meta property="og:description" content="{e(descripcion or 'Novedades de la profesión contable')}">
+<meta property="og:url" content="{sitio_url()}{ruta}"><meta property="og:image" content="{sitio_url()}compartir.png">
+<meta name="twitter:card" content="summary_large_image">
+{extra_head}
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Source+Sans+3:wght@400;600;700&display=swap">
 <link rel="stylesheet" href="estilos.css?v={VERSION}">
@@ -221,6 +235,40 @@ def bloque(b):
     return ""
 
 
+def preguntas_html(n):
+    qs = n.get("preguntas") or []
+    if not qs:
+        return ""
+    items = "".join(f"<details><summary>{e(q['p'])}</summary><p>{e(q['r'])}</p></details>" for q in qs)
+    return f'<section class="faq"><h2>Preguntas frecuentes</h2>{items}</section>'
+
+
+def relacionadas(n, notas):
+    otras = [x for x in notas if x["slug"] != n["slug"] and x["seccion"] == n["seccion"]][:4]
+    if not otras:
+        return ""
+    return '<section class="relacionadas"><h2>Más sobre ' + e(SECCIONES[n["seccion"]]) + "</h2><ul>" + "".join(
+        f'<li><a href="nota-{x["slug"]}.html">{e(x["titulo"])}</a></li>' for x in otras) + "</ul></section>"
+
+
+def sitemaps(notas):
+    base = sitio_url()
+    hoy = datetime.date.today().isoformat()
+    urls = [f"<url><loc>{base}</loc><lastmod>{hoy}</lastmod></url>"] + [
+        f"<url><loc>{base}{k}.html</loc><lastmod>{hoy}</lastmod></url>" for k in SECCIONES] + [
+        f"<url><loc>{base}nota-{n['slug']}.html</loc><lastmod>{str(n.get('actualizado') or n['fecha'])[:10]}</lastmod></url>" for n in notas]
+    mapa = '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' + "".join(urls) + "</urlset>"
+    limite = datetime.date.today() - datetime.timedelta(days=2)
+    recientes = [n for n in notas if str(n["fecha"])[:10] >= limite.isoformat()]
+    noticias = ('<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" '
+                'xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">' + "".join(
+        f"<url><loc>{base}nota-{n['slug']}.html</loc><news:news><news:publication><news:name>Ramacontable</news:name>"
+        f"<news:language>es</news:language></news:publication><news:publication_date>{str(n['fecha'])[:10]}</news:publication_date>"
+        f"<news:title>{e(n['titulo'])}</news:title></news:news></url>" for n in recientes) + "</urlset>")
+    robots = f"User-agent: *\nAllow: /\nDisallow: /admin.html\nSitemap: {base}sitemap.xml\nSitemap: {base}sitemap-noticias.xml\n"
+    return mapa, noticias, robots
+
+
 def pagina_nota(n, notas, aportes=None):
     verif = ("Elaborada con fuentes oficiales." if n.get("verificada")
              else "Pendiente de verificación con fuente oficial.")
@@ -238,10 +286,12 @@ def pagina_nota(n, notas, aportes=None):
 {previa}
 <div class="encorto"><b>En corto</b><p>{e(n['encorto'])}</p></div>
 {cuerpo}
+{preguntas_html(n)}
 <p class="fuente"><b>Fuente:</b> {e(n['fuente'])}</p>
 <p class="aviso">Información de carácter general. Se recomienda verificar siempre en las fuentes oficiales. Cada profesional es responsable de su aplicación. {verif}</p>
 </div>
 
+{relacionadas(n, notas)}
 <section class="bloque-op" id="opiniones">
 <h2 class="tit-bloque">Opiniones <span data-n="opiniones">0</span></h2>
 <form id="form-opinion" class="form-op"><textarea name="texto" rows="3" maxlength="1500" placeholder="¿Qué opinás de esta novedad?" required></textarea><button class="btn">Publicar opinión</button></form>
@@ -255,7 +305,20 @@ def pagina_nota(n, notas, aportes=None):
 <button class="btn ancho" data-nuevo-paso>Subir mi explicativo</button>
 </section>
 </article>{lateral(notas)}</div>"""
-    return pagina(f"{n['titulo']} | Ramacontable", contenido, n["seccion"], n["encorto"])
+    url = f"{sitio_url()}nota-{n['slug']}.html"
+    ld = [{"@context": "https://schema.org", "@type": "NewsArticle", "headline": n["titulo"][:110],
+           "description": n.get("descripcion_seo") or n["encorto"], "datePublished": str(n["fecha"]),
+           "dateModified": str(n.get("actualizado") or n["fecha"]), "inLanguage": "es-AR",
+           "mainEntityOfPage": url, "articleSection": SECCIONES[n["seccion"]],
+           "author": {"@type": "Organization", "name": "Redacción Ramacontable", "url": sitio_url()},
+           "publisher": {"@type": "Organization", "name": "Ramacontable", "logo": {"@type": "ImageObject", "url": sitio_url() + "logo.svg"}}}]
+    if n.get("preguntas"):
+        ld.append({"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [
+            {"@type": "Question", "name": q["p"], "acceptedAnswer": {"@type": "Answer", "text": q["r"]}} for q in n["preguntas"]]})
+    head = "".join(f'<script type="application/ld+json">{json.dumps(x, ensure_ascii=False).replace("</", "<\\/")}</script>' for x in ld)
+    head += f'<meta property="og:type" content="article"><meta property="article:published_time" content="{e(str(n["fecha"]))}">'
+    return pagina(n.get("seo_titulo") or f"{n['titulo']} | Ramacontable", contenido, n["seccion"],
+                  n.get("descripcion_seo") or n["encorto"], f"nota-{n['slug']}.html", head)
 
 
 def portada(notas, titulo_pag="Ramacontable | Comunidad contable", actual="", encabezado=""):
@@ -264,7 +327,7 @@ def portada(notas, titulo_pag="Ramacontable | Comunidad contable", actual="", en
     else:
         lista = tarjeta(notas[0], grande=True) + '<div class="tarjetas">' + "".join(tarjeta(n) for n in notas[1:]) + "</div>"
     cab = f'<h1 class="titsec">{e(encabezado)}</h1>' if encabezado else ""
-    return pagina(titulo_pag, f'<div class="grilla"><section>{cab}{lista}</section>{lateral(notas)}</div>', actual)
+    return pagina(titulo_pag, f'<div class="grilla"><section>{cab}{lista}</section>{lateral(notas)}</div>', actual, "", f"{actual}.html" if actual else "")
 
 
 def main():
@@ -286,13 +349,17 @@ def main():
     for n in notas:
         escribir(f"nota-{n['slug']}.html", pagina_nota(n, notas, aportes.get(n['slug'])))
     with open(os.path.join(RAIZ, "paginas", "herramientas.html"), encoding="utf-8") as f:
-        escribir("herramientas.html", pagina("Vencimientos | Ramacontable", f.read()))
+        escribir("herramientas.html", pagina("Vencimientos | Ramacontable", f.read(), "", "Vencimientos impositivos y previsionales que se vienen.", "herramientas.html"))
     with open(os.path.join(RAIZ, "paginas", "terminos.html"), encoding="utf-8") as f:
         escribir("terminos.html", pagina("Términos y privacidad | Ramacontable", f.read()))
     with open(os.path.join(RAIZ, "paginas", "nota-dinamica.html"), encoding="utf-8") as f:
         escribir("nota.html", pagina("Nota | Ramacontable", f.read()))
     with open(os.path.join(RAIZ, "paginas", "admin.html"), encoding="utf-8") as f:
         escribir("admin.html", pagina("Administración | Ramacontable", f.read()))
+    mapa, noticias, robots = sitemaps(notas)
+    escribir("sitemap.xml", mapa)
+    escribir("sitemap-noticias.xml", noticias)
+    escribir("robots.txt", robots)
     escribir(".nojekyll", "")
     print(f"Listo: {len(notas)} notas en {SALIDA}")
 

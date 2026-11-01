@@ -137,7 +137,11 @@ class Fabrica:
             "cuerpo": _bloques_ok(nota.get("cuerpo")), "fuente": str(nota.get("fuente", ""))[:300],
             "fuentes": [{"nombre": it["fuente"], "url": it["url"], "titulo": it["titulo"]} for it in items],
             "verificada": oficial and ok, "estado": "publicada" if ok else "revision", "tema": grupo.get("tema"),
-            "actualiza": grupo.get("actualiza"), "motivo_revision": "; ".join(problemas)[:600] if not ok else None,
+            "actualiza": grupo.get("actualiza"),
+            "seo_titulo": str(nota.get("seo_titulo") or "")[:70] or None,
+            "descripcion_seo": str(nota.get("descripcion_seo") or "")[:170] or None,
+            "preguntas": [{"p": str(q.get("p", ""))[:200], "r": str(q.get("r", ""))[:500]} for q in (nota.get("preguntas") or [])
+                          if isinstance(q, dict) and q.get("p") and q.get("r")][:5], "motivo_revision": "; ".join(problemas)[:600] if not ok else None,
         }
 
     def correr(self):

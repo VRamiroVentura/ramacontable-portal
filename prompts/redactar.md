@@ -24,7 +24,10 @@ Formato de respuesta: SOLO JSON con esta forma:
  "dato": "el dato clave en pocas palabras para una etiqueta (ej.: 5,7% + $50.000) o null",
  "encorto": "2 o 3 oraciones con lo esencial",
  "cuerpo": [{"h": "subtítulo"}, {"p": "párrafo"}, {"tabla": [["encabezado1","encabezado2"],["fila","fila"]]}],
+ "seo_titulo": "título para Google, máximo 65 caracteres, con las palabras que un contador escribiría en el buscador (organismo, norma, convenio, mes y año). Ej.: Escala Comercio noviembre 2026: aumento 5,7% y bono $50.000",
+ "descripcion_seo": "descripción para el resultado de Google, entre 120 y 155 caracteres, con el dato principal",
+ "preguntas": [{"p": "pregunta concreta que alguien buscaría en Google", "r": "respuesta breve (1 o 2 oraciones) con datos de las fuentes"}],
  "fuente": "norma o documento original (ej.: Resolución General ARCA 5918; Acuerdo FAECYS – CAC, CAME y UDECA del 27/10/2026)",
  "dudas": ["lista vacía si no hay contradicciones ni datos que falten"]
 }
-Estructura sugerida del cuerpo: Qué cambia → A quién alcanza → Cómo se aplica / cómo figura → Fechas y vigencia. Usá tabla solo si ordena mejor los datos (escalas, cronogramas, montos por categoría).
+Estructura sugerida del cuerpo: Qué cambia → A quién alcanza → Cómo se aplica / cómo figura → Fechas y vigencia. Escribí los subtítulos como los buscaría un profesional (ej.: \"¿Desde cuándo rige?\", \"¿Cuánto es el aumento en noviembre?\"). Incluí de 3 a 4 preguntas frecuentes, solo con datos de las fuentes. El slug tiene que llevar las palabras clave (organismo o convenio, tema, mes y año). Usá tabla solo si ordena mejor los datos (escalas, cronogramas, montos por categoría).

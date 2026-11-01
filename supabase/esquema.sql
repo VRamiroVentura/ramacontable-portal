@@ -279,3 +279,8 @@ language sql stable security definer set search_path = public as $$
   select slug from public.notas where estado <> 'publicada';
 $$;
 grant execute on function public.slugs_no_publicados() to anon, authenticated;
+
+-- Datos para buscadores (Google)
+alter table public.notas add column if not exists seo_titulo text;
+alter table public.notas add column if not exists descripcion_seo text;
+alter table public.notas add column if not exists preguntas jsonb not null default '[]'::jsonb;
