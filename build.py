@@ -23,7 +23,7 @@ REDES = {
     "TikTok": "https://www.tiktok.com/@ramacontable",
 }
 MAIL = "ramacontable@gmail.com"
-MENU = {"sueldos": "Sueldos", "impuestos": "Impuestos", "guias": "Guías", "economia": "Economía"}
+MENU = {"sueldos": "Sueldos", "impuestos": "Impuestos", "guias": "Guías"}
 RAMAS_GUIAS = {"sueldos": "Guías de sueldos", "impuestos": "Guías de impuestos", "profesion": "Guías contables y de la profesión"}
 es_guia = lambda n: n.get("tipo") == "guia"
 
@@ -297,7 +297,7 @@ def pagina(titulo, cuerpo, actual="", descripcion="", ruta="", extra_head=""):
 </head><body>
 <header class="cab"><div class="wrap fila">
 <a class="logo" href="index.html">{LOGO_SVG}<span>ramacontable</span></a>
-<nav class="menu">{menu}<a class="chico" href="convenios.html">Escalas</a><a class="chico2" href="calculadoras.html">Calculadoras</a><a class="chico2" href="herramientas.html">Vencimientos</a><a class="chico2" href="feriados.html">Feriados</a></nav>
+<nav class="menu">{menu}<a class="chico" href="calculadoras.html">Calculadoras</a><a class="chico2" href="herramientas.html">Vencimientos</a></nav>
 <div id="sesion" class="sesion"><button class="btn" data-ingresar>Ingresar</button></div>
 </div></header>
 <main class="wrap">{cuerpo}</main>
