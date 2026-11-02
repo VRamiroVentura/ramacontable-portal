@@ -196,10 +196,10 @@ def leer(fuente, dias=3, maximo=25):
 PORTALES_WP = [("Ignacio Online", "https://www.ignacioonline.com.ar"), ("Contadores en Red", "https://contadoresenred.com")]
 
 
-def buscar_portales(consulta, por_portal=3):
+def buscar_portales(consulta, por_portal=3, portales=None):
     """Busca notas en los portales WordPress (API pública de búsqueda). Devuelve [{fuente, titulo, url, texto}]."""
     salida = []
-    for nombre, base in PORTALES_WP:
+    for nombre, base in portales or PORTALES_WP:
         r = _bajar(f"{base}/wp-json/wp/v2/posts?search={consulta.replace(' ', '+')}&per_page={por_portal}&_fields=title,link,content")
         try:
             posts = r.json() if r is not None else []
@@ -280,3 +280,12 @@ def documento_oficial(urls, claves=()):
         if len(texto) > 500 and any(c in _norm(texto) for c in ("basico", "categoria", "escala")):
             return url, "html", texto[:20000]
     return None, None, None
+
+
+def estado(url):
+    """Código HTTP de una página (para saber si una publicación fue borrada). None si no respondió."""
+    try:
+        r = util.pedir("GET", url, intentos=2, espera=3, headers=UA, timeout=40, ok=(200,))
+        return getattr(r, "status_code", None)
+    except Exception:  # noqa
+        return None

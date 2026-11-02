@@ -12,6 +12,9 @@ from datetime import timedelta
 
 from . import fuentes, gemini, mail, util
 
+CONFIABLE = "Ignacio Online"  # lo que publica Ignacio se toma como correcto (pedido de Ramiro); se vigila si después lo edita o borra
+
+
 def _prompt(nombre):
     return (util.RAIZ / "prompts" / nombre).read_text(encoding="utf-8")
 
@@ -44,6 +47,8 @@ class Fabrica:
         self.convenios_act, self.convenios_rev = [], []
         self.guias = []
         self.guias_info = ""
+        self.vencimientos_info, self.vencimientos_cambio = [], False
+        self.observaciones, self.alertas = [], []
         self.convenios = self.cargar_convenios()
 
     # ---------- memoria ----------
@@ -176,6 +181,9 @@ class Fabrica:
         if not any(h.get("periodo") == per for h in hist):
             hist.append({"periodo": per, "fecha": util.ahora().date().isoformat(), "nota": nota_slug})
         ok = bool(control.get("ok")) and not nuevo.get("dudas") and not control.get("agrega_ejemplos")
+        if not ok and any(CONFIABLE in t for t in textos):
+            self.observaciones.append((f"Escala {c['nombre']}", "; ".join(list(control.get("problemas") or []) + list(nuevo.get("dudas") or []))[:400]))
+            ok = True
         motivo = "; ".join(list(control.get("problemas") or []) + [f"Duda: {d}" for d in (nuevo.get("dudas") or [])])[:600]
         registro = {"slug": c["slug"], "nombre": c["nombre"], "periodo": per, "motivo": motivo, "datos": datos}
         (self.convenios_act if ok else self.convenios_rev).append(registro)
@@ -190,21 +198,28 @@ class Fabrica:
         locales = {}
         for ruta in glob.glob(str(util.RAIZ / "convenios" / "*.json")):
             c = json.load(open(ruta, encoding="utf-8"))
-            if c.get("oficial"):
+            if c.get("oficial") or c.get("buscar_portal"):
                 locales[c["slug"]] = c
         orden = sorted((s for s in locales if s in self.convenios), key=lambda s: str(self.convenios[s].get("actualizado") or ""))
         hechos = 0
         for slug in orden:
-            if hechos >= int(self.cfg.get("escalas_por_vuelta", 2)):
+            if hechos >= int(self.cfg.get("escalas_por_vuelta", 3)):
                 break
             c, loc = self.convenios[slug], locales[slug]
-            try:
-                url, tipo, contenido = fuentes.documento_oficial(loc["oficial"], loc.get("buscar_doc") or ())
-            except Exception as e:  # noqa
-                util.avisar(f"No pude leer la escala oficial de {c['nombre']}", str(e))
-                continue
+            url = tipo = contenido = None
+            if loc.get("oficial"):
+                try:
+                    url, tipo, contenido = fuentes.documento_oficial(loc["oficial"], loc.get("buscar_doc") or ())
+                except Exception as e:  # noqa
+                    util.avisar(f"No pude leer la escala oficial de {c['nombre']}", str(e))
+            if not url and loc.get("buscar_portal"):
+                # sin fuente oficial (o no se pudo leer): las notas de escalas de Ignacio Online y Contadores en Red
+                notas = [n for n in fuentes.buscar_portales(loc["buscar_portal"], 2) if "escala" in _slug(n["titulo"])]
+                if notas:
+                    url, tipo = notas[0]["url"], "portal"
+                    contenido = "\n\n".join(f"--- FUENTE: {n['fuente']} (portal)\nTítulo: {n['titulo']}\n{n['texto']}" for n in notas[:3])
             if not url:
-                util.avisar(f"Escala oficial de {c['nombre']}", "no encontré el documento en la página del sindicato")
+                util.avisar(f"Escala de {c['nombre']}", "no encontré documento oficial ni notas de escala en los portales")
                 continue
             ya = {(c.get("escala") or {}).get("doc"), ((c.get("propuesta") or {}).get("escala") or {}).get("doc")}
             if url in ya:
@@ -216,12 +231,76 @@ class Fabrica:
                 import base64
                 adjunto = {"inline_data": {"mime_type": "application/pdf", "data": base64.b64encode(contenido).decode()}}
                 textos = [f"--- FUENTE OFICIAL (PDF del sindicato): {url}"]
+            elif tipo == "portal":
+                adjunto, textos = None, [contenido]
             else:
                 adjunto, textos = None, [f"--- FUENTE OFICIAL (página del sindicato): {url}\n{contenido}"]
             try:
                 self.actualizar_convenio({"convenio": slug, "tema": c["nombre"]}, None, textos, adjunto, url)
             except Exception as e:  # noqa
                 util.avisar(f"No pude actualizar la escala de {c['nombre']}", str(e))
+
+    # ---------- vencimientos y feriados ----------
+    MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
+
+    def actualizar_vencimientos(self):
+        """Una vez por día: arma los vencimientos y feriados del mes actual y del siguiente con lo que publicaron
+        los portales. Solo se publica lo que confirman al menos `minimo_fuentes` fuentes distintas y no es estimado."""
+        if not self.db:
+            return
+        try:
+            cfg = json.loads((util.RAIZ / "vencimientos" / "fuentes.json").read_text(encoding="utf-8"))
+            previos = {r["mes"]: r for r in self.db.select("vencimientos", {"select": "mes,actualizado"})}
+        except Exception as e:  # noqa
+            util.avisar("No pude leer la agenda de vencimientos (¿falta correr esquema.sql?)", str(e))
+            return
+        hoy = util.ahora().date()
+        minimo = int(cfg.get("minimo_fuentes", 2))
+        for k in (0, 1):
+            anio, mes = hoy.year + (hoy.month - 1 + k) // 12, (hoy.month - 1 + k) % 12 + 1
+            clave = f"{anio}-{mes:02d}"
+            if str((previos.get(clave) or {}).get("actualizado") or "")[:10] == hoy.isoformat():
+                continue
+            nombre_mes = self.MESES[mes - 1]
+            textos, vistos = [], set()
+            for plantilla in cfg.get("paginas", []):
+                url = plantilla.format(mes=nombre_mes, anio=anio)
+                texto, _ = fuentes.detalle(url, largo=15000)
+                if len(texto) > 300:
+                    nombre = url.split("/")[2].replace("www.", "")
+                    textos.append(f"--- FUENTE: {nombre}\n{texto}")
+                    vistos.add(nombre)
+            for consulta in cfg.get("buscar", []):
+                for it in fuentes.buscar_portales(consulta.format(mes=nombre_mes, anio=anio), 2, cfg.get("wordpress")):
+                    if nombre_mes in _slug(it["titulo"]) or nombre_mes in _slug(it["texto"][:600]):
+                        textos.append(f"--- FUENTE: {it['fuente']}\nTítulo: {it['titulo']}\n{it['texto'][:6000]}")
+                        vistos.add(it["fuente"])
+            if len(vistos) < minimo and CONFIABLE not in vistos:
+                util.avisar(f"Vencimientos de {nombre_mes}", f"solo encontré {len(vistos)} fuente(s); queda la agenda anterior")
+                continue
+            try:
+                r = gemini.gemini(_prompt("vencimientos.md"), f"MES: {nombre_mes} {anio}\n\nFUENTES:\n" + "\n\n".join(textos), temperatura=0.1)
+            except Exception as e:  # noqa
+                util.avisar(f"No pude armar los vencimientos de {nombre_mes}", str(e))
+                continue
+            def confirmados(lista, campos):
+                salida = []
+                for x in lista if isinstance(lista, list) else []:
+                    if not isinstance(x, dict) or not re.match(r"^\d{4}-\d{2}-\d{2}$", str(x.get("fecha", ""))):
+                        continue
+                    n = len({str(f) for f in (x.get("fuentes") or [])})
+                    de_ignacio = CONFIABLE in [str(f) for f in (x.get("fuentes") or [])]
+                    if (n >= minimo or de_ignacio) and not x.get("estimado") and str(x["fecha"]).startswith(clave):
+                        salida.append({c: str(x.get(c) or "")[:160] for c in campos} | {"fuentes": n})
+                return sorted(salida, key=lambda x: x["fecha"])
+            venc = confirmados(r.get("vencimientos"), ("fecha", "concepto", "detalle"))
+            fer = confirmados(r.get("feriados"), ("fecha", "nombre", "tipo", "norma"))
+            util.log(f"Vencimientos {clave}: {len(venc)} confirmados, {len(fer)} feriados ({len(vistos)} fuentes)")
+            self.vencimientos_info.append(f"{nombre_mes} {anio}: {len(venc)} vencimientos y {len(fer)} feriados confirmados por {minimo}+ fuentes ({', '.join(sorted(vistos))})")
+            if self.activo and venc:
+                self.db.upsert("vencimientos", [{"mes": clave, "items": venc, "feriados": fer, "fuentes": sorted(vistos),
+                                                 "actualizado": util.ahora().isoformat()}], "mes")
+                self.vencimientos_cambio = True
 
     def armar_fila(self, grupo, items, nota, control, usados):
         base = _slug(nota.get("slug") or nota.get("titulo"))
@@ -233,6 +312,10 @@ class Fabrica:
         if control.get("agrega_ejemplos"):
             problemas.append("Agrega ejemplos prácticos que no están en las fuentes.")
         ok = bool(control.get("ok")) and not nota.get("dudas") and not control.get("agrega_ejemplos")
+        if not ok and any(it.get("fuente") == CONFIABLE for it in items):
+            # viene de Ignacio: se publica igual y las observaciones quedan en el mail para mirarlas
+            self.observaciones.append((nota.get("titulo", ""), "; ".join(problemas)[:400]))
+            ok = True
         oficial = any(it["tipo"] == "oficial" for it in items)
         return {
             "slug": slug, "fecha": util.ahora().date().isoformat(), "seccion": grupo.get("seccion") if grupo.get("seccion") in ("sueldos", "impuestos", "profesion") else "profesion",
@@ -275,6 +358,8 @@ class Fabrica:
         if not items:
             self.escribir_guias()
             self.revisar_escalas_oficiales()
+            self.actualizar_vencimientos()
+            self.vigilar_ignacio()
             self.cierre()
             return
         grupos = self.agrupar(items, recientes)
@@ -307,6 +392,11 @@ class Fabrica:
             if self.activo and self.db:
                 self.db.upsert("notas", [fila], "slug")
                 self.marcar(urls, g.get("tema"), fila["slug"])
+                for mi in miembros:
+                    if mi["fuente"] == CONFIABLE:
+                        base_txt, _ = fuentes.detalle(mi["url"], largo=6000)
+                        if base_txt:
+                            self.db.update("radar", {"url": f"eq.{mi['url']}"}, {"texto": base_txt[:6000]})
             if g.get("escala") and fila.get("convenio"):
                 try:
                     self.actualizar_convenio(g, fila["slug"] if fila["estado"] == "publicada" else None)
@@ -314,13 +404,16 @@ class Fabrica:
                     util.avisar(f"No pude actualizar el convenio {fila['convenio']}", str(e))
         self.escribir_guias()
         self.revisar_escalas_oficiales()
+        self.actualizar_vencimientos()
+        self.vigilar_ignacio()
         self.cierre()
 
     def cierre(self):
         if self.activo:
-            if self.publicadas or self.convenios_act:
+            if self.publicadas or self.convenios_act or self.vencimientos_cambio:
                 self.republicar_web()
-            mail.avisar(self.publicadas + self.revision, self.cfg.get("sitio_url", ""), self.cfg.get("mail_aviso"), self.convenios_act, self.convenios_rev)
+            mail.avisar(self.publicadas + self.revision, self.cfg.get("sitio_url", ""), self.cfg.get("mail_aviso"), self.convenios_act, self.convenios_rev,
+                        self.alertas, self.observaciones)
         self.informe()
 
     # ---------- guías ----------
@@ -374,6 +467,42 @@ class Fabrica:
         if self.activo and self.db:
             self.db.upsert("notas", [fila], "slug")
 
+    def vigilar_ignacio(self):
+        """Revisa las notas de Ignacio que usamos en los últimos días: avisa si las editó o las borró."""
+        if not self.db:
+            return
+        import difflib
+        desde = (util.ahora() - timedelta(days=int(self.cfg.get("dias_vigilancia", 4)))).isoformat()
+        try:
+            filas = self.db.select("radar", {"select": "url,titulo,texto,nota", "fuente": f"eq.{CONFIABLE}", "usado": "eq.true",
+                                             "nota": "not.is.null", "visto": f"gte.{desde}", "limit": "200"})
+        except Exception as e:  # noqa
+            util.log("No pude leer el radar para vigilar a Ignacio:", util.ocultar(str(e)))
+            return
+        for f in filas:
+            antes = f.get("texto") or ""
+            if antes.startswith("__BORRADA__") or len(antes) < 300:
+                continue
+            codigo = fuentes.estado(f["url"])
+            if codigo in (404, 410):
+                self.alertas.append({"titulo": f["titulo"], "nota": f["nota"], "url": f["url"], "que": "Ignacio BORRÓ la publicación"})
+                if self.activo:
+                    self.db.update("radar", {"url": f"eq.{f['url']}"}, {"texto": "__BORRADA__" + antes[:5000]})
+                continue
+            ahora, _ = fuentes.detalle(f["url"], largo=6000)
+            if not ahora:
+                continue
+            norm = lambda t: re.sub(r"\s+", " ", t).strip().lower()
+            a_, b_ = norm(antes), norm(ahora)
+            parecido = difflib.SequenceMatcher(None, a_, b_, autojunk=False).ratio()
+            numeros = set(re.findall(r"\d[\d.,%]*", a_)) != set(re.findall(r"\d[\d.,%]*", b_))
+            negacion = a_.count("no remunerativ") != b_.count("no remunerativ")
+            if a_ != b_ and (parecido < float(self.cfg.get("umbral_edicion", 0.99)) or numeros or negacion):
+                self.alertas.append({"titulo": f["titulo"], "nota": f["nota"], "url": f["url"],
+                                     "que": "Ignacio EDITÓ la publicación" + (" (cambió algún número)" if numeros else "") + (" (cambió remunerativo/no remunerativo)" if negacion else "") + f" · coincide {parecido:.1%}"})
+                if self.activo:
+                    self.db.update("radar", {"url": f"eq.{f['url']}"}, {"texto": ahora[:6000]})
+
     def marcar(self, urls, tema, slug):
         if self.activo and self.db and urls:
             for u in urls:
@@ -417,6 +546,9 @@ class Fabrica:
             t = (c["datos"].get("escala") or {}).get("tabla") or []
             if t:
                 md.append(f"**Escala {c['nombre']} {c['periodo']}**\n\n| " + " | ".join(t[0]) + " |\n|" + "---|" * len(t[0]) + "\n" + "\n".join("| " + " | ".join(f) + " |" for f in t[1:]) + "\n")
+        md.append(f"## 🚨 Ignacio editó o borró ({len(self.alertas)})\n" + "".join(f"- {a['que']}: [{a['titulo']}]({a['url']}) → nuestra nota `{a['nota']}`\n" for a in self.alertas))
+        md.append(f"## 📝 Publicadas con observaciones por venir de Ignacio ({len(self.observaciones)})\n" + "".join(f"- {t}: {o}\n" for t, o in self.observaciones))
+        md.append("## 📅 Vencimientos\n" + ("\n".join(f"- {x}" for x in self.vencimientos_info) or "Sin cambios (ya actualizados hoy).") + "\n")
         md.append(f"## 📘 Guías\n{self.guias_info or 'Sin datos.'}\n")
         md.append(f"## ⏳ Esperando segunda fuente ({len(self.esperando)})\n" + "".join(f"- {t} ({d})\n" for t, d in self.esperando))
         md.append(f"## 🚫 Descartadas ({len(self.descartes)})\n" + "".join(f"- {t}: {d}\n" for t, d in self.descartes))

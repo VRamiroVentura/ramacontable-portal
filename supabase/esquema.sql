@@ -320,3 +320,15 @@ do $$ begin
   alter table public.notas add constraint notas_tipo_ok check (tipo in ('nota','guia'));
 exception when duplicate_object then null; end $$;
 create index if not exists notas_tipo on public.notas(tipo);
+
+-- ===== v13: agenda de vencimientos y feriados (la arma la fábrica con lo que publican los portales) =====
+create table if not exists public.vencimientos (
+  mes text primary key check (mes ~ '^\d{4}-\d{2}$'),
+  items jsonb not null default '[]'::jsonb,
+  feriados jsonb not null default '[]'::jsonb,
+  fuentes jsonb not null default '[]'::jsonb,
+  actualizado timestamptz not null default now()
+);
+alter table public.vencimientos enable row level security;
+drop policy if exists "todos leen vencimientos" on public.vencimientos;
+create policy "todos leen vencimientos" on public.vencimientos for select using (true);

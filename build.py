@@ -98,6 +98,33 @@ def pasos_estaticos(lista):
     return "".join(items)
 
 
+VENC = []  # filas de la tabla vencimientos (la arma la fábrica a diario)
+
+
+def cargar_vencimientos():
+    url = os.environ.get("SUPABASE_URL", "").strip().rstrip("/")
+    key = os.environ.get("SUPABASE_PUBLISHABLE_KEY", "").strip()
+    if not url or not key:
+        return []
+    try:
+        req = urllib.request.Request(url + "/rest/v1/vencimientos?select=*&order=mes.asc", headers={"apikey": key, "Authorization": "Bearer " + key})
+        return json.load(urllib.request.urlopen(req, timeout=30))
+    except Exception as ex:
+        print("Aviso: no se pudieron leer los vencimientos:", ex)
+        return []
+
+
+def proximos_vencimientos(n=None):
+    hoy = datetime.date.today().isoformat()
+    todos = [x for fila in VENC for x in (fila.get("items") or []) if x.get("fecha", "") >= hoy]
+    todos.sort(key=lambda x: (x["fecha"], x.get("concepto", "")))
+    return todos[:n] if n else todos
+
+
+def fecha_corta(iso):
+    return f"{iso[8:10]}/{iso[5:7]}"
+
+
 def notas_supabase():
     """Notas publicadas en Supabase (las escribe la fábrica y las edita el administrador)."""
     url = os.environ.get("SUPABASE_URL", "").strip().rstrip("/")
@@ -293,6 +320,32 @@ def pagina_impuesto(imp, notas, guias, catalogo):
                   f"Todo sobre {nombre} para contadores: últimas novedades, normas y guías prácticas paso a paso.", f"impuesto-{slug}.html")
 
 
+def pagina_vencimientos(notas):
+    MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
+    DIAS = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"]
+    hoy = datetime.date.today().isoformat()
+    bloques = ""
+    for fila in VENC:
+        items = [x for x in fila.get("items") or [] if x.get("fecha", "") >= hoy[:8] + "01"]
+        if not items or fila["mes"] < hoy[:7]:
+            continue
+        anio, mes = fila["mes"].split("-")
+        filas = "".join(
+            f'<tr{" class=pasado" if x["fecha"] < hoy else ""}><td>{DIAS[datetime.date.fromisoformat(x["fecha"]).weekday()].capitalize()} {int(x["fecha"][8:])}</td>'
+            f'<td>{e(x["concepto"])}</td><td>{e(x.get("detalle") or "Todas las terminaciones")}</td></tr>' for x in items)
+        fer = "".join(f'<li><b>{fecha_corta(x["fecha"])}</b> {e(x["nombre"])} <small>({e(x.get("tipo",""))})</small></li>' for x in fila.get("feriados") or [])
+        bloques += (f'<h2>Vencimientos de {MESES[int(mes)-1]} {anio}</h2><div class="tabla"><table class="feriados"><thead><tr><th>Fecha</th><th>Obligación</th><th>Terminación de CUIT</th></tr></thead><tbody>{filas}</tbody></table></div>'
+                    + (f'<p class="ayuda"><b>Feriados y días no laborables del mes:</b></p><ul class="historial">{fer}</ul>' if fer else ""))
+    if not bloques:
+        bloques = '<div class="vacio-caja"><b>Agenda en preparación</b>La agenda del mes se actualiza automáticamente todos los días.</div>'
+    cuerpo = (f'<div class="grilla"><article class="nota calc"><p class="ante">Herramientas | ARCA</p><h1>Vencimientos impositivos y previsionales</h1>'
+              f'<p class="firma">Redacción Ramacontable · Se actualiza todos los días</p>{bloques}'
+              '<p class="aviso">Se publican solo las fechas confirmadas por al menos dos fuentes. Verificá siempre en la agenda oficial de ARCA según la terminación de tu CUIT.</p>'
+              f'</article>{lateral(notas)}</div>')
+    return pagina("Vencimientos ARCA: calendario del mes por terminación de CUIT | Ramacontable", cuerpo, "",
+                  "Vencimientos impositivos y previsionales del mes por terminación de CUIT: IVA, F.931, Monotributo, Autónomos, Ganancias y más.", "herramientas.html")
+
+
 def html_admin(h):
     """HTML que escribió el administrador al editar: se quitan scripts y atributos peligrosos."""
     h = re.sub(r"(?is)<(script|style|iframe|object|embed|form)\b[^>]*>.*?</\1\s*>", "", h or "")
@@ -371,6 +424,15 @@ def tarjeta(n, grande=False):
 
 
 def lateral(notas):
+    prox = proximos_vencimientos(5)
+    caja_venc = ('<section class="caja"><h3>Vencimientos que se vienen</h3><ul class="venc">' + "".join(
+        f'<li><span>{e(x["concepto"])}{(" · " + e(x["detalle"])) if x.get("detalle") else ""}</span><b>{fecha_corta(x["fecha"])}</b></li>' for x in prox)
+        + '</ul><a class="mas" href="herramientas.html">Ver todos</a></section>') if prox else \
+        '<section class="caja"><h3>Vencimientos</h3><p class="ayuda">Agenda del mes</p><a class="mas" href="herramientas.html">Ver vencimientos</a></section>'
+    return _lateral(notas, caja_venc)
+
+
+def _lateral(notas, caja_venc):
     esperando = "".join(
         f'<li><a href="nota-{n["slug"]}.html#aplica">{e(n["titulo"])}</a><span>Sé el primero en explicarlo</span></li>'
         for n in notas[:4])
@@ -379,10 +441,7 @@ def lateral(notas):
 <section class="caja" id="destacados" hidden><h3>Destacados de la comunidad</h3><ol id="ranking"></ol></section>
 <a class="caja caja-calc" href="aguinaldo.html"><b>Calculadora de aguinaldo</b><span>Diciembre 2026 · paso a paso, con descuentos y neto</span></a>
 <a class="caja caja-calc" href="sueldo-comercio.html"><b>Calculadora de sueldo de Comercio</b><span>Con escala vigente, antigüedad, presentismo y neto</span></a>
-<section class="caja"><h3>Vencimientos que se vienen</h3><ul class="venc">
-<li><span>DDJJ Ganancias 2025 (personas humanas)</span><b>16/11</b></li>
-<li><span>Adhesión a planes de pago MiPyME y salud</span><b>30/12</b></li>
-</ul><a class="mas" href="herramientas.html">Ver todos</a></section>
+{caja_venc}
 </aside>"""
 
 
@@ -501,6 +560,8 @@ def main():
     if os.path.exists(SALIDA):
         shutil.rmtree(SALIDA)
     shutil.copytree(os.path.join(RAIZ, "web"), SALIDA)
+    global VENC
+    VENC = cargar_vencimientos()
     notas = cargar_notas()
     with open(os.path.join(SALIDA, "config.js"), "w", encoding="utf-8") as f:
         f.write("window.RC_CONFIG=" + json.dumps({
@@ -535,8 +596,7 @@ def main():
     aportes = cargar_aportes()
     for n in todas:
         escribir(f"nota-{n['slug']}.html", pagina_nota(n, guias if es_guia(n) else notas, aportes.get(n['slug'])))
-    with open(os.path.join(RAIZ, "paginas", "herramientas.html"), encoding="utf-8") as f:
-        escribir("herramientas.html", pagina("Vencimientos | Ramacontable", f.read(), "", "Vencimientos impositivos y previsionales que se vienen.", "herramientas.html"))
+    escribir("herramientas.html", pagina_vencimientos(notas))
     with open(os.path.join(RAIZ, "paginas", "terminos.html"), encoding="utf-8") as f:
         escribir("terminos.html", pagina("Términos y privacidad | Ramacontable", f.read()))
     with open(os.path.join(RAIZ, "paginas", "aguinaldo.html"), encoding="utf-8") as f:
@@ -562,7 +622,14 @@ def main():
     for archivo, titulo, desc in [("calculadoras.html", "Calculadoras de sueldos y aguinaldo | Ramacontable", "Calculadoras gratuitas para liquidar sueldos: comercio, casas particulares y aguinaldo, con escalas vigentes."),
                                   ("feriados.html", "Feriados 2026 Argentina: calendario completo y cómo se pagan | Ramacontable", "Calendario de feriados 2026 en Argentina: inamovibles, trasladables y días no laborables, y cómo se liquida trabajar un feriado.")]:
         with open(os.path.join(RAIZ, "paginas", archivo), encoding="utf-8") as f:
-            escribir(archivo, pagina(titulo, f.read(), "", desc, archivo))
+            cuerpo = f.read()
+        if archivo == "feriados.html":
+            extra = [x for fila in VENC for x in fila.get("feriados") or [] if f'data-f="{x["fecha"]}"' not in cuerpo]
+            if extra:
+                filas = "".join(f'<tr data-f="{e(x["fecha"])}"><td>{int(x["fecha"][8:])}/{int(x["fecha"][5:7])}</td><td>{e(x["nombre"])}'
+                                + (f' ({e(x["norma"])})' if x.get("norma") else "") + f'</td><td><span class="tipo-f t-no ">{e(x.get("tipo",""))}</span></td></tr>' for x in extra)
+                cuerpo = cuerpo.replace("</tbody></table></div>", "</tbody></table></div>" + '<h2>Feriados y días no laborables agregados durante el año</h2><div class="tabla"><table class="feriados"><thead><tr><th>Fecha</th><th>Detalle</th><th>Tipo</th></tr></thead><tbody>' + filas + "</tbody></table></div>", 1)
+        escribir(archivo, pagina(titulo, cuerpo, "", desc, archivo))
     for c in convenios:
         escribir(f"escala-{c['slug']}.html", pagina_convenio(c, notas, aportes.get("convenio-" + c["slug"])))
     mapa, noticias, robots = sitemaps(todas, convenios)

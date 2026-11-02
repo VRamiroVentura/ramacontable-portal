@@ -16,6 +16,6 @@
 <p class="aviso">Información de carácter general. Verificá siempre en el Boletín Oficial: el Gobierno puede declarar feriados o días no laborables adicionales, y algunas provincias y municipios tienen feriados propios.</p>
 </article>
 <aside class="lateral"><a class="caja caja-calc" href="herramientas.html"><b>Vencimientos</b><span>Impositivos y previsionales</span></a><a class="caja caja-calc" href="calculadoras.html"><b>Calculadoras</b><span>Sueldo, aguinaldo</span></a></aside></div>
-<script>(function(){var h=new Date();h.setHours(0,0,0,0);var f=[].slice.call(document.querySelectorAll('tr[data-f]'));var p=f.find(function(t){return new Date(t.dataset.f+'T00:00:00')>=h});
+<script>(function(){var h=new Date();h.setHours(0,0,0,0);var f=[].slice.call(document.querySelectorAll('tr[data-f]'));var p=f.filter(function(t){return new Date(t.dataset.f+'T00:00:00')>=h}).sort(function(x,y){return x.dataset.f<y.dataset.f?-1:1})[0];
 f.forEach(function(t){if(new Date(t.dataset.f+'T00:00:00')<h)t.className='pasado'});
 var c=document.querySelector('#proximo p');if(p){p.className='prox-f';var d=Math.round((new Date(p.dataset.f+'T00:00:00')-h)/864e5);c.textContent=p.cells[0].textContent+': '+p.cells[1].textContent+(d===0?' (hoy)':' (faltan '+d+(d===1?' día)':' días)'))}else c.textContent='No quedan feriados nacionales en 2026.'})();</script>

@@ -1,0 +1,8 @@
+{
+ "_ayuda": "Fuentes que la fábrica lee una vez por día para armar los vencimientos y feriados del mes actual y del siguiente. {mes} = noviembre, {anio} = 2026.",
+ "paginas": ["https://yo-facturo.com/vencimientos/{mes}-{anio}/"],
+ "wordpress": [["Ignacio Online", "https://www.ignacioonline.com.ar"], ["Contadores en Red", "https://contadoresenred.com"],
+               ["Calcular Sueldo", "https://calcularsueldo.com.ar"], ["Econoblog", "https://www.econoblog.com.ar"]],
+ "buscar": ["vencimientos {mes} {anio}", "feriados {mes} {anio}"],
+ "minimo_fuentes": 2
+}

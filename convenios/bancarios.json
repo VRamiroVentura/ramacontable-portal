@@ -1,0 +1,15 @@
+{
+ "slug": "bancarios",
+ "nombre": "Bancarios",
+ "cct": "CCT 18/75",
+ "partes": "La Bancaria y cámaras de bancos",
+ "descripcion": "Comprende al personal de entidades financieras y bancos.",
+ "escala": null,
+ "novedades": [],
+ "calculo": [],
+ "nr": [],
+ "recibo": [],
+ "preguntas": [],
+ "historial": [],
+ "buscar_portal": "bancarios escala salarial"
+}
