@@ -5,6 +5,7 @@ portada, una página por sección y una página por nota.
 Las claves públicas de Supabase se toman de las variables de entorno
 SUPABASE_URL y SUPABASE_PUBLISHABLE_KEY (en GitHub vienen de los Secrets).
 """
+import unicodedata
 import html, json, os, re, shutil, glob, datetime, urllib.request
 
 RAIZ = os.path.dirname(os.path.abspath(__file__))
@@ -25,6 +26,19 @@ REDES = {
 MAIL = "ramacontable@gmail.com"
 MENU = {"sueldos": "Sueldos", "impuestos": "Impuestos", "guias": "Guías"}
 RAMAS_GUIAS = {"sueldos": "Guías de sueldos", "impuestos": "Guías de impuestos", "profesion": "Guías contables y de la profesión"}
+GRUPOS_GUIAS = {"sueldos": "Guías de sueldos", "impuestos": "Guías de impuestos", "contables": "Guías contables",
+                "tramites": "Sociedades y trámites", "otras": "Otras guías"}
+IMPUESTOS = [
+    ("ganancias", "Ganancias", ["ganancias", "siradig", "cuarta categoria"], ["ganancias-cuarta-categoria", "siradig", "ganancias-personas-humanas", "ganancias-sociedades"]),
+    ("iva", "IVA", ["iva", "valor agregado"], ["iva"]),
+    ("monotributo", "Monotributo", ["monotribut", "regimen simplificado"], ["monotributo"]),
+    ("autonomos", "Autónomos", ["autonomo"], ["autonomos"]),
+    ("bienes-personales", "Bienes Personales", ["bienes personales"], ["bienes-personales"]),
+    ("ingresos-brutos", "Ingresos Brutos", ["ingresos brutos", "arba", "agip", "convenio multilateral"], ["ingresos-brutos-arba", "convenio-multilateral"]),
+    ("retenciones", "Retenciones y percepciones", ["retencion", "percepcion"], ["retenciones-percepciones"]),
+    ("planes-de-pago", "Planes de pago y moratorias", ["plan de pago", "planes de pago", "moratoria", "facilidades de pago"], ["planes-de-pago-arca"]),
+]
+_N = lambda t: "".join(ch for ch in unicodedata.normalize("NFD", str(t or "").lower()) if unicodedata.category(ch) != "Mn")
 es_guia = lambda n: n.get("tipo") == "guia"
 
 
@@ -244,10 +258,14 @@ def tira_guias(guias, seccion):
 
 def pagina_guias(guias, notas, catalogo):
     hechas = {g["slug"] for g in guias}
+    grupo_cat = {"guia-" + c["slug"]: c.get("grupo") or c["seccion"] for c in catalogo}
+    grupo_de = lambda g: grupo_cat.get(g["slug"]) or (g["seccion"] if g["seccion"] in ("sueldos", "impuestos") else "otras")
     bloques = ""
-    for k, titulo in RAMAS_GUIAS.items():
-        lista = sorted([g for g in guias if g["seccion"] == k], key=lambda g: g["titulo"])
-        prox = [c for c in catalogo if c["seccion"] == k and "guia-" + c["slug"] not in hechas]
+    for k, titulo in GRUPOS_GUIAS.items():
+        lista = sorted([g for g in guias if grupo_de(g) == k], key=lambda g: g["titulo"])
+        prox = [c for c in catalogo if (c.get("grupo") or c["seccion"]) == k and "guia-" + c["slug"] not in hechas]
+        if not lista and not prox:
+            continue
         items = "".join(f'<li><a href="nota-{g["slug"]}.html"><b>{e(g["titulo"])}</b><span>{e(g.get("encorto", "")[:140])}</span></a></li>' for g in lista)
         items += "".join(f'<li class="prox"><b>{e(c["titulo"])}</b><span>Próximamente</span></li>' for c in prox)
         bloques += f'<section class="rama-guias" id="{k}"><h2>{e(titulo)}</h2><ul class="lista-guias">{items}</ul></section>'
@@ -255,6 +273,24 @@ def pagina_guias(guias, notas, catalogo):
     cuerpo = f'<div class="grilla"><section><h1 class="titsec">Guías prácticas</h1><p class="ayuda">Guías completas de sueldos, impuestos y temas contables, basadas en la norma oficial y actualizadas cuando cambia algo. Debajo de cada una, la comunidad suma su explicación paso a paso.</p>{bloques}{otras}</section>{lateral(notas)}</div>'
     return pagina("Guías prácticas de sueldos, impuestos y contabilidad | Ramacontable", cuerpo, "guias",
                   "Guías prácticas para contadores y liquidadores: vacaciones, liquidación final, Ganancias, IVA, Monotributo, Ingresos Brutos y más.", "guias.html")
+
+
+def pagina_impuesto(imp, notas, guias, catalogo):
+    slug, nombre, claves, guias_slugs = imp
+    por_slug = {g["slug"]: g for g in guias}
+    tit_cat = {c["slug"]: c["titulo"] for c in catalogo}
+    items = ""
+    for s in guias_slugs:
+        g = por_slug.get("guia-" + s)
+        items += (f'<li><a href="nota-{g["slug"]}.html"><b>{e(g["titulo"])}</b><span>{e(g.get("encorto", "")[:140])}</span></a></li>' if g
+                  else f'<li class="prox"><b>{e(tit_cat.get(s, s))}</b><span>Próximamente</span></li>')
+    relacionadas_i = [n for n in notas if any(c in _N(n["titulo"] + " " + n.get("antetitulo", "") + " " + (n.get("tema") or "")) for c in claves)]
+    lista = ('<div class="tarjetas">' + "".join(tarjeta(n) for n in relacionadas_i[:20]) + "</div>") if relacionadas_i else '<p class="vacio">Todavía no hay novedades de este tema.</p>'
+    cuerpo = (f'<div class="grilla"><section><p class="miga"><a href="impuestos.html">Impuestos</a></p><h1 class="titsec">{e(nombre)}</h1>'
+              f'<section class="rama-guias"><h2>Guías de {e(nombre)}</h2><ul class="lista-guias">{items}</ul></section>'
+              f'<section class="rama-guias"><h2>Novedades de {e(nombre)}</h2>{lista}</section></section>{lateral(notas)}</div>')
+    return pagina(f"{nombre}: novedades, vencimientos y guías prácticas | Ramacontable", cuerpo, "impuestos",
+                  f"Todo sobre {nombre} para contadores: últimas novedades, normas y guías prácticas paso a paso.", f"impuesto-{slug}.html")
 
 
 def html_admin(h):
@@ -273,8 +309,15 @@ ICONOS = {
 
 
 def pagina(titulo, cuerpo, actual="", descripcion="", ruta="", extra_head=""):
+    sub = {
+        "sueldos": [("sueldos.html", "Novedades de sueldos"), ("convenios.html", "Escalas por convenio"), ("guias.html#sueldos", "Guías de sueldos"),
+                    ("sueldo-comercio.html", "Calculadora de sueldo de Comercio")],
+        "impuestos": [("impuestos.html", "Novedades de impuestos")] + [(f"impuesto-{s}.html", n) for s, n, _, _ in IMPUESTOS] + [("guias.html#impuestos", "Guías de impuestos")],
+        "guias": [(f"guias.html#{k}", v) for k, v in GRUPOS_GUIAS.items()] + [("guias.html", "Todas las guías")],
+    }
     menu = "".join(
-        f'<a href="{k}.html"{" aria-current=page" if k == actual else ""}>{v}</a>'
+        f'<div class="dd"><a href="{k}.html"{" aria-current=page" if k == actual else ""}>{v}</a>'
+        f'<div class="dd-m">' + "".join(f'<a href="{u}"{" class=sep" if "guias.html" in u and k != "guias" else ""}>{e(t)}</a>' for u, t in sub.get(k, [])) + '</div></div>'
         for k, v in list(MENU.items()))
     redes = "".join(
         f'<a href="{u}" target="_blank" rel="noopener" aria-label="{n}">{ICONOS[n]}</a>'
@@ -378,7 +421,7 @@ def sitemaps(notas, convenios=()):
     base = sitio_url()
     hoy = datetime.date.today().isoformat()
     urls = [f"<url><loc>{base}</loc><lastmod>{hoy}</lastmod></url>"] + [
-        f"<url><loc>{base}{k}.html</loc><lastmod>{hoy}</lastmod></url>" for k in list(SECCIONES) + ["aguinaldo", "herramientas", "convenios", "guias", "calculadoras", "feriados", "sueldo-comercio", "sueldo-casas-particulares"]] + [
+        f"<url><loc>{base}{k}.html</loc><lastmod>{hoy}</lastmod></url>" for k in list(SECCIONES) + ["aguinaldo", "herramientas", "convenios", "guias", "calculadoras", "feriados", "sueldo-comercio", "sueldo-casas-particulares"] + [f"impuesto-{i[0]}" for i in IMPUESTOS]] + [
         f"<url><loc>{base}escala-{c['slug']}.html</loc><lastmod>{str(c.get('actualizado') or hoy)[:10]}</lastmod></url>" for c in convenios] + [
         f"<url><loc>{base}nota-{n['slug']}.html</loc><lastmod>{str(n.get('actualizado') or n['fecha'])[:10]}</lastmod></url>" for n in notas]
     mapa = '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' + "".join(urls) + "</urlset>"
@@ -476,11 +519,16 @@ def main():
         catalogo = []
     escribir("index.html", portada(notas))
     escribir("guias.html", pagina_guias(guias, notas, catalogo))
+    for imp in IMPUESTOS:
+        escribir(f"impuesto-{imp[0]}.html", pagina_impuesto(imp, notas, guias, catalogo))
     for k, v in SECCIONES.items():
         extra = ""
         if k == "sueldos":
             extra = ('<div class="conv-chips"><b>Escalas por convenio:</b> ' + " ".join(
                 f'<a href="escala-{c["slug"]}.html">{e(c["nombre"])}</a>' for c in convenios) + ' <a href="convenios.html">Ver todos →</a></div>')
+        if k == "impuestos":
+            extra = ('<div class="conv-chips"><b>Por impuesto:</b> ' + " ".join(
+                f'<a href="impuesto-{s}.html">{e(n)}</a>' for s, n, _, _ in IMPUESTOS) + "</div>")
         if k in RAMAS_GUIAS:
             extra += tira_guias(guias, k)
         escribir(f"{k}.html", portada([n for n in notas if n["seccion"] == k], f"{v} | Ramacontable", k, v, extra))

@@ -229,34 +229,39 @@
   "titulo": "Ajuste por inflación contable (RT 6)",
   "seccion": "profesion",
   "buscar": "ajuste por inflacion contable",
-  "oficial": []
+  "oficial": [],
+  "grupo": "contables"
  },
  {
   "slug": "certificacion-ingresos",
   "titulo": "Certificación de ingresos: requisitos y modelo",
   "seccion": "profesion",
   "buscar": "certificacion de ingresos",
-  "oficial": []
+  "oficial": [],
+  "grupo": "contables"
  },
  {
   "slug": "constitucion-sas",
   "titulo": "Constitución de una SAS paso a paso",
   "seccion": "profesion",
   "buscar": "sociedad por acciones simplificada sas",
-  "oficial": []
+  "oficial": [],
+  "grupo": "tramites"
  },
  {
   "slug": "facturacion-electronica",
   "titulo": "Facturación electrónica: tipos de comprobante y requisitos",
   "seccion": "profesion",
   "buscar": "factura electronica",
-  "oficial": []
+  "oficial": [],
+  "grupo": "tramites"
  },
  {
   "slug": "intimaciones-arca",
   "titulo": "Intimaciones de ARCA: cómo responder",
   "seccion": "profesion",
   "buscar": "intimacion arca descargo",
-  "oficial": []
+  "oficial": [],
+  "grupo": "tramites"
  }
 ]

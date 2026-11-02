@@ -274,3 +274,11 @@ table.feriados tr.pasado td{color:#9a9a9a}
 table.feriados tr.prox-f td{background:var(--bronce-suave);font-weight:600}
 .tipo-f{display:inline-block;white-space:nowrap;padding:1px 8px;border-radius:10px;font-size:12.5px;background:#eee}
 .tipo-f.t-ina{background:#DDE8E0;color:var(--verde)}.tipo-f.t-tra{background:var(--bronce-suave)}.tipo-f.t-no {background:#eee;color:#555}
+/* menú desplegable */
+.cab .menu .dd{position:relative;display:flex;align-items:center}
+.cab .menu .dd-m{display:none;position:absolute;top:100%;left:-14px;z-index:60;min-width:250px;background:#fff;border-top:3px solid var(--bronce);box-shadow:0 10px 24px rgba(0,0,0,.18);padding:6px 0}
+.cab .menu .dd:hover .dd-m,.cab .menu .dd:focus-within .dd-m{display:block}
+.cab .menu .dd-m a{display:block;color:var(--verde);padding:8px 16px;border:0;font-weight:500;font-size:14.5px;white-space:nowrap}
+.cab .menu .dd-m a:hover{background:var(--bronce-suave);color:var(--verde)}
+.cab .menu .dd-m a.sep{border-top:1px solid var(--linea);margin-top:4px;padding-top:10px;font-weight:700}
+@media(max-width:760px){.cab .menu .dd-m{display:none!important}}
