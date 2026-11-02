@@ -1,0 +1,22 @@
+{
+ "slug": "pasteleros-heladerias",
+ "nombre": "Pasteleros – Heladerías",
+ "cct": "CCT 273/96",
+ "partes": "Federación de Trabajadores Pasteleros y cámaras del sector",
+ "descripcion": "Comprende al personal de heladerías encuadrado en el CCT 273/96 (rama heladerías).",
+ "escala": null,
+ "novedades": [],
+ "calculo": [],
+ "nr": [],
+ "recibo": [],
+ "preguntas": [],
+ "historial": [],
+ "oficial": [
+  "https://pasteleros.org/wp-content/uploads/2026/07/escala_2026_273-96_heladeria_julio_2026-enero_2027.pdf",
+  "https://pasteleros.org/convenios/"
+ ],
+ "buscar_doc": [
+  "heladeri",
+  "273"
+ ]
+}

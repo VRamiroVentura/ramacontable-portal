@@ -10,5 +10,13 @@
  "nr": [],
  "recibo": [],
  "preguntas": [],
- "historial": []
+ "historial": [],
+ "oficial": [
+  "https://www.camioneros-ba.org.ar/index.php/gremiales/salarios/escalas-salariales"
+ ],
+ "buscar_doc": [
+  "escala",
+  "salari",
+  "acuerdo"
+ ]
 }

@@ -148,19 +148,25 @@ class Fabrica:
         self._textos = textos
         return nota, control
 
-    def actualizar_convenio(self, grupo, nota_slug):
+    def actualizar_convenio(self, grupo, nota_slug, textos=None, adjunto=None, doc=None):
         c = self.convenios.get(grupo.get("convenio"))
         if not c:
             return
+        textos = textos if textos is not None else self._textos
         actual = {k: c.get(k) for k in ("nombre", "cct", "escala", "novedades", "calculo", "nr", "recibo", "preguntas", "fuente")}
-        pedido = "PÁGINA ACTUAL DEL CONVENIO:\n" + json.dumps(actual, ensure_ascii=False) + "\n\nFUENTES DEL NUEVO ACUERDO:\n" + "\n\n".join(self._textos)
+        pedido = "PÁGINA ACTUAL DEL CONVENIO:\n" + json.dumps(actual, ensure_ascii=False) + "\n\nFUENTES DEL NUEVO ACUERDO:\n" + "\n\n".join(textos)
+        control_txt = "\n\nFUENTES:\n" + "\n\n".join(textos)
+        if adjunto:  # PDF oficial: va como archivo para que Gemini lea la tabla tal cual
+            pedido = [{"text": pedido + "\n(La fuente principal es el PDF oficial adjunto.)"}, adjunto]
         nuevo = gemini.gemini(_prompt("convenio.md"), pedido, temperatura=0.3)
-        control = gemini.gemini(_prompt("verificar.md"), "NOTA:\n" + json.dumps(nuevo, ensure_ascii=False) + "\n\nFUENTES:\n" + "\n\n".join(self._textos), temperatura=0.1)
+        verif = "NOTA:\n" + json.dumps(nuevo, ensure_ascii=False) + control_txt
+        control = gemini.gemini(_prompt("verificar.md"), [{"text": verif + "\n(Las fuentes incluyen el PDF oficial adjunto.)"}, adjunto] if adjunto else verif, temperatura=0.1)
         esc = nuevo.get("escala") if isinstance(nuevo.get("escala"), dict) else None
         if esc:
             tabla = esc.get("tabla") if isinstance(esc.get("tabla"), list) else []
             esc = {"periodo": str(esc.get("periodo") or "")[:80], "vigencia": str(esc.get("vigencia") or "")[:120],
-                   "tabla": [[str(x)[:80] for x in f][:10] for f in tabla[:80] if isinstance(f, list)], "aclaraciones": str(esc.get("aclaraciones") or "")[:800]}
+                   "tabla": [[str(x)[:80] for x in f][:10] for f in tabla[:80] if isinstance(f, list)], "aclaraciones": str(esc.get("aclaraciones") or "")[:800],
+                   "doc": doc}
         datos = {"escala": esc or c.get("escala"), "novedades": _bloques_ok(nuevo.get("novedades")), "calculo": _bloques_ok(nuevo.get("calculo")) or c.get("calculo") or [],
                  "nr": _bloques_ok(nuevo.get("nr")) or c.get("nr") or [], "recibo": _bloques_ok(nuevo.get("recibo")) or c.get("recibo") or [],
                  "preguntas": [{"p": str(q.get("p"))[:200], "r": str(q.get("r"))[:500]} for q in (nuevo.get("preguntas") or []) if isinstance(q, dict) and q.get("p") and q.get("r")][:6],
@@ -178,6 +184,44 @@ class Fabrica:
                 self.db.update("convenios", {"slug": f"eq.{c['slug']}"}, dict(datos, historial=hist, propuesta=None, motivo_propuesta=None))
             else:
                 self.db.update("convenios", {"slug": f"eq.{c['slug']}"}, {"propuesta": dict(datos, historial=hist), "motivo_propuesta": motivo})
+
+    def revisar_escalas_oficiales(self):
+        """Lee la página o el PDF oficial de cada sindicato y actualiza la escala si hay un documento nuevo."""
+        locales = {}
+        for ruta in glob.glob(str(util.RAIZ / "convenios" / "*.json")):
+            c = json.load(open(ruta, encoding="utf-8"))
+            if c.get("oficial"):
+                locales[c["slug"]] = c
+        orden = sorted((s for s in locales if s in self.convenios), key=lambda s: str(self.convenios[s].get("actualizado") or ""))
+        hechos = 0
+        for slug in orden:
+            if hechos >= int(self.cfg.get("escalas_por_vuelta", 2)):
+                break
+            c, loc = self.convenios[slug], locales[slug]
+            try:
+                url, tipo, contenido = fuentes.documento_oficial(loc["oficial"], loc.get("buscar_doc") or ())
+            except Exception as e:  # noqa
+                util.avisar(f"No pude leer la escala oficial de {c['nombre']}", str(e))
+                continue
+            if not url:
+                util.avisar(f"Escala oficial de {c['nombre']}", "no encontré el documento en la página del sindicato")
+                continue
+            ya = {(c.get("escala") or {}).get("doc"), ((c.get("propuesta") or {}).get("escala") or {}).get("doc")}
+            if url in ya:
+                util.log(f"{c['nombre']}: sin escala nueva ({url})")
+                continue
+            hechos += 1
+            util.log(f"{c['nombre']}: documento nuevo {url}")
+            if tipo == "pdf":
+                import base64
+                adjunto = {"inline_data": {"mime_type": "application/pdf", "data": base64.b64encode(contenido).decode()}}
+                textos = [f"--- FUENTE OFICIAL (PDF del sindicato): {url}"]
+            else:
+                adjunto, textos = None, [f"--- FUENTE OFICIAL (página del sindicato): {url}\n{contenido}"]
+            try:
+                self.actualizar_convenio({"convenio": slug, "tema": c["nombre"]}, None, textos, adjunto, url)
+            except Exception as e:  # noqa
+                util.avisar(f"No pude actualizar la escala de {c['nombre']}", str(e))
 
     def armar_fila(self, grupo, items, nota, control, usados):
         base = _slug(nota.get("slug") or nota.get("titulo"))
@@ -230,6 +274,7 @@ class Fabrica:
                                       "texto": (it.get("texto") or "")[:4000], "fecha": it.get("fecha")} for it in nuevos], "url")
         if not items:
             self.escribir_guias()
+            self.revisar_escalas_oficiales()
             self.cierre()
             return
         grupos = self.agrupar(items, recientes)
@@ -268,6 +313,7 @@ class Fabrica:
                 except Exception as e:  # noqa
                     util.avisar(f"No pude actualizar el convenio {fila['convenio']}", str(e))
         self.escribir_guias()
+        self.revisar_escalas_oficiales()
         self.cierre()
 
     def cierre(self):

@@ -10,5 +10,13 @@
  "nr": [],
  "recibo": [],
  "preguntas": [],
- "historial": []
+ "historial": [],
+ "oficial": [
+  "https://www.sanidad.org.ar/content/cct_pdfs/c122/2026%20CCT122%20-%20Acuerdo%20Octubre.pdf",
+  "https://sanidad.org.ar/accion-gremial/"
+ ],
+ "buscar_doc": [
+  "122",
+  "c122"
+ ]
 }

@@ -10,5 +10,13 @@
  "nr": [],
  "recibo": [],
  "preguntas": [],
- "historial": []
+ "historial": [],
+ "oficial": [
+  "https://www.seclaplata.org.ar/gremiales/escalasalarial"
+ ],
+ "buscar_doc": [
+  "escala",
+  "acuerdo",
+  "salari"
+ ]
 }

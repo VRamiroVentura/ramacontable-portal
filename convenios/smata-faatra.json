@@ -1,0 +1,23 @@
+{
+ "slug": "smata-faatra",
+ "nombre": "Talleres mecánicos (SMATA – FAATRA)",
+ "cct": "CCT 27/88",
+ "partes": "SMATA y FAATRA",
+ "descripcion": "Comprende al personal de talleres de reparación de automotores, estaciones de servicio vinculadas y actividades afines representadas por FAATRA.",
+ "escala": null,
+ "novedades": [],
+ "calculo": [],
+ "nr": [],
+ "recibo": [],
+ "preguntas": [],
+ "historial": [],
+ "oficial": [
+  "https://www.smata.com.ar/convenios-y-escalas/convenio/faatra/"
+ ],
+ "buscar_doc": [
+  "faatra",
+  "27/88",
+  "27-88",
+  "escala"
+ ]
+}

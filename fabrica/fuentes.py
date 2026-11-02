@@ -236,3 +236,47 @@ def texto_oficial(ref):
         return ""
     j = _art(norm, ref.get("hasta"), i + 10) if ref.get("hasta") else -1
     return t[i: j if j > i else i + 15000][:20000]
+
+
+# ---------- Escalas: documento oficial del sindicato ----------
+
+_FECHA_DOC = re.compile(r"(20\d\d)[-_./ ]?(0[1-9]|1[0-2])?")
+
+
+def _peso_doc(url, texto):
+    """Para elegir el documento más nuevo: año y mes que aparezcan en el nombre o en el texto del link."""
+    mejor = (0, 0)
+    for a, m in _FECHA_DOC.findall(_norm(url + " " + texto)):
+        mejor = max(mejor, (int(a), int(m or 0)))
+    return mejor
+
+
+def documento_oficial(urls, claves=()):
+    """Devuelve (url, tipo, contenido) del documento con la escala vigente.
+    Si la URL es un PDF, lo baja. Si es una página, busca en ella el PDF más nuevo que coincida con las claves."""
+    claves = [_norm(c) for c in claves]
+    for url in urls:
+        r = _bajar(url)
+        if r is None:
+            continue
+        tipo = (r.headers.get("content-type") or "").lower()
+        if "pdf" in tipo or url.lower().split("?")[0].endswith(".pdf"):
+            if r.content[:4] == b"%PDF":
+                return url, "pdf", r.content
+            continue
+        links = []
+        for href, txt in re.findall(r'(?is)<a[^>]+href=["\']([^"\']+)["\'][^>]*>(.*?)</a>', r.text):
+            completo = urljoin(url, unescape(href))
+            etiqueta = _limpio(txt)
+            n = _norm(completo + " " + etiqueta)
+            es_doc = ".pdf" in completo.lower() or "download" in n or "descarg" in n
+            if es_doc and (not claves or any(c in n for c in claves)):
+                links.append((_peso_doc(completo, etiqueta), completo))
+        for _, link in sorted(links, reverse=True)[:3]:
+            d = _bajar(link)
+            if d is not None and d.content[:4] == b"%PDF":
+                return link, "pdf", d.content
+        texto = _limpio(r.text)
+        if len(texto) > 500 and any(c in _norm(texto) for c in ("basico", "categoria", "escala")):
+            return url, "html", texto[:20000]
+    return None, None, None

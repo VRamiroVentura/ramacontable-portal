@@ -10,5 +10,14 @@
  "nr": [],
  "recibo": [],
  "preguntas": [],
- "historial": []
+ "historial": [],
+ "oficial": [
+  "https://www.uocra.org/pdf/f03639_acuerdo_76.75y577.10-21.09.2026.pdf",
+  "https://www.uocra.org/?s=nuevas-escalas-salariales&lang=1"
+ ],
+ "buscar_doc": [
+  "acuerdo_76",
+  "76.75",
+  "escala"
+ ]
 }
