@@ -1,4 +1,4 @@
-:root{--verde:#13271F;--verde2:#1D3A2E;--bronce:#A8844F;--bronce-suave:#F4EFE3;--fondo:#F6F7F4;--blanco:#fff;--texto:#1B2520;--gris:#5A6660;--linea:#DAE0DA;--comunidad:#6B4FA0;--serif:"Libre Baskerville",Georgia,serif;--sans:"Source Sans 3","Segoe UI",system-ui,sans-serif}
+:root{--verde:#13271F;--verde2:#1D3A2E;--bronce:#8A6A36;--bronce-suave:#F4EFE3;--fondo:#F6F7F4;--blanco:#fff;--texto:#1B2520;--gris:#5A6660;--linea:#DAE0DA;--comunidad:#6B4FA0;--serif:"Libre Baskerville",Georgia,serif;--sans:"Source Sans 3","Segoe UI",system-ui,sans-serif}
 *{box-sizing:border-box}
 body{margin:0;background:var(--fondo);color:var(--texto);font:17px/1.6 var(--sans);-webkit-font-smoothing:antialiased}
 a{color:inherit}
