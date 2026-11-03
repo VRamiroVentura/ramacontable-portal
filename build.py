@@ -283,7 +283,7 @@ def tira_guias(guias, seccion):
     if not lista:
         return ""
     return (f'<div class="conv-chips guias-chips"><b>{e(RAMAS_GUIAS[seccion])}:</b> ' + " ".join(
-        f'<a href="nota-{g["slug"]}.html">{e(g["titulo"].split(":")[0])}</a>' for g in lista[:2]) + f' <a class="mas-chip" href="guias.html#{seccion}">Ver más guías →</a></div>')
+        f'<a href="nota-{g["slug"]}.html">{e(g["titulo"].split(":")[0])}</a>' for g in lista[:2]) + f' <a class="mas-chip" href="guias.html#{seccion}">Ver más guías ({len(lista)}) →</a></div>')
 
 
 def pagina_guias(guias, notas, catalogo):
