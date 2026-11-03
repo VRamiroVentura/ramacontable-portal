@@ -12,7 +12,10 @@ Tu tarea:
    - "tema": un título corto y neutro del tema.
    - "convenio": si el tema es de un convenio colectivo de la lista CONVENIOS, poné su slug; si no, null.
    - "escala": true si el tema es un acuerdo salarial, una escala nueva, un aumento o una suma no remunerativa de ese convenio.
+   - "clase": qué tipo de nota es:
+     - "novedad": una norma, resolución, cambio impositivo o laboral, vencimiento, prórroga, acuerdo salarial, escala o anuncio oficial de un organismo (ARCA, ANSES, BCRA, Trabajo, rentas, consejos, sindicatos). Es información que publican todos.
+     - "propia": un trabajo propio de un medio o portal: investigación, encuesta, relevamiento, estadística elaborada por ellos, informe de una consultora, análisis u opinión de un autor, entrevista, caso particular. Ejemplo: "Una de cada siete pymes industriales enfrenta embargos de ARCA" es "propia".
 
 Respondé SOLO con JSON con esta forma:
-{"grupos": [{"tema": "...", "items": [ids], "profesion": true, "seccion": "sueldos", "repetido": false, "actualiza": null, "convenio": null, "escala": false, "motivo": "una línea"}]}
+{"grupos": [{"tema": "...", "items": [ids], "profesion": true, "seccion": "sueldos", "repetido": false, "actualiza": null, "convenio": null, "escala": false, "clase": "novedad", "motivo": "una línea"}]}
 Cada id de novedad tiene que aparecer en un solo grupo.
