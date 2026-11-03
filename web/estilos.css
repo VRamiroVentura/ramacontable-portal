@@ -281,4 +281,10 @@ table.feriados tr.prox-f td{background:var(--bronce-suave);font-weight:600}
 .cab .menu .dd-m a{display:block;color:var(--verde);padding:8px 16px;border:0;font-weight:500;font-size:14.5px;white-space:nowrap}
 .cab .menu .dd-m a:hover{background:var(--bronce-suave);color:var(--verde)}
 .cab .menu .dd-m a.sep{border-top:1px solid var(--linea);margin-top:4px;padding-top:10px;font-weight:700}
-@media(max-width:760px){.cab .menu .dd-m{display:none!important}}
+@media(max-width:760px),(hover:none){
+  .cab .menu .dd:hover .dd-m,.cab .menu .dd:focus-within .dd-m{display:none}
+  .cab .menu .dd > a::after{content:" ▾";font-size:11px;opacity:.7}
+  .cab .menu .dd.abierto .dd-m{display:block!important;position:fixed;left:0;right:0;min-width:0;max-height:70vh;overflow-y:auto;border-radius:0}
+  .cab .menu .dd-m a{white-space:normal;padding:12px 18px;font-size:15.5px}
+}
+.conv-chips a.mas-chip{background:var(--verde);color:#fff}

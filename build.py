@@ -275,12 +275,15 @@ def pagina_convenios(convenios, notas):
                   "Escalas salariales vigentes por convenio colectivo, con novedades, sumas no remunerativas y cómo liquidar.", "convenios.html")
 
 
+PRINCIPALES = ["comercio", "casas-particulares", "uocra", "uom", "sanidad"]
+
+
 def tira_guias(guias, seccion):
     lista = [g for g in guias if g["seccion"] == seccion]
     if not lista:
         return ""
     return (f'<div class="conv-chips guias-chips"><b>{e(RAMAS_GUIAS[seccion])}:</b> ' + " ".join(
-        f'<a href="nota-{g["slug"]}.html">{e(g["titulo"].split(":")[0])}</a>' for g in lista[:12]) + ' <a href="guias.html">Ver todas →</a></div>')
+        f'<a href="nota-{g["slug"]}.html">{e(g["titulo"].split(":")[0])}</a>' for g in lista[:2]) + f' <a class="mas-chip" href="guias.html#{seccion}">Ver más guías →</a></div>')
 
 
 def pagina_guias(guias, notas, catalogo):
@@ -405,6 +408,11 @@ def pagina(titulo, cuerpo, actual="", descripcion="", ruta="", extra_head=""):
 <p class="legal">Información de carácter general. Se recomienda verificar siempre en las fuentes oficiales. Cada profesional es responsable de su aplicación. · <a href="terminos.html">Términos y privacidad</a> · © {anio} Ramacontable</p>
 </div></footer>
 <div id="modal" class="modal" hidden></div>
+<script>(function(){{var chico=function(){{return window.matchMedia('(max-width:760px)').matches||window.matchMedia('(hover:none)').matches}};
+document.querySelectorAll('.cab .menu .dd > a').forEach(function(a){{a.addEventListener('click',function(ev){{if(!chico())return;var dd=a.parentNode,ab=dd.classList.contains('abierto');
+document.querySelectorAll('.cab .menu .dd.abierto').forEach(function(x){{x.classList.remove('abierto')}});if(!ab){{ev.preventDefault();dd.classList.add('abierto');
+var m=dd.querySelector('.dd-m');m.style.top=document.querySelector('.cab').getBoundingClientRect().bottom+'px'}}}})}});
+document.addEventListener('click',function(ev){{if(!ev.target.closest('.cab .menu .dd'))document.querySelectorAll('.cab .menu .dd.abierto').forEach(function(x){{x.classList.remove('abierto')}})}});}})();</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="vendor/purify.min.js"></script>
 <script src="vendor/jszip.min.js"></script>
@@ -586,7 +594,8 @@ def main():
         extra = ""
         if k == "sueldos":
             extra = ('<div class="conv-chips"><b>Escalas por convenio:</b> ' + " ".join(
-                f'<a href="escala-{c["slug"]}.html">{e(c["nombre"])}</a>' for c in convenios) + ' <a href="convenios.html">Ver todos →</a></div>')
+                f'<a href="escala-{c["slug"]}.html">{e(c["nombre"])}</a>' for c in sorted(convenios, key=lambda c: PRINCIPALES.index(c["slug"]) if c["slug"] in PRINCIPALES else 99)[:5])
+                + f' <a class="mas-chip" href="convenios.html">Más convenios ({len(convenios)}) →</a></div>')
         if k == "impuestos":
             extra = ('<div class="conv-chips"><b>Por impuesto:</b> ' + " ".join(
                 f'<a href="impuesto-{s}.html">{e(n)}</a>' for s, n, _, _ in IMPUESTOS) + "</div>")
