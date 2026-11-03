@@ -1,0 +1,178 @@
+{
+  "_ayuda": "Temas puntuales que tienen que salir sí o sí. Cada uno sale UNA vez, en el próximo video del turno indicado (1 = el de finanzas), en lugar del tema que tocaba ese día, en el orden de la lista. 'datos' es lo único que puede usar el guion (chequeado a mano): si cambia la norma, actualizalo acá. 'hasta' es la fecha en que el tema deja de tener sentido. Cuando sale, queda anotado en data/estado.json (temas_hechos) y no se repite. 'carrusel' son las placas fijas (si no está, las escribe la IA) y 'carrusel_ig': true hace que ese día también se suba el carrusel a Instagram, además del Reel. 'datos_vivos' trae cotizaciones del momento en que se arma el video (Yahoo / AwesomeAPI) y 'cierre' fija la última frase del video.",
+  "temas": [
+    {
+      "id": "brasil-lula-2026-10",
+      "turno": 1,
+      "serie": "economia",
+      "hasta": "2026-10-26",
+      "titulo": "Ganó Lula y se desplomaron el real y la Bolsa de Brasil",
+      "fuente": "La Nación, MercoPress y Bloomberg",
+      "fecha_datos": "lunes 26 de octubre de 2026, mañana y mediodía",
+      "carrusel_ig": false,
+      "prompt": "Video de actualidad para cualquier argentino que escuchó la noticia y no entiende qué pasó. Formato \"Esto te cambia\". TONO NEUTRAL: nada de opiniones sobre Lula, Bolsonaro ni la elección; contá qué hizo el mercado y por qué, como un dato.\n- Hablá siempre de que CAYÓ EL REAL (\"el real perdió casi 9%\"), nunca de que \"subió el dólar\".\n- Escena 1: el hecho, de frente: ganó Lula y al día siguiente se desplomaron el real y la Bolsa de Brasil. Prometé contar cómo quedó todo y qué tiene que ver con vos.\n- Escenas 2 y 3: dale contexto de tiempo a quien lo ve a la noche: cómo arrancó el lunes (la Bolsa tuvo que frenar a los pocos minutos) y cómo estaba a la tarde, el día después de la elección, con los DATOS ACTUALIZADOS si están (decí el día y el momento: «el lunes a la tarde, el real había perdido...»). Si no hay datos actualizados, usá los del mediodía diciendo «al mediodía».\n- La Bolsa: decí cuánto cayó en reales y, para que se entienda la magnitud, cuánto medida en dólares, que es lo que perdió un inversor de afuera (usá el dato «medido en dólares» de los DATOS ACTUALIZADOS si está; si no, que el fondo de acciones brasileñas en Nueva York llegó a caer 27%).\n- Desarrollo: por qué: los inversores habían apostado a que ganaba Flávio Bolsonaro (después de la primera vuelta la Bolsa había subido casi 8%) esperando más orden en las cuentas públicas, y el resultado los agarró mal parados. La duda fiscal (deuda de más del 80% del PBI) en una frase.\n- Giro: un dato que casi nadie sabe: que fue el primer freno de la Bolsa desde la pandemia (marzo de 2020), o que las exportadoras como Vale subieron porque un real barato les conviene.\n- Lo que más importa para quien mira: las vacaciones. Si el real sigue barato, Brasil sale más barato para vacacionar este verano (en condicional). Si entra, una frase de que a lo que Argentina le vende a Brasil le cuesta más competir.\n- Cierre: terminá EXACTAMENTE con esta pregunta, para que la gente opine en los comentarios: «¿Seguirá bajando todo mucho más? ¿Vos qué opinás?». No hagas pronósticos propios.\n- Hashtags: #brasil #lula #real #vacaciones #economia #argentina.",
+      "datos": "BRASIL: REACCIÓN DE LOS MERCADOS TRAS LA REELECCIÓN DE LULA (lunes 26 de octubre de 2026).\n- Elección: el domingo 25 de octubre Lula da Silva ganó el balotaje con alrededor del 51,8% de los votos contra el senador Flávio Bolsonaro (hijo de Jair Bolsonaro). Es su cuarta victoria presidencial y el primer candidato que gana después de haber salido segundo en la primera vuelta desde que volvieron las elecciones directas en 1989. El bolsonarismo no reconoció el resultado y habló de pedir que se anule.\n- El real (a la mañana): el viernes 1 dólar costaba 4,99 reales; el lunes abrió en 5,42 y a las 11:43 estaba en 5,47. O sea, el real llegó a perder casi 9% de su valor contra el dólar en una mañana. Según el diario El País, es la peor caída del real en un día desde 1999.\n- La Bolsa (índice Ibovespa): el viernes cerró en unos 205.000 puntos. El lunes cayó más de 10% a los pocos minutos y se activó el 'circuit breaker', el freno automático que corta las operaciones 30 minutos: fue el primero desde marzo de 2020 (la pandemia). A las 11:26 caía 17,3% y a las 12:07, 15,5% (173.000 puntos).\n- Medido en dólares (lo que perdió un inversor de afuera, porque se suman la caída de las acciones y la del real): el fondo de acciones brasileñas que cotiza en Nueva York (EWZ) llegó a caer 27% antes de la apertura, y las acciones de Petrobras, Itaú y Bradesco en Nueva York caían más de 20%.\n- Las que más cayeron en Brasil: bancos como Banco do Brasil (−31%) y Bradesco (−27%); Petrobras cayó 12,5%. En cambio, exportadoras como Vale (+6%) y Suzano (+8%) subieron, porque cobran en dólares y un real barato les conviene.\n- El Tesoro de Brasil canceló las subastas de deuda previstas del 27 al 29 de octubre.\n- Por qué: los inversores habían apostado a que ganaba Flávio Bolsonaro. Después de que él ganara la primera vuelta, a principios de octubre, la Bolsa había subido 7,7% esperando más disciplina fiscal. La duda principal es fiscal: la deuda pública de Brasil supera el 80% del PBI. Los analistas miran quién será el ministro de Hacienda y si Lula consigue mayorías en un Congreso con mayoría opositora.\n- Para Argentina (consecuencias lógicas, en condicional): si el real se mantiene más barato, vacacionar en Brasil sale más barato para un argentino. Brasil es uno de los principales socios comerciales de Argentina: a los productos argentinos que se venden en Brasil les cuesta más competir.",
+      "datos_vivos": [
+        {
+          "nombre": "Real brasileño",
+          "yahoo": "BRL=X",
+          "awesome": "USD-BRL",
+          "moneda": true,
+          "unidad": "reales",
+          "decimales": 2,
+          "contra": "el cierre anterior (si es lunes, el del viernes, antes de la elección)"
+        },
+        {
+          "nombre": "Bolsa de Brasil (índice Ibovespa)",
+          "yahoo": "^BVSP",
+          "unidad": "puntos",
+          "decimales": 0,
+          "en_dolares_con": "BRL=X",
+          "contra": "el cierre anterior (si es lunes, el del viernes, antes de la elección)"
+        }
+      ],
+      "cierre": {
+        "voz": "¿Seguirá bajando todo mucho más? ¿Vos qué opinás?",
+        "pantalla": "¿Seguirá bajando? ¿Qué opinás?",
+        "emoji": "🤔"
+      }
+    },
+    {
+      "id": "brasil-vacaciones-2026-10",
+      "turno": 2,
+      "serie": "plata",
+      "hasta": "2026-10-29",
+      "titulo": "Gastar en Brasil, 10% más barato",
+      "fuente": "Turismo en Río (julio 2026), Quanto Custa Viajar, Infobae y Banco Nación",
+      "fecha_datos": "fines de octubre de 2026",
+      "carrusel_ig": false,
+      "datos_vivos": [
+        {
+          "nombre": "Real brasileño",
+          "yahoo": "BRL=X",
+          "awesome": "USD-BRL",
+          "moneda": true,
+          "unidad": "reales",
+          "decimales": 2,
+          "referencia": 4.99,
+          "contra": "el viernes antes de la elección (4,99 reales por dólar)"
+        }
+      ],
+      "cierre": {
+        "voz": "¿Vos qué opinás? ¿Te irías a Brasil antes que a la Costa?",
+        "pantalla": "¿Brasil o la Costa?",
+        "emoji": "🏖️"
+      },
+      "prompt": "Video corto y positivo para argentinos que piensan dónde vacacionar este verano. Formato \"Esto te cambia\". TONO NEUTRAL en lo político: el tema es la plata del que viaja.\n- Hablá siempre de que CAYÓ EL REAL, nunca de que \"subió el dólar\".\n- Escena 1: de frente: vacacionar en Brasil ya competía con la Costa, y con la caída del real ahora sale todavía más barato. Prometé decir cuánto.\n- Escenas 2 y 3: cuánto cayó el real (con los DATOS ACTUALIZADOS si están; si no, el dato del Banco Nación: de 317 a 284 pesos, un 10% menos) y qué significa: todo lo que pagues allá en reales (comida, playa, taxis, compras) te sale más o menos ese porcentaje menos.\n- No des ejemplos de precios ni hagas cuentas en dólares: alcanza con el porcentaje.\n- Lo de la Costa, en UNA sola frase y sin números de la Costa: antes de la elección, alojamiento y comida en Río ya costaban casi lo mismo que en Mar del Plata.\n- Sin aclaraciones ni advertencias (no hables de pasajes, paquetes ni de si el real se recupera). Lo que sale más barato es lo que gastás allá: decilo así, sin prometer que todo el viaje baja.\n- Giro: Brasil ya era el favorito: en 2025 fueron 3,4 millones de argentinos, un récord.\n- Cierre: terminá EXACTAMENTE con: «¿Vos qué opinás? ¿Te irías a Brasil antes que a la Costa?».\n- Título sugerido (máximo 40 caracteres): «Gastar en Brasil, 10% más barato» o parecido.\n- Hashtags: #brasil #vacaciones #real #verano #viajes #argentina.",
+      "datos": "VACACIONES EN BRASIL DESPUÉS DE LA CAÍDA DEL REAL (fines de octubre de 2026).\n- Qué pasó: el domingo 25 de octubre ganó Lula el balotaje y el lunes 26 el real se hundió. El viernes 1 dólar costaba 4,99 reales; el lunes llegó a 5,47 (el real perdió casi 9% contra el dólar). En el Banco Nación, el real pasó de 317 a 284 pesos: 10,4% menos.\n- Qué se abarata (Infobae): lo que se paga en reales en destino: comidas, bebida en la playa, sombrillas y reposeras, taxis, transporte y compras.\n- Ya competía con la Costa: antes de la elección, una semana de alojamiento y comida para dos en Río (hotel 3 estrellas, comiendo afuera) costaba casi lo mismo que en Mar del Plata (departamento de 1 ambiente, comiendo afuera), sin contar cómo llegar.\n- Brasil es el destino favorito: en 2025 lo visitaron 3.386.823 argentinos, el récord."
+    },
+    {
+      "id": "fal-2026",
+      "turno": 1,
+      "serie": "monotributo",
+      "hasta": "2026-12-20",
+      "titulo": "El FAL: el fondo para despidos que arranca en diciembre",
+      "fuente": "Ley 27.802, Decreto 1228/2026 y RG ARCA 5907/2026",
+      "fecha_datos": "octubre de 2026",
+      "prompt": "Video para dueños de pymes, comercios y profesionales que tienen empleados. Formato \"Esto te cambia\".\n- Escena 1: nombrá a quien mira y la novedad con su fecha (si tenés empleados, en diciembre arranca el FAL) y prometé contarle qué tiene que hacer.\n- Escenas 2 y 3: qué es en palabras simples (un fondo para pagar indemnizaciones por despido) y cuánto es (2,5% de los sueldos si sos pyme, 1% si sos grande).\n- Desarrollo: que según ARCA no es plata extra (sale de las contribuciones que ya pagás), a dónde va la plata (una cuenta a tu nombre), cuándo se paga el primero y el trámite concreto (elegir la entidad, sacar el ID FAL e informarlo en ARCA; si no elegís, te asignan una).\n- Giro: la carencia de 12 meses: hasta 2028 esa plata no se puede usar, así que un despido de 2027 se sigue pagando como siempre.\n- Cierre: para el empleado no cambia nada (la indemnización la cobra igual) y mandáselo a alguien que tenga empleados.\n- La postergación (antes era noviembre) mencionala solo al pasar, si suma.\n- Hashtags: #FAL #reformalaboral #pymes #empleadores #ARCA #argentina.",
+      "datos": "FONDO DE ASISTENCIA LABORAL (FAL). Lo creó la Ley 27.802 de Modernización Laboral.\n- Qué es: un fondo que arma cada empleador privado para ayudarse a pagar las indemnizaciones por despido (antigüedad, preaviso e integración del mes de despido) de trabajadores registrados con al menos 12 meses de antigüedad. No reemplaza la indemnización: el trabajador la cobra igual; lo que cambia es de dónde sale la plata.\n- Cuándo arranca: el Decreto 1228/2026 (Boletín Oficial del 20 de octubre de 2026) lo postergó del 1 de noviembre al 1 de diciembre de 2026. El primer aporte corresponde a los sueldos de diciembre de 2026 y se paga en enero de 2027, junto con las cargas sociales (formulario 931).\n- Cuánto: 2,5% de los sueldos (la misma base de las contribuciones jubilatorias) para las pymes con certificado MiPyME vigente; 1% para las empresas grandes.\n- No es un costo extra según la reglamentación de ARCA (Resolución General 5907/2026): ese porcentaje se descuenta de las contribuciones patronales que ya se pagan (jubilación, PAMI, Fondo Nacional de Empleo y asignaciones familiares). Cambia el destino de parte de esa plata. El sistema Declaración en línea lo calcula solo.\n- A dónde va la plata: a una cuenta individual a nombre del empleador, en una entidad habilitada (un banco o un agente) que la invierte en fondos comunes de inversión o fideicomisos controlados por la CNV.\n- Qué tiene que hacer el empleador: elegir la entidad, abrir su cuenta y conseguir su número de cuenta, el 'ID FAL', e informarlo a ARCA con clave fiscal en el servicio 'Simplificación Registral' antes del primer aporte. Si no elige, le asignan una entidad de oficio y, mientras tanto, la plata queda sin asignar a su cuenta.\n- Carencia: el mismo decreto la amplió de 6 a 12 meses seguidos de aportes. Durante ese tiempo la plata no se puede usar para pagar indemnizaciones: con este calendario, recién desde enero de 2028. Hasta entonces, los despidos se pagan como siempre.\n- No aplica al sector público.",
+      "carrusel_ig": true,
+      "carrusel": [
+        {
+          "titulo": "Si tenés empleados, en diciembre arranca el FAL",
+          "cuerpo": "Qué es, a quién le toca y qué tenés que hacer",
+          "emoji": "📅"
+        },
+        {
+          "titulo": "¿Qué es el FAL?",
+          "cuerpo": "El Fondo de Asistencia Laboral: un fondo para ayudarte a pagar las indemnizaciones si despedís a alguien. Lo creó la Ley 27.802 de Modernización Laboral.",
+          "emoji": "🏦"
+        },
+        {
+          "titulo": "¿A quién le aplica?",
+          "cuerpo": "A todos los empleadores privados: pymes, comercios, profesionales con empleados y empresas grandes. El sector público queda afuera.",
+          "emoji": "👥"
+        },
+        {
+          "titulo": "¿Cuánto es?",
+          "cuerpo": "2,5% de los sueldos si sos pyme con certificado MiPyME vigente. 1% si sos una empresa grande. Se calcula sobre la misma base que las cargas sociales.",
+          "emoji": "💰"
+        },
+        {
+          "titulo": "¿Es plata extra?",
+          "cuerpo": "No. Según ARCA (RG 5907/2026), ese porcentaje se descuenta de las contribuciones patronales que ya pagás. Va a una cuenta a tu nombre, invertida en fondos controlados por la CNV.",
+          "emoji": "🔄"
+        },
+        {
+          "titulo": "¿Qué tenés que hacer?",
+          "cuerpo": "1) Elegí la entidad (banco o agente). 2) Abrí tu cuenta y pedí tu ID FAL. 3) Informalo en ARCA, en Simplificación Registral, antes del primer pago. Si no elegís, te asignan una.",
+          "emoji": "✅"
+        },
+        {
+          "titulo": "¿Y para el empleado?",
+          "cuerpo": "No le cambia nada: si lo despiden, cobra su indemnización igual. Lo que cambia es de dónde sale la plata.",
+          "emoji": "🤝"
+        },
+        {
+          "titulo": "Fechas clave",
+          "cuerpo": "Arranca el 1 de diciembre de 2026. El primer aporte es el de los sueldos de diciembre y se paga en enero de 2027 con el 931. Hay 12 meses de carencia: la plata no se puede usar hasta 2028.",
+          "emoji": "📆"
+        },
+        {
+          "titulo": "Guardalo y mandáselo a quien tenga empleados",
+          "cuerpo": "Más información en ramacontable.com.ar",
+          "emoji": "📌"
+        }
+      ]
+    },
+    {
+      "id": "siradig-2026",
+      "turno": 1,
+      "serie": "monotributo",
+      "hasta": "2027-03-20",
+      "titulo": "SiRADIG: los gastos que te bajan Ganancias del sueldo",
+      "fuente": "ARCA (SiRADIG - Trabajador) y notas de iProfesional y Calcular Sueldo de 2026",
+      "fecha_datos": "2026",
+      "prompt": "Video para empleados en relación de dependencia a los que les descuentan Ganancias del sueldo. Formato \"Lo que casi nadie aprovecha\" con un toque de \"El error que sale caro\".\n- Escena 1: nombrá a quien mira (si en tu recibo te descuentan Ganancias) y prometé lo concreto: hay gastos que te bajan ese descuento y mucha gente no los carga.\n- Escenas 2 y 3: qué es SiRADIG en una frase (donde le avisás a tu empleador tus gastos) y por qué importa (si no cargás nada, te retienen de más).\n- Desarrollo: solo nombrá de qué se puede deducir (vivienda, familia, salud, educación, empleada doméstica, seguros y donaciones), SIN explicar topes, porcentajes ni requisitos de cada uno.\n- Giro: no cargues cualquier cosa: ARCA cruza lo que cargás con lo que informa tu empleador y mandó intimaciones masivas por deducciones mal cargadas (ropa, celulares, cargas de familia).\n- Cierre: hasta cuándo se puede cargar lo de 2026 y que conviene hacerlo mes a mes; mandáselo a un compañero de laburo.\n- No digas montos en pesos: los topes cambian.\n- Hashtags: #SiRADIG #ganancias #sueldo #ARCA #impuestos #argentina.",
+      "datos": "SiRADIG - TRABAJADOR (formulario 572 web) es el servicio de ARCA donde el empleado en relación de dependencia que paga impuesto a las Ganancias le informa a su empleador sus deducciones. El empleador es el que le retiene el impuesto del sueldo: si el empleado no carga nada, le retiene sobre más plata y paga de más.\nDe qué se puede deducir (período 2026): vivienda, familia, salud, educación, empleada doméstica, seguros y donaciones, entre otros. Cada uno tiene sus propios topes y requisitos.\nPlazo: lo que corresponde a 2026 se puede cargar hasta el 31 de marzo de 2027, pero conviene cargarlo mes a mes: así el empleador te retiene menos durante el año.\nOjo: durante 2026 ARCA mandó intimaciones masivas a empleados por deducciones de 2025 mal cargadas en SiRADIG. Las detecta cruzando lo que carga el empleado con lo que informa el empleador. Revisó sobre todo: ropa (solo cuenta la de uso exclusivo y obligatorio para el trabajo; nunca celulares ni tablets), autos (solo para viajantes), aportes a cajas que ya figuran en el recibo, aportes a sociedades de garantía recíproca y cargas de familia mal repartidas. Quien recibe la intimación tiene 15 días hábiles para responder con clave fiscal en el servicio SIACE.",
+      "carrusel_ig": true,
+      "carrusel": [
+        {
+          "titulo": "¿Te descuentan Ganancias del sueldo?",
+          "cuerpo": "Estos gastos te bajan el descuento",
+          "emoji": "🧾"
+        },
+        {
+          "titulo": "¿A quién le sirve?",
+          "cuerpo": "A los empleados en relación de dependencia a los que les retienen Ganancias. Si en tu recibo no aparece ese descuento, por ahora no te toca.",
+          "emoji": "👤"
+        },
+        {
+          "titulo": "¿Qué es SiRADIG?",
+          "cuerpo": "El formulario 572 web de ARCA. Ahí le avisás a tu empleador qué gastos tenés. Si no cargás nada, te retiene de más.",
+          "emoji": "💻"
+        },
+        {
+          "titulo": "¿Qué podés deducir?",
+          "cuerpo": "• Vivienda\n• Familia\n• Salud\n• Educación\n• Empleada doméstica\n• Seguros y donaciones",
+          "emoji": "🧮"
+        },
+        {
+          "titulo": "Ojo: no cargues de más",
+          "cuerpo": "ARCA cruza lo que cargás con lo que informa tu empleador y ya intimó a empleados por deducciones mal cargadas: ropa que no es de trabajo, celulares, tablets y cargas de familia mal repartidas.",
+          "emoji": "⚠️"
+        },
+        {
+          "titulo": "¿Hasta cuándo?",
+          "cuerpo": "Lo de 2026 se puede cargar hasta el 31 de marzo de 2027. Pero conviene hacerlo mes a mes: así te retienen menos en cada sueldo.",
+          "emoji": "📆"
+        },
+        {
+          "titulo": "Guardalo y mandáselo a un compañero",
+          "cuerpo": "Más información en ramacontable.com.ar",
+          "emoji": "📌"
+        }
+      ]
+    }
+  ]
+}
