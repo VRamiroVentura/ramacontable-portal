@@ -233,7 +233,10 @@
   const tipo = form.dataset.calc;
   const tabla = filas => `<table class="tabla-desc"><tbody>${filas.map(f => `<tr${f[2] ? ' class="tot"' : ''}><td>${f[0]}</td><td>${f[1]}</td></tr>`).join('')}</tbody></table>`;
 
+  const etiqueta = (sel, textos) => { const f = () => { form.querySelector('[data-etq]').textContent = textos[sel.value]; }; sel.addEventListener('change', f); f(); };
+
   if (tipo === 'actualizacion') {
+    etiqueta(form.sentido, { adelante: 'Monto en la fecha inicial', atras: 'Monto en la fecha final' });
     const metodo = form.metodo, fija = form.querySelector('[data-fija]'), modoBox = form.querySelector('[data-modo]');
     const ver = () => { const v = metodo.value; fija.hidden = v !== 'fija'; modoBox.hidden = !(v === 'fija' || ['badlar', 'tamar', 'plazo_fijo', 'personales'].includes(v)); };
     metodo.addEventListener('change', ver); ver();
@@ -246,17 +249,21 @@
       try {
         const monto = numero(form.monto.value), desde = form.desde.value, hasta = form.hasta.value, modo = form.modo.value;
         const v = metodo.value;
-        const r = v === 'fija' ? tasaFija(monto, desde, hasta, numero(form.tna.value), modo) : actualizar(await serie(v), monto, desde, hasta, modo);
+        const atras = form.sentido.value === 'atras';
+        const calc = (m, s) => s ? actualizar(s, m, desde, hasta, modo) : tasaFija(m, desde, hasta, numero(form.tna.value), modo);
+        const base = calc(monto, v === 'fija' ? null : await serie(v));
+        // hacia atrás: se divide por el mismo coeficiente
+        const r = atras ? { ...base, total: r2(monto / base.coef) } : base;
         let comp = '';
         if (form.comparar.checked) {
           const claves = ['ipc', 'cer', 'uva', 'icl', 'dolar_minorista', 'dolar_mayorista', 'justicia', 'plazo_fijo', 'badlar'];
           const filas = [];
           for (const k of claves) {
-            try { const s = await serie(k); const x = actualizar(s, monto, desde, hasta, 'simple'); filas.push([esc(s.nombre), fmt(x.total), pct((x.coef - 1) * 100)]); } catch (e) { /* sin datos para esa fecha */ }
+            try { const s = await serie(k); const x = actualizar(s, monto, desde, hasta, 'simple'); filas.push([esc(s.nombre), fmt(atras ? monto / x.coef : x.total), pct((x.coef - 1) * 100)]); } catch (e) { /* sin datos para esa fecha */ }
           }
-          comp = `<h3>Comparación con todos los índices</h3><table class="tabla-desc"><thead><tr><th>Índice o tasa</th><th>Monto actualizado</th><th>Variación</th></tr></thead><tbody>${filas.map(f => `<tr><td>${f[0]}</td><td>${f[1]}</td><td>${f[2]}</td></tr>`).join('')}</tbody></table>`;
+          comp = `<h3>Comparación con todos los índices</h3><table class="tabla-desc"><thead><tr><th>Índice o tasa</th><th>${atras ? `Equivale al ${fd(desde)}` : `Equivale al ${fd(hasta)}`}</th><th>Variación</th></tr></thead><tbody>${filas.map(f => `<tr><td>${f[0]}</td><td>${f[1]}</td><td>${f[2]}</td></tr>`).join('')}</tbody></table>`;
         }
-        mostrar(`<div class="res-top"><div><span>Monto original</span><b>${fmt(monto)}</b></div><div><span>Variación</span><b>${pct((r.coef - 1) * 100)}</b></div><div class="neto"><span>Monto actualizado</span><b>${fmt(r.total)}</b></div></div>
+        mostrar(`<div class="res-top"><div><span>${atras ? 'Monto al ' + fd(hasta) : 'Monto al ' + fd(desde)}</span><b>${fmt(monto)}</b></div><div><span>Variación del período</span><b>${pct((r.coef - 1) * 100)}</b></div><div class="neto"><span>${atras ? 'Equivale al ' + fd(desde) : 'Equivale al ' + fd(hasta)}</span><b>${fmt(r.total)}</b></div></div>
           <p>Coeficiente: <b>${r.coef.toLocaleString('es-AR', { maximumFractionDigits: 6 })}</b> · ${esc(r.detalle)}</p>${r.aviso ? `<p class="nota-chica">${esc(r.aviso)}</p>` : ''}${comp}`);
       } catch (e) { err.textContent = e.message === 'sin datos' ? 'No se pudieron cargar los datos del BCRA. Probá de nuevo en un rato.' : e.message; salida.hidden = true; }
     });
@@ -286,12 +293,17 @@
   }
 
   if (tipo === 'plazofijo') {
+    etiqueta(form.sentido, { inicio: 'Capital que invertís hoy', final: 'Monto que querés cobrar al vencimiento' });
     serie('plazo_fijo').then(s => { if (!form.tna.value) form.tna.value = String(s.v[s.v.length - 1]).replace('.', ','); }).catch(() => {});
     form.addEventListener('submit', ev => {
       ev.preventDefault(); err.textContent = '';
       try {
-        const r = plazoFijo(numero(form.monto.value), numero(form.tna.value), numero(form.dias.value), numero(form.renov.value) || 1);
-        mostrar(`<div class="res-top"><div><span>Intereses</span><b>${fmt(r.interes)}</b></div><div><span>TEA</span><b>${pct(r.tea)}</b></div><div class="neto"><span>Total al vencimiento</span><b>${fmt(r.total)}</b></div></div>
+        let capital = numero(form.monto.value);
+        const tna = numero(form.tna.value), dias = numero(form.dias.value), renov = numero(form.renov.value) || 1;
+        if (form.sentido.value === 'final') capital = r2(capital / Math.pow(1 + tna / 100 * dias / 365, renov));
+        const r = plazoFijo(capital, tna, dias, renov);
+        mostrar(`<div class="res-top"><div><span>Capital inicial</span><b>${fmt(capital)}</b></div><div><span>Intereses del primer plazo</span><b>${fmt(r.interes)}</b></div><div class="neto"><span>${renov > 1 ? `Al final de ${renov} renovaciones` : 'Total al vencimiento'}</span><b>${fmt(renov > 1 ? r.renovado : r.total)}</b></div></div>
+          <p>TEA ${pct(r.tea)}</p>
           ${tabla([['Tasa efectiva mensual aproximada', pct(r.tem)], [`Capital si renovás ${numero(form.renov.value) || 1} ${numero(form.renov.value) > 1 ? 'veces' : 'vez'} a la misma tasa`, fmt(r.renovado)]])}
           <p class="nota-chica">Interés = capital × TNA × días ÷ 365. La tasa real depende del banco: el valor sugerido es el promedio de plazo fijo a 30 días que publica el BCRA.</p>`);
       } catch (e) { err.textContent = e.message; salida.hidden = true; }
