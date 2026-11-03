@@ -1,0 +1,27 @@
+<div class="grilla"><article class="nota calc">
+<p class="ante">Herramientas | Datos oficiales del BCRA</p>
+<h1>Calculadora de actualización de montos: inflación, CER, UVA, dólar y tasas</h1>
+<p class="firma">Redacción Ramacontable · Con las series oficiales del Banco Central, actualizadas todos los días</p>
+<div class="encorto"><b>En corto</b><p>Actualizá una deuda, un crédito o cualquier importe entre dos fechas por inflación, CER, UVA, ICL, dólar oficial o tasas de interés, y compará todos los índices de una vez.</p></div>
+<form id="calc" data-calc="actualizacion" class="form-calc" novalidate>
+<label>Monto<input name="monto" inputmode="decimal" placeholder="Ej.: 1.000.000"></label>
+<div class="fila2"><label>Desde<input type="date" name="desde"></label><label>Hasta<input type="date" name="hasta" data-hoy></label></div>
+<label>Actualizar por<select name="metodo"><option value="ipc">Inflación (IPC del INDEC)</option><option value="cer">CER</option><option value="uva">UVA</option><option value="icl">ICL (alquileres)</option><option value="dolar_minorista">Dólar oficial minorista</option><option value="dolar_mayorista">Dólar mayorista (A 3500)</option><option value="justicia">Tasa pasiva uso de justicia (Com. P 14.290)</option><option value="plazo_fijo">Tasa de plazo fijo (BCRA)</option><option value="badlar">Tasa BADLAR</option><option value="tamar">Tasa TAMAR</option><option value="personales">Tasa de préstamos personales (BCRA)</option><option value="fija">Tasa fija que cargo yo</option></select></label>
+<div data-fija hidden><label>Tasa nominal anual (TNA %)<input name="tna" inputmode="decimal" placeholder="Ej.: 36"></label></div>
+<div data-modo hidden><label>Forma de cálculo<select name="modo"><option value="simple">Interés simple</option><option value="compuesto">Capitalizado (interés compuesto)</option></select></label></div>
+<label class="check"><input type="checkbox" name="comparar" checked> Comparar con todos los índices</label>
+<p class="error" id="err"></p>
+<button class="btn ancho">Calcular</button>
+</form>
+<section id="resultado" class="resultado" hidden></section>
+<h2>¿Cómo se actualiza un monto?</h2>
+<p><b>Por índice</b> (CER, UVA, ICL o dólar): se multiplica el monto por el valor del índice en la fecha final dividido por el valor en la fecha inicial. <b>Por inflación</b>: se acumulan las variaciones mensuales del IPC de los meses posteriores al inicial hasta el mes final. <b>Por tasa</b>: se suman (o capitalizan) los intereses diarios según la tasa vigente cada día.</p>
+<h2>¿Qué es la tasa de uso de justicia?</h2>
+<p>Es la tasa pasiva que publica el BCRA por la Comunicación P 14.290 como un porcentaje acumulado. El interés de un período es la diferencia entre el valor acumulado de la fecha final y el de la fecha inicial. Muchos juzgados la usan para actualizar créditos, pero cada tribunal fija su propia tasa.</p>
+<section class="faq"><h2>Preguntas frecuentes</h2><details><summary>¿De dónde salen los datos?</summary><p>De la API oficial de estadísticas del Banco Central de la República Argentina (BCRA), que se consulta todos los días.</p></details><details><summary>¿Qué índice conviene usar?</summary><p>Depende de lo que diga el contrato, la ley o la sentencia. Para comparar el poder de compra se usa la inflación; los créditos UVA se ajustan por UVA y los alquileres de contratos 2020-2023 por ICL.</p></details><details><summary>¿Por qué el resultado usa un dato anterior a la fecha final?</summary><p>Cuando el BCRA todavía no publicó el valor de un día, se toma el último valor disponible y se avisa en el resultado.</p></details></section>
+<p class="aviso">Herramienta de carácter general. El resultado es una estimación y no reemplaza el análisis profesional de cada caso. Verificá siempre el índice o la tasa que fija el contrato, la ley o la sentencia aplicable.</p>
+</article>
+<aside class="lateral"><section class="caja"><h3>Último dato de cada serie</h3><ul class="venc" id="ultimos"></ul></section><a class="caja caja-calc" href="calculadoras.html"><b>Todas las calculadoras</b><span>Sueldos, aguinaldo, actualización de montos, plazo fijo y más</span></a></aside>
+</div>
+<script src="calcs.js?v=1"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "¿De dónde salen los datos?", "acceptedAnswer": {"@type": "Answer", "text": "De la API oficial de estadísticas del Banco Central de la República Argentina (BCRA), que se consulta todos los días."}}, {"@type": "Question", "name": "¿Qué índice conviene usar?", "acceptedAnswer": {"@type": "Answer", "text": "Depende de lo que diga el contrato, la ley o la sentencia. Para comparar el poder de compra se usa la inflación; los créditos UVA se ajustan por UVA y los alquileres de contratos 2020-2023 por ICL."}}, {"@type": "Question", "name": "¿Por qué el resultado usa un dato anterior a la fecha final?", "acceptedAnswer": {"@type": "Answer", "text": "Cuando el BCRA todavía no publicó el valor de un día, se toma el último valor disponible y se avisa en el resultado."}}]}</script>

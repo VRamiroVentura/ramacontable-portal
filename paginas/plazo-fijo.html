@@ -1,0 +1,21 @@
+<div class="grilla"><article class="nota calc">
+<p class="ante">Herramientas | Finanzas personales</p>
+<h1>Simulador de plazo fijo: intereses, TEA y renovación</h1>
+<p class="firma">Redacción Ramacontable · Con la tasa promedio que informa el BCRA</p>
+<div class="encorto"><b>En corto</b><p>Calculá cuánto vas a cobrar de intereses por un plazo fijo tradicional, la tasa efectiva anual y cuánto tendrías si lo renovás.</p></div>
+<form id="calc" data-calc="plazofijo" class="form-calc" novalidate>
+<label>Monto a invertir<input name="monto" inputmode="decimal" placeholder="Ej.: 1.000.000"></label>
+<div class="fila2"><label>Tasa nominal anual (TNA %)<input name="tna" inputmode="decimal"></label><label>Plazo en días<input name="dias" inputmode="numeric" value="30"></label></div>
+<label>Cantidad de veces que lo renovás<input name="renov" inputmode="numeric" value="1"></label>
+<p class="error" id="err"></p>
+<button class="btn ancho">Calcular</button>
+</form>
+<section id="resultado" class="resultado" hidden></section>
+<h2>¿Cómo se calculan los intereses de un plazo fijo?</h2><p>Intereses = capital × TNA × días ÷ 365. La tasa efectiva anual (TEA) muestra cuánto rendiría en un año si renovás capital e intereses al mismo plazo y tasa.</p>
+<section class="faq"><h2>Preguntas frecuentes</h2><details><summary>¿Cuál es el plazo mínimo?</summary><p>El plazo fijo tradicional tiene un plazo mínimo de 30 días.</p></details><details><summary>¿La tasa es la de mi banco?</summary><p>La sugerida es el promedio de plazo fijo a 30 días que publica el BCRA. Cargá la tasa que te ofrece tu banco para un resultado exacto.</p></details></section>
+<p class="aviso">Herramienta de carácter general. El resultado es una estimación y no reemplaza el análisis profesional de cada caso.</p>
+</article>
+<aside class="lateral"><a class="caja caja-calc" href="calculadoras.html"><b>Todas las calculadoras</b><span>Sueldos, aguinaldo, actualización de montos, plazo fijo y más</span></a></aside>
+</div>
+<script src="calcs.js?v=1"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "¿Cuál es el plazo mínimo?", "acceptedAnswer": {"@type": "Answer", "text": "El plazo fijo tradicional tiene un plazo mínimo de 30 días."}}, {"@type": "Question", "name": "¿La tasa es la de mi banco?", "acceptedAnswer": {"@type": "Answer", "text": "La sugerida es el promedio de plazo fijo a 30 días que publica el BCRA. Cargá la tasa que te ofrece tu banco para un resultado exacto."}}]}</script>

@@ -1,0 +1,21 @@
+<div class="grilla"><article class="nota calc">
+<p class="ante">Herramientas | IVA</p>
+<h1>Calculadora de IVA: agregar o quitar IVA</h1>
+<p class="firma">Redacción Ramacontable · 21%, 10,5%, 27% y otras alícuotas</p>
+<div class="encorto"><b>En corto</b><p>Sumá el IVA a un importe neto o separá el IVA de un precio final con cualquier alícuota.</p></div>
+<form id="calc" data-calc="iva" class="form-calc" novalidate>
+<label>Monto<input name="monto" inputmode="decimal"></label>
+<div class="fila2"><label>Alícuota<select name="alicuota"><option value="21">21%</option><option value="10.5">10,5%</option><option value="27">27%</option><option value="5">5%</option><option value="2.5">2,5%</option></select></label>
+<label>Operación<select name="modo"><option value="agregar">Agregar IVA al neto</option><option value="quitar">Quitar IVA del precio final</option></select></label></div>
+<p class="error" id="err"></p>
+<button class="btn ancho">Calcular</button>
+</form>
+<section id="resultado" class="resultado" hidden></section>
+<h2>¿Cómo se calcula el IVA?</h2><p>Para agregarlo: neto × (1 + alícuota). Para quitarlo de un precio final: precio ÷ (1 + alícuota), y la diferencia es el IVA.</p>
+<section class="faq"><h2>Preguntas frecuentes</h2><details><summary>¿Cuál es la alícuota general?</summary><p>La alícuota general es del 21%. Hay alícuotas diferenciales del 10,5% y del 27% para ciertos bienes y servicios.</p></details></section>
+<p class="aviso">Herramienta de carácter general. El resultado es una estimación y no reemplaza el análisis profesional de cada caso.</p>
+</article>
+<aside class="lateral"><a class="caja caja-calc" href="calculadoras.html"><b>Todas las calculadoras</b><span>Sueldos, aguinaldo, actualización de montos, plazo fijo y más</span></a></aside>
+</div>
+<script src="calcs.js?v=1"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "¿Cuál es la alícuota general?", "acceptedAnswer": {"@type": "Answer", "text": "La alícuota general es del 21%. Hay alícuotas diferenciales del 10,5% y del 27% para ciertos bienes y servicios."}}]}</script>

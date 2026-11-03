@@ -125,6 +125,71 @@ def fecha_corta(iso):
     return f"{iso[8:10]}/{iso[5:7]}"
 
 
+# Series oficiales del BCRA (API pública de estadísticas, v4.0). Se bajan en cada publicación de la web.
+SERIES_BCRA = {
+    "cer": (30, "CER (Coeficiente de Estabilización de Referencia)", "indice"),
+    "uva": (31, "UVA (Unidad de Valor Adquisitivo)", "indice"),
+    "icl": (40, "ICL (Índice para Contratos de Locación)", "indice"),
+    "dolar_minorista": (4, "Dólar oficial minorista (promedio vendedor)", "indice"),
+    "dolar_mayorista": (5, "Dólar mayorista de referencia (Com. A 3500)", "indice"),
+    "ipc": (27, "Inflación mensual (IPC)", "mensual"),
+    "justicia": (43, "Tasa pasiva uso de justicia (Com. P 14.290)", "acumulada"),
+    "badlar": (7, "Tasa BADLAR bancos privados", "tna"),
+    "tamar": (44, "Tasa TAMAR bancos privados", "tna"),
+    "plazo_fijo": (12, "Tasa de plazo fijo a 30 días", "tna"),
+    "personales": (14, "Tasa de préstamos personales", "tna"),
+}
+
+
+def bajar_series(destino):
+    """Escribe sitio/datos/serie-<clave>.json con {f: fechas, v: valores}. Si el BCRA no responde, esa serie queda sin archivo."""
+    import ssl
+    os.makedirs(destino, exist_ok=True)
+    resumen = {}
+    desde = "2016-01-01"
+    for clave, (idv, nombre, tipo) in SERIES_BCRA.items():
+        puntos = {}
+        try:
+            offset = 0
+            while True:
+                url = f"https://api.bcra.gob.ar/estadisticas/v4.0/monetarias/{idv}?desde={desde}&limit=3000&offset={offset}"
+                req = urllib.request.Request(url, headers={"Accept": "application/json", "User-Agent": "ramacontable-build"})
+                try:
+                    datos = json.load(urllib.request.urlopen(req, timeout=60, context=ssl.create_default_context()))
+                except ssl.SSLError:
+                    # si el sistema no reconoce el certificado del BCRA, se prueba con la lista de certificados de certifi
+                    import certifi
+                    datos = json.load(urllib.request.urlopen(req, timeout=60, context=ssl.create_default_context(cafile=certifi.where())))
+                det = (datos.get("results") or [{}])[0].get("detalle") or []
+                for d in det:
+                    puntos[d["fecha"][:10]] = d["valor"]
+                if len(det) < 3000:
+                    break
+                offset += 3000
+        except Exception as ex:
+            print(f"Aviso: no se pudo bajar la serie {clave} del BCRA:", ex)
+        if not puntos:
+            continue
+        fechas = sorted(puntos)
+        json.dump({"nombre": nombre, "tipo": tipo, "f": fechas, "v": [puntos[x] for x in fechas]},
+                  open(os.path.join(destino, f"serie-{clave}.json"), "w", encoding="utf-8"), separators=(",", ":"))
+        resumen[clave] = {"nombre": nombre, "tipo": tipo, "desde": fechas[0], "hasta": fechas[-1], "ultimo": puntos[fechas[-1]]}
+    json.dump(resumen, open(os.path.join(destino, "series.json"), "w", encoding="utf-8"), ensure_ascii=False)
+    return resumen
+
+
+def escribir_feriados(destino):
+    """Lista de feriados y días no laborables (página de feriados + los que confirmó la fábrica) para contar días hábiles."""
+    os.makedirs(destino, exist_ok=True)
+    fechas = set(re.findall(r'data-f="(\d{4}-\d{2}-\d{2})"', open(os.path.join(RAIZ, "paginas", "feriados.html"), encoding="utf-8").read()))
+    for fila in VENC:
+        for x in fila.get("feriados") or []:
+            if re.match(r"^\d{4}-\d{2}-\d{2}$", str(x.get("fecha", ""))):
+                fechas.add(x["fecha"])
+    anios = sorted({f[:4] for f in fechas})
+    json.dump({"fechas": sorted(fechas), "anios": anios}, open(os.path.join(destino, "feriados.json"), "w", encoding="utf-8"))
+
+
 def notas_supabase():
     """Notas publicadas en Supabase (las escribe la fábrica y las edita el administrador)."""
     url = os.environ.get("SUPABASE_URL", "").strip().rstrip("/")
@@ -511,7 +576,7 @@ def sitemaps(notas, convenios=()):
     base = sitio_url()
     hoy = datetime.date.today().isoformat()
     urls = [f"<url><loc>{base}</loc><lastmod>{hoy}</lastmod></url>"] + [
-        f"<url><loc>{base}{k}.html</loc><lastmod>{hoy}</lastmod></url>" for k in list(SECCIONES) + ["aguinaldo", "herramientas", "convenios", "guias", "calculadoras", "feriados", "sueldo-comercio", "sueldo-casas-particulares"] + [f"impuesto-{i[0]}" for i in IMPUESTOS]] + [
+        f"<url><loc>{base}{k}.html</loc><lastmod>{hoy}</lastmod></url>" for k in list(SECCIONES) + ["aguinaldo", "herramientas", "convenios", "guias", "calculadoras", "feriados", "sueldo-comercio", "sueldo-casas-particulares", "actualizacion", "dias-habiles", "plazo-fijo", "prestamos", "vacaciones", "liquidacion-final", "horas-extras", "iva"] + [f"impuesto-{i[0]}" for i in IMPUESTOS]] + [
         f"<url><loc>{base}escala-{c['slug']}.html</loc><lastmod>{str(c.get('actualizado') or hoy)[:10]}</lastmod></url>" for c in convenios] + [
         f"<url><loc>{base}nota-{n['slug']}.html</loc><lastmod>{str(n.get('actualizado') or n['fecha'])[:10]}</lastmod></url>" for n in notas]
     mapa = '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' + "".join(urls) + "</urlset>"
@@ -653,6 +718,9 @@ def main():
     with open(os.path.join(RAIZ, "paginas", "admin.html"), encoding="utf-8") as f:
         escribir("admin.html", pagina("Administración | Ramacontable", f.read()))
     escribir("convenios.html", pagina_convenios(convenios, notas))
+    if os.environ.get("RC_SIN_SERIES") != "1":
+        bajar_series(os.path.join(SALIDA, "datos"))
+    escribir_feriados(os.path.join(SALIDA, "datos"))
     por_slug = {c["slug"]: c for c in convenios}
     def calc_conv(archivo, salida_html, slug, titulo, desc):
         c = por_slug.get(slug) or {}
@@ -665,6 +733,18 @@ def main():
               "Calculá el sueldo de comercio con la escala vigente: básico por categoría, antigüedad, presentismo, sumas no remunerativas, descuentos y neto.")
     calc_conv("sueldo-casas.html", "sueldo-casas-particulares.html", "casas-particulares", "Calculadora de sueldo de empleadas domésticas 2026: por hora y mensual | Ramacontable",
               "Calculá el sueldo de casas particulares por categoría, con o sin retiro, mensual o por hora, con antigüedad y zona desfavorable.")
+    CALCS = [("actualizacion.html", "Calculadora de actualización de montos por inflación, CER, UVA, dólar y tasas", "Actualizá montos y deudas entre dos fechas con datos oficiales del BCRA: inflación, CER, UVA, ICL, dólar oficial y tasas."),
+             ("dias-habiles.html", "Calculadora de días hábiles 2026 con feriados", "Contá días hábiles entre dos fechas o calculá el vencimiento de un plazo, descontando sábados, domingos y feriados nacionales."),
+             ("plazo-fijo.html", "Simulador de plazo fijo: intereses y TEA", "Calculá los intereses de un plazo fijo, la TEA y cuánto tenés si lo renovás, con la tasa promedio del BCRA."),
+             ("prestamos.html", "Calculadora de préstamos: cuota y cuadro de amortización", "Calculá la cuota de un préstamo en sistema francés o alemán, el total de intereses y el cuadro de amortización."),
+             ("vacaciones.html", "Calculadora de vacaciones 2026: días y cuánto se cobra", "Calculá los días de vacaciones según antigüedad y cuánto se cobra: sueldo ÷ 25 y plus vacacional (LCT arts. 150 a 157)."),
+             ("liquidacion-final.html", "Calculadora de liquidación final e indemnización por despido 2026", "Calculá la liquidación final por renuncia o despido: indemnización art. 245, preaviso, integración, SAC y vacaciones proporcionales."),
+             ("horas-extras.html", "Calculadora de horas extras al 50% y al 100%", "Calculá el valor de las horas extras al 50% y al 100% a partir del sueldo y la jornada (art. 201 LCT)."),
+             ("iva.html", "Calculadora de IVA: agregar o quitar IVA", "Sumá o quitá el IVA de un importe con alícuotas del 21%, 10,5%, 27% y otras.")]
+    for archivo, titulo, desc in CALCS:
+        with open(os.path.join(RAIZ, "paginas", archivo), encoding="utf-8") as f:
+            escribir(archivo, pagina(titulo + " | Ramacontable", f.read(), "", desc, archivo, herramienta_ld(titulo, desc, archivo),
+                                     [("Calculadoras", "calculadoras.html"), (titulo.split(":")[0], archivo)]))
     for archivo, titulo, desc in [("calculadoras.html", "Calculadoras de sueldos y aguinaldo | Ramacontable", "Calculadoras gratuitas para liquidar sueldos: comercio, casas particulares y aguinaldo, con escalas vigentes."),
                                   ("feriados.html", "Feriados 2026 Argentina: calendario completo y cómo se pagan | Ramacontable", "Calendario de feriados 2026 en Argentina: inamovibles, trasladables y días no laborables, y cómo se liquida trabajar un feriado.")]:
         with open(os.path.join(RAIZ, "paginas", archivo), encoding="utf-8") as f:

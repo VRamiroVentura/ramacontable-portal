@@ -1,0 +1,23 @@
+<div class="grilla"><article class="nota calc">
+<p class="ante">Herramientas | Ley de Contrato de Trabajo, arts. 150 a 157</p>
+<h1>Calculadora de vacaciones: días que corresponden y cuánto se cobra</h1>
+<p class="firma">Redacción Ramacontable · Antigüedad, valor del día y plus vacacional</p>
+<div class="encorto"><b>En corto</b><p>Calculá cuántos días de vacaciones te corresponden según tu antigüedad y cuánto se cobra, con el valor del día a sueldo dividido 25.</p></div>
+<form id="calc" data-calc="vacaciones" class="form-calc" novalidate>
+<div class="fila2"><label>Fecha de ingreso<input type="date" name="ingreso"></label><label>Vacaciones del año<select name="anio"><option>2026</option><option>2027</option></select></label></div>
+<label>Tipo de trabajador<select name="tipo"><option value="mensual">Mensualizado</option><option value="jornal">Jornalizado</option></select></label>
+<div data-sueldo><label>Sueldo mensual bruto (remunerativo)<input name="sueldo" inputmode="decimal"></label></div>
+<div data-jornal hidden><label>Valor del jornal diario<input name="jornal" inputmode="decimal"></label></div>
+<p class="error" id="err"></p>
+<button class="btn ancho">Calcular</button>
+</form>
+<section id="resultado" class="resultado" hidden></section>
+<h2>¿Cuántos días de vacaciones corresponden?</h2><div class="tabla"><table class="tabla-desc"><thead><tr><th>Antigüedad al 31 de diciembre</th><th>Días corridos</th></tr></thead><tbody><tr><td>Menos de 5 años</td><td>14</td></tr><tr><td>De 5 a menos de 10 años</td><td>21</td></tr><tr><td>De 10 a menos de 20 años</td><td>28</td></tr><tr><td>20 años o más</td><td>35</td></tr></tbody></table></div>
+<p>Si en el año no trabajó al menos la mitad de los días hábiles, corresponde un día de descanso por cada 20 días de trabajo efectivo (art. 153 LCT). Para mensualizados, cada día de vacaciones se paga como sueldo ÷ 25 (art. 155 LCT).</p>
+<section class="faq"><h2>Preguntas frecuentes</h2><details><summary>¿Cómo se calcula el día de vacaciones?</summary><p>Para mensualizados, sueldo ÷ 25. Para jornalizados, el valor del jornal.</p></details><details><summary>¿Qué es el plus vacacional?</summary><p>Es la diferencia entre pagar el día a sueldo ÷ 25 en lugar de sueldo ÷ 30.</p></details></section>
+<p class="aviso">Herramienta de carácter general. El resultado es una estimación y no reemplaza el análisis profesional de cada caso. Algunos convenios colectivos otorgan más días.</p>
+</article>
+<aside class="lateral"><a class="caja caja-calc" href="calculadoras.html"><b>Todas las calculadoras</b><span>Sueldos, aguinaldo, actualización de montos, plazo fijo y más</span></a></aside>
+</div>
+<script src="calcs.js?v=1"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "¿Cómo se calcula el día de vacaciones?", "acceptedAnswer": {"@type": "Answer", "text": "Para mensualizados, sueldo ÷ 25. Para jornalizados, el valor del jornal."}}, {"@type": "Question", "name": "¿Qué es el plus vacacional?", "acceptedAnswer": {"@type": "Answer", "text": "Es la diferencia entre pagar el día a sueldo ÷ 25 en lugar de sueldo ÷ 30."}}]}</script>
