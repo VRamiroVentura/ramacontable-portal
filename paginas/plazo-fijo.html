@@ -4,7 +4,8 @@
 <p class="firma">Redacción Ramacontable · Con la tasa promedio que informa el BCRA</p>
 <div class="encorto"><b>En corto</b><p>Calculá cuánto vas a cobrar de intereses por un plazo fijo tradicional, la tasa efectiva anual y cuánto tendrías si lo renovás.</p></div>
 <form id="calc" data-calc="plazofijo" class="form-calc" novalidate>
-<label>Monto a invertir<input name="monto" inputmode="decimal" placeholder="Ej.: 1.000.000"></label>
+<label>¿Qué querés calcular?<select name="sentido"><option value="inicio">Sé cuánto invierto: ¿cuánto cobro al final?</option><option value="final">Sé cuánto quiero cobrar al final: ¿cuánto tengo que invertir?</option></select></label>
+<label><span data-etq>Capital que invertís hoy</span><input name="monto" inputmode="decimal" placeholder="Ej.: 1.000.000"></label>
 <div class="fila2"><label>Tasa nominal anual (TNA %)<input name="tna" inputmode="decimal"></label><label>Plazo en días<input name="dias" inputmode="numeric" value="30"></label></div>
 <label>Cantidad de veces que lo renovás<input name="renov" inputmode="numeric" value="1"></label>
 <p class="error" id="err"></p>

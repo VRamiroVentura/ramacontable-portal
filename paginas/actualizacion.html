@@ -4,8 +4,9 @@
 <p class="firma">Redacción Ramacontable · Con las series oficiales del Banco Central, actualizadas todos los días</p>
 <div class="encorto"><b>En corto</b><p>Actualizá una deuda, un crédito o cualquier importe entre dos fechas por inflación, CER, UVA, ICL, dólar oficial o tasas de interés, y compará todos los índices de una vez.</p></div>
 <form id="calc" data-calc="actualizacion" class="form-calc" novalidate>
-<label>Monto<input name="monto" inputmode="decimal" placeholder="Ej.: 1.000.000"></label>
-<div class="fila2"><label>Desde<input type="date" name="desde"></label><label>Hasta<input type="date" name="hasta" data-hoy></label></div>
+<label>¿Qué querés calcular?<select name="sentido"><option value="adelante">Tengo un monto de la fecha inicial: ¿cuánto es en la fecha final?</option><option value="atras">Tengo un monto de la fecha final: ¿cuánto era en la fecha inicial?</option></select></label>
+<label><span data-etq>Monto en la fecha inicial</span><input name="monto" inputmode="decimal" placeholder="Ej.: 1.000.000"></label>
+<div class="fila2"><label>Fecha inicial<input type="date" name="desde"></label><label>Fecha final<input type="date" name="hasta" data-hoy></label></div>
 <label>Actualizar por<select name="metodo"><option value="ipc">Inflación (IPC del INDEC)</option><option value="cer">CER</option><option value="uva">UVA</option><option value="icl">ICL (alquileres)</option><option value="dolar_minorista">Dólar oficial minorista</option><option value="dolar_mayorista">Dólar mayorista (A 3500)</option><option value="justicia">Tasa pasiva uso de justicia (Com. P 14.290)</option><option value="plazo_fijo">Tasa de plazo fijo (BCRA)</option><option value="badlar">Tasa BADLAR</option><option value="tamar">Tasa TAMAR</option><option value="personales">Tasa de préstamos personales (BCRA)</option><option value="fija">Tasa fija que cargo yo</option></select></label>
 <div data-fija hidden><label>Tasa nominal anual (TNA %)<input name="tna" inputmode="decimal" placeholder="Ej.: 36"></label></div>
 <div data-modo hidden><label>Forma de cálculo<select name="modo"><option value="simple">Interés simple</option><option value="compuesto">Capitalizado (interés compuesto)</option></select></label></div>
