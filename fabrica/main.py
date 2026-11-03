@@ -382,6 +382,12 @@ class Fabrica:
             portales = {m["fuente"] for m in miembros if m["tipo"] != "oficial"}
             if not oficial and not portales:
                 continue
+            # Las notas propias de un medio (investigaciones, encuestas, opinión) no se replican:
+            # solo novedades normativas u oficiales, o temas que ya publicaron varios portales.
+            if g.get("clase") == "propia" and not oficial and len(portales) < int(self.cfg.get("portales_para_nota_propia", 3)):
+                self.descartes.append((g.get("tema"), "nota propia de un portal (investigación u opinión): no se replica"))
+                self.marcar(urls, g.get("tema"), None)
+                continue
             if hechas >= self.cfg.get("max_notas_por_vuelta", 6):
                 self.esperando.append((g.get("tema"), "queda para la próxima vuelta"))
                 continue
