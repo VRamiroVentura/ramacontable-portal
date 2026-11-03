@@ -9,10 +9,11 @@ API = "https://generativelanguage.googleapis.com/v1beta/models/{modelo}:generate
 
 def _json_de(texto):
     t = re.sub(r"```(?:json)?", "", texto or "").strip()
-    a, b = t.find("{"), t.rfind("}")
-    if a < 0 or b < 0:
+    a = t.find("{")
+    if a < 0:
         raise ValueError("La IA no devolvió JSON: " + t[:200])
-    return json.loads(t[a:b + 1])
+    # se lee el primer objeto JSON completo y se ignora lo que venga después (a veces la IA agrega texto o un segundo objeto)
+    return json.JSONDecoder().raw_decode(t[a:])[0]
 
 
 LISTA = "https://generativelanguage.googleapis.com/v1beta/models"
@@ -83,6 +84,22 @@ def _mensaje(r):
 
 
 def gemini(sistema, usuario, temperatura=0.9):
+    """Si Google está saturado (503/429 en todos los modelos), espera y reintenta hasta 3 veces antes de rendirse."""
+    import time
+    for intento in range(3):
+        try:
+            return _gemini(sistema, usuario, temperatura)
+        except Bloqueado:
+            raise
+        except RuntimeError as e:
+            saturado = " 503 " in str(e) or " 429 " in str(e) or "high demand" in str(e)
+            if not saturado or intento == 2:
+                raise
+            util.log(f"Gemini saturado; espero {60 * (intento + 1)} s y reintento")
+            time.sleep(60 * (intento + 1))
+
+
+def _gemini(sistema, usuario, temperatura=0.9):
     global _modelo_ok
     clave = util.secreto("GEMINI_API_KEY")
     if not clave:

@@ -362,7 +362,11 @@ class Fabrica:
             self.vigilar_ignacio()
             self.cierre()
             return
-        grupos = self.agrupar(items, recientes)
+        try:
+            grupos = self.agrupar(items, recientes)
+        except Exception as e:  # noqa  (las novedades quedan en el radar y se procesan en la próxima vuelta)
+            util.avisar("No pude agrupar las novedades (quedan para la próxima vuelta)", str(e))
+            grupos = []
         usados_slug = {n["slug"] for n in recientes}
         hechas = 0
         for g in grupos:
