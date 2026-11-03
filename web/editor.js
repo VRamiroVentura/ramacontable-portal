@@ -97,8 +97,20 @@ window.RCEditor = (function () {
     const txt = n.toLocaleString('es-AR', { minimumFractionDigits: dec, maximumFractionDigits: dec });
     return (/\$/.test(cod) ? '$ ' : '') + txt;
   }
+  // JSZip se baja solo cuando alguien sube un Excel o un Word (así las páginas cargan más rápido)
+  let _jszip = null;
+  function cargarJSZip() {
+    if (window.JSZip) return Promise.resolve(window.JSZip);
+    if (!_jszip) _jszip = new Promise((ok, mal) => {
+      const s = document.createElement('script');
+      s.src = new URL('vendor/jszip.min.js', document.baseURI).href;
+      s.onload = () => ok(window.JSZip); s.onerror = () => mal(new Error('No se pudo cargar el lector de archivos.'));
+      document.head.appendChild(s);
+    });
+    return _jszip;
+  }
   async function xlsxAHtml(archivo) {
-    const zip = await JSZip.loadAsync(archivo);
+    const zip = await (await cargarJSZip()).loadAsync(archivo);
     const leer = async p => zip.file(p) ? zip.file(p).async('string') : null;
     const ss = await leer('xl/sharedStrings.xml');
     const textos = ss ? hijos(xml(ss).documentElement, 'si').map(si => hijos(si, 't').map(t => t.textContent).join('')) : [];
@@ -161,7 +173,7 @@ window.RCEditor = (function () {
 
   // ---------- Word (.docx) → texto con formato ----------
   async function docxAHtml(archivo) {
-    const zip = await JSZip.loadAsync(archivo);
+    const zip = await (await cargarJSZip()).loadAsync(archivo);
     const d = xml(await zip.file('word/document.xml').async('string'));
     const cuerpo = hijos(d, 'body')[0];
     const run = r => {

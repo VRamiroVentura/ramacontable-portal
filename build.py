@@ -263,7 +263,8 @@ def pagina_convenio(c, notas, aportes=None):
     if c.get("preguntas"):
         head += '<script type="application/ld+json">' + json.dumps({"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [
             {"@type": "Question", "name": q["p"], "acceptedAnswer": {"@type": "Answer", "text": q["r"]}} for q in c["preguntas"]]}, ensure_ascii=False).replace("</", "<\\/") + "</script>"
-    return pagina(seo_t + " | Ramacontable", contenido, "sueldos", desc, f"escala-{c['slug']}.html", head)
+    return pagina(seo_t + " | Ramacontable", contenido, "sueldos", desc, f"escala-{c['slug']}.html", head,
+                  [("Sueldos", "sueldos.html"), ("Convenios", "convenios.html"), (c["nombre"], f"escala-{c['slug']}.html")])
 
 
 def pagina_convenios(convenios, notas):
@@ -272,7 +273,8 @@ def pagina_convenios(convenios, notas):
         f'<p class="meta">{e((c.get("escala") or {}).get("periodo") or "Escala pendiente de carga")}</p></div></a>' for c in convenios)
     cuerpo = f'<div class="grilla"><section><h1 class="titsec">Convenios y escalas salariales</h1><p class="ayuda">Escalas vigentes, novedades de cada acuerdo, tratamiento de las sumas no remunerativas y cómo se liquida cada convenio.</p><div class="tarjetas">{items}</div></section>{lateral(notas)}</div>'
     return pagina("Escalas salariales por convenio 2026: Comercio, UOCRA, UOM, Sanidad y más | Ramacontable", cuerpo, "sueldos",
-                  "Escalas salariales vigentes por convenio colectivo, con novedades, sumas no remunerativas y cómo liquidar.", "convenios.html")
+                  "Escalas salariales vigentes por convenio colectivo, con novedades, sumas no remunerativas y cómo liquidar.", "convenios.html",
+                  migas=[("Sueldos", "sueldos.html"), ("Convenios", "convenios.html")])
 
 
 PRINCIPALES = ["comercio", "casas-particulares", "uocra", "uom", "sanidad"]
@@ -302,7 +304,7 @@ def pagina_guias(guias, notas, catalogo):
     otras = '<p class="ayuda">¿Buscás novedades de la profesión? <a href="profesion.html">Ver notas de Profesión →</a></p>'
     cuerpo = f'<div class="grilla"><section><h1 class="titsec">Guías prácticas</h1><p class="ayuda">Guías completas de sueldos, impuestos y temas contables, basadas en la norma oficial y actualizadas cuando cambia algo. Debajo de cada una, la comunidad suma su explicación paso a paso.</p>{bloques}{otras}</section>{lateral(notas)}</div>'
     return pagina("Guías prácticas de sueldos, impuestos y contabilidad | Ramacontable", cuerpo, "guias",
-                  "Guías prácticas para contadores y liquidadores: vacaciones, liquidación final, Ganancias, IVA, Monotributo, Ingresos Brutos y más.", "guias.html")
+                  "Guías prácticas para contadores y liquidadores: vacaciones, liquidación final, Ganancias, IVA, Monotributo, Ingresos Brutos y más.", "guias.html", migas=[("Guías", "guias.html")])
 
 
 def pagina_impuesto(imp, notas, guias, catalogo):
@@ -320,7 +322,8 @@ def pagina_impuesto(imp, notas, guias, catalogo):
               f'<section class="rama-guias"><h2>Guías de {e(nombre)}</h2><ul class="lista-guias">{items}</ul></section>'
               f'<section class="rama-guias"><h2>Novedades de {e(nombre)}</h2>{lista}</section></section>{lateral(notas)}</div>')
     return pagina(f"{nombre}: novedades, vencimientos y guías prácticas | Ramacontable", cuerpo, "impuestos",
-                  f"Todo sobre {nombre} para contadores: últimas novedades, normas y guías prácticas paso a paso.", f"impuesto-{slug}.html")
+                  f"Todo sobre {nombre} para contadores: últimas novedades, normas y guías prácticas paso a paso.", f"impuesto-{slug}.html",
+                  migas=[("Impuestos", "impuestos.html"), (nombre, f"impuesto-{slug}.html")])
 
 
 def pagina_vencimientos(notas):
@@ -364,7 +367,26 @@ ICONOS = {
 }
 
 
-def pagina(titulo, cuerpo, actual="", descripcion="", ruta="", extra_head=""):
+def datos_sitio(migas=None):
+    """Datos estructurados que lee Google: el sitio, la organización y la ruta de la página (migas de pan)."""
+    base = sitio_url()
+    grafo = [{"@type": "Organization", "@id": base + "#org", "name": "Ramacontable", "url": base,
+              "logo": {"@type": "ImageObject", "url": base + "compartir.png"}, "email": MAIL, "sameAs": list(REDES.values())},
+             {"@type": "WebSite", "@id": base + "#web", "name": "Ramacontable", "url": base, "inLanguage": "es-AR",
+              "publisher": {"@id": base + "#org"}}]
+    if migas:
+        grafo.append({"@type": "BreadcrumbList", "itemListElement": [
+            {"@type": "ListItem", "position": i + 1, "name": n, "item": base + u} for i, (n, u) in enumerate([("Inicio", "")] + list(migas))]})
+    return '<script type="application/ld+json">' + json.dumps({"@context": "https://schema.org", "@graph": grafo}, ensure_ascii=False).replace("</", "<\\/") + "</script>"
+
+
+def herramienta_ld(nombre, descripcion, ruta):
+    return '<script type="application/ld+json">' + json.dumps({"@context": "https://schema.org", "@type": "WebApplication", "name": nombre,
+        "description": descripcion, "url": sitio_url() + ruta, "applicationCategory": "FinanceApplication", "operatingSystem": "Web",
+        "inLanguage": "es-AR", "offers": {"@type": "Offer", "price": "0", "priceCurrency": "ARS"}}, ensure_ascii=False) + "</script>"
+
+
+def pagina(titulo, cuerpo, actual="", descripcion="", ruta="", extra_head="", migas=None):
     sub = {
         "sueldos": [("sueldos.html", "Novedades de sueldos"), ("convenios.html", "Escalas por convenio"), ("guias.html#sueldos", "Guías de sueldos"),
                     ("sueldo-comercio.html", "Calculadora de sueldo de Comercio")],
@@ -389,6 +411,8 @@ def pagina(titulo, cuerpo, actual="", descripcion="", ruta="", extra_head=""):
 <meta property="og:url" content="{sitio_url()}{ruta}"><meta property="og:image" content="{sitio_url()}compartir.png">
 <meta name="twitter:card" content="summary_large_image">
 {extra_head}
+{datos_sitio(migas)}
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Source+Sans+3:wght@400;600;700&display=swap">
 <link rel="stylesheet" href="estilos.css?v={VERSION}">
@@ -413,12 +437,11 @@ document.querySelectorAll('.cab .menu .dd > a').forEach(function(a){{a.addEventL
 document.querySelectorAll('.cab .menu .dd.abierto').forEach(function(x){{x.classList.remove('abierto')}});if(!ab){{ev.preventDefault();dd.classList.add('abierto');
 var m=dd.querySelector('.dd-m');m.style.top=document.querySelector('.cab').getBoundingClientRect().bottom+'px'}}}})}});
 document.addEventListener('click',function(ev){{if(!ev.target.closest('.cab .menu .dd'))document.querySelectorAll('.cab .menu .dd.abierto').forEach(function(x){{x.classList.remove('abierto')}})}});}})();</script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="vendor/purify.min.js"></script>
-<script src="vendor/jszip.min.js"></script>
-<script src="config.js"></script>
-<script src="editor.js?v={VERSION}"></script>
-<script src="app.js?v={VERSION}"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script defer src="vendor/purify.min.js"></script>
+<script defer src="config.js?v={VERSION}"></script>
+<script defer src="editor.js?v={VERSION}"></script>
+<script defer src="app.js?v={VERSION}"></script>
 </body></html>"""
 
 
@@ -551,8 +574,18 @@ def pagina_nota(n, notas, aportes=None):
             {"@type": "Question", "name": q["p"], "acceptedAnswer": {"@type": "Answer", "text": q["r"]}} for q in n["preguntas"]]})
     head = "".join(f'<script type="application/ld+json">{json.dumps(x, ensure_ascii=False).replace("</", "<\\/")}</script>' for x in ld)
     head += f'<meta property="og:type" content="article"><meta property="article:published_time" content="{e(str(n["fecha"]))}">'
+    migas = ([("Guías", "guias.html"), (RAMAS_GUIAS.get(n["seccion"], "Guías"), f"guias.html#{n['seccion']}")] if es_guia(n)
+             else [(SECCIONES[n["seccion"]], f"{n['seccion']}.html")]) + [(n["titulo"][:80], f"nota-{n['slug']}.html")]
     return pagina(n.get("seo_titulo") or f"{n['titulo']} | Ramacontable", contenido, n["seccion"],
-                  n.get("descripcion_seo") or n["encorto"], f"nota-{n['slug']}.html", head)
+                  n.get("descripcion_seo") or n["encorto"], f"nota-{n['slug']}.html", head, migas)
+
+
+DESC_SECCION = {
+    "sueldos": "Novedades de sueldos, escalas salariales por convenio, sumas no remunerativas, guías y calculadoras para liquidar.",
+    "impuestos": "Novedades impositivas de ARCA y rentas provinciales: Ganancias, IVA, Monotributo, Bienes Personales, Ingresos Brutos y más.",
+    "profesion": "Novedades para el ejercicio de la profesión contable: consejos profesionales, normas contables, sociedades y trámites.",
+    "economia": "Novedades económicas que impactan en el trabajo del contador.",
+}
 
 
 def portada(notas, titulo_pag="Ramacontable | Comunidad contable", actual="", encabezado="", extra=""):
@@ -561,7 +594,9 @@ def portada(notas, titulo_pag="Ramacontable | Comunidad contable", actual="", en
     else:
         lista = tarjeta(notas[0], grande=True) + '<div class="tarjetas">' + "".join(tarjeta(n) for n in notas[1:]) + "</div>"
     cab = f'<h1 class="titsec">{e(encabezado)}</h1>' if encabezado else ""
-    return pagina(titulo_pag, f'<div class="grilla"><section>{cab}{extra}{lista}</section>{lateral(notas)}</div>', actual, "", f"{actual}.html" if actual else "")
+    desc = DESC_SECCION.get(actual, "Novedades contables, impositivas y laborales explicadas claro, escalas salariales, guías, calculadoras y vencimientos.")
+    return pagina(titulo_pag, f'<div class="grilla"><section>{cab}{extra}{lista}</section>{lateral(notas)}</div>', actual, desc,
+                  f"{actual}.html" if actual else "", migas=[(encabezado, f"{actual}.html")] if actual else None)
 
 
 def main():
@@ -611,7 +646,8 @@ def main():
     with open(os.path.join(RAIZ, "paginas", "aguinaldo.html"), encoding="utf-8") as f:
         escribir("aguinaldo.html", pagina("Calculadora de aguinaldo diciembre 2026 (SAC): cálculo paso a paso | Ramacontable", f.read(), "",
                  "Calculá el aguinaldo de diciembre 2026: mensualizados y jornalizados, proporcional por días, descuentos y neto, con el cálculo paso a paso.",
-                 "aguinaldo.html"))
+                 "aguinaldo.html", herramienta_ld("Calculadora de aguinaldo (SAC)", "Calculá el aguinaldo con el cálculo paso a paso, descuentos y neto.", "aguinaldo.html"),
+                 [("Calculadoras", "calculadoras.html"), ("Aguinaldo", "aguinaldo.html")]))
     with open(os.path.join(RAIZ, "paginas", "nota-dinamica.html"), encoding="utf-8") as f:
         escribir("nota.html", pagina("Nota | Ramacontable", f.read()))
     with open(os.path.join(RAIZ, "paginas", "admin.html"), encoding="utf-8") as f:
@@ -623,7 +659,8 @@ def main():
         datos = dict(c.get("escala") or {}, slug=slug)
         with open(os.path.join(RAIZ, "paginas", archivo), encoding="utf-8") as f:
             cuerpo = f.read().replace('<script src="sueldo.js', '<script>window.RC_ESCALA=' + json.dumps(datos, ensure_ascii=False).replace("</", "<\\/") + ';</script><script src="sueldo.js')
-        escribir(salida_html, pagina(titulo, cuerpo, "", desc, salida_html))
+        escribir(salida_html, pagina(titulo, cuerpo, "", desc, salida_html, herramienta_ld(titulo.split(":")[0].split(" | ")[0], desc, salida_html),
+                                     [("Calculadoras", "calculadoras.html"), (titulo.split(":")[0].split(" | ")[0], salida_html)]))
     calc_conv("sueldo-comercio.html", "sueldo-comercio.html", "comercio", "Calculadora de sueldo Empleados de Comercio 2026: neto con antigüedad y presentismo | Ramacontable",
               "Calculá el sueldo de comercio con la escala vigente: básico por categoría, antigüedad, presentismo, sumas no remunerativas, descuentos y neto.")
     calc_conv("sueldo-casas.html", "sueldo-casas-particulares.html", "casas-particulares", "Calculadora de sueldo de empleadas domésticas 2026: por hora y mensual | Ramacontable",
