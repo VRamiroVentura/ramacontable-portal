@@ -332,3 +332,43 @@ create table if not exists public.vencimientos (
 alter table public.vencimientos enable row level security;
 drop policy if exists "todos leen vencimientos" on public.vencimientos;
 create policy "todos leen vencimientos" on public.vencimientos for select using (true);
+
+-- ===== v19: contador de visitas propio (sin cookies ni servicios externos) =====
+create table if not exists public.visitas (
+  dia date not null default current_date,
+  ruta text not null check (char_length(ruta) <= 120),
+  vistas int not null default 0,
+  visitantes int not null default 0,
+  primary key (dia, ruta)
+);
+create table if not exists public.visitas_origen (
+  dia date not null default current_date,
+  origen text not null check (char_length(origen) <= 60),
+  n int not null default 0,
+  primary key (dia, origen)
+);
+alter table public.visitas enable row level security;
+alter table public.visitas_origen enable row level security;
+drop policy if exists "admin ve visitas" on public.visitas;
+create policy "admin ve visitas" on public.visitas for select to authenticated using (public.es_admin());
+drop policy if exists "admin ve origenes" on public.visitas_origen;
+create policy "admin ve origenes" on public.visitas_origen for select to authenticated using (public.es_admin());
+
+-- La web solo puede sumar 1 visita por llamada (no puede leer ni borrar nada)
+create or replace function public.sumar_visita(p_ruta text, p_nuevo boolean, p_origen text)
+returns void language plpgsql security definer set search_path = public as $$
+declare
+  r text := left(regexp_replace(coalesce(p_ruta, ''), '[^a-z0-9._/-]', '', 'gi'), 120);
+  o text := left(regexp_replace(lower(coalesce(p_origen, '')), '[^a-z0-9.-]', '', 'g'), 60);
+  hoy date := (now() at time zone 'America/Argentina/Buenos_Aires')::date;
+begin
+  if r = '' then r := 'index.html'; end if;
+  insert into public.visitas(dia, ruta, vistas, visitantes) values (hoy, r, 1, case when p_nuevo then 1 else 0 end)
+  on conflict (dia, ruta) do update set vistas = visitas.vistas + 1, visitantes = visitas.visitantes + case when p_nuevo then 1 else 0 end;
+  if o <> '' then
+    insert into public.visitas_origen(dia, origen, n) values (hoy, o, 1)
+    on conflict (dia, origen) do update set n = visitas_origen.n + 1;
+  end if;
+end $$;
+revoke all on function public.sumar_visita(text, boolean, text) from public;
+grant execute on function public.sumar_visita(text, boolean, text) to anon, authenticated;

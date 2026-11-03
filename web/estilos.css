@@ -288,3 +288,8 @@ table.feriados tr.prox-f td{background:var(--bronce-suave);font-weight:600}
   .cab .menu .dd-m a{white-space:normal;padding:12px 18px;font-size:15.5px}
 }
 .conv-chips a.mas-chip{background:var(--verde);color:#fff}
+
+/* estadísticas de visitas (administración) */
+.barras{display:flex;align-items:flex-end;gap:3px;height:120px;background:#fff;border:1px solid var(--linea);padding:8px;margin:12px 0}
+.barras div{flex:1;height:100%;display:flex;align-items:flex-end}.barras i{display:block;width:100%;background:var(--verde);min-height:1px}
+#admin-estadisticas{margin-bottom:28px}

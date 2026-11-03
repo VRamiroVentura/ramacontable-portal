@@ -509,6 +509,44 @@
     barraAdmin(data);
     if (dinamica && (data.estado === 'publicada' || esAdmin)) { $('#opiniones').hidden = false; $('#aplica').hidden = false; }
   }
+  // ---------- contador de visitas (sin cookies: solo cuenta, no identifica a nadie) ----------
+  // días en hora de Argentina (igual que el servidor)
+  const diaAR = atras => new Date(Date.now() - 3 * 3600000 - atras * 86400000).toISOString().slice(0, 10);
+  function contarVisita() {
+    try {
+      if (!sb || esAdmin || navigator.webdriver || /bot|crawl|spider|slurp|lighthouse|headless|preview/i.test(navigator.userAgent)) return;
+      const hoy = diaAR(0);
+      let nuevo = false;
+      try { nuevo = localStorage.getItem('rc_dia') !== hoy; localStorage.setItem('rc_dia', hoy); } catch (e) { /* navegación privada */ }
+      let origen = new URLSearchParams(location.search).get('utm_source') || '';
+      if (!origen && document.referrer) {
+        const h = new URL(document.referrer).hostname.replace(/^(www|l|lm|m|mobile)\./, '');
+        if (h && h !== location.hostname.replace(/^www\./, '')) origen = h;
+      }
+      sb.rpc('sumar_visita', { p_ruta: location.pathname.replace(/^\//, '') || 'index.html', p_nuevo: nuevo, p_origen: origen.slice(0, 60) });
+    } catch (e) { /* el contador nunca rompe la página */ }
+  }
+  async function estadisticas() {
+    const caja = $('#admin-estadisticas'); if (!caja || !esAdmin) return;
+    const desde = diaAR(29);
+    const [v, o] = await Promise.all([
+      sb.from('visitas').select('dia,ruta,vistas,visitantes').gte('dia', desde).limit(10000),
+      sb.from('visitas_origen').select('dia,origen,n').gte('dia', desde).limit(5000)]);
+    const filas = v.data || [], orig = o.data || [];
+    const hoy = diaAR(0), hace7 = diaAR(6);
+    const suma = (lista, campo, f = () => true) => lista.filter(f).reduce((s, x) => s + x[campo], 0);
+    const porDia = {}; filas.forEach(x => { porDia[x.dia] = (porDia[x.dia] || 0) + x.vistas; });
+    const dias = []; for (let i = 29; i >= 0; i--) { const d = diaAR(i); dias.push([d, porDia[d] || 0]); }
+    const max = Math.max(1, ...dias.map(d => d[1]));
+    const top = (lista, clave, campo) => Object.entries(lista.reduce((m, x) => { m[x[clave]] = (m[x[clave]] || 0) + x[campo]; return m; }, {})).sort((a, b) => b[1] - a[1]).slice(0, 10);
+    const E = RCEditor.esc;
+    caja.innerHTML = `<h2>Visitas</h2>
+      <div class="res-top"><div><span>Hoy</span><b>${suma(filas, 'vistas', x => x.dia === hoy)}</b></div><div><span>Últimos 7 días</span><b>${suma(filas, 'vistas', x => x.dia >= hace7)}</b></div><div class="neto"><span>Últimos 30 días</span><b>${suma(filas, 'vistas')}</b></div></div>
+      <p class="ayuda">Visitantes distintos por día (aprox.): hoy ${suma(filas, 'visitantes', x => x.dia === hoy)} · 30 días ${suma(filas, 'visitantes')}. No se cuentan tus visitas de administrador ni los robots.</p>
+      <div class="barras">${dias.map(([d, n]) => `<div title="${d.slice(8)}/${d.slice(5, 7)}: ${n}"><i style="height:${Math.round(n / max * 100)}%"></i></div>`).join('')}</div>
+      <div class="fila2"><div><h3>Páginas más vistas</h3><table class="tabla-desc"><tbody>${top(filas, 'ruta', 'vistas').map(([r, n]) => `<tr><td><a href="${E(r)}">${E(r.replace('.html', ''))}</a></td><td>${n}</td></tr>`).join('') || '<tr><td>Sin datos todavía</td></tr>'}</tbody></table></div>
+      <div><h3>De dónde llegan</h3><table class="tabla-desc"><tbody>${top(orig, 'origen', 'n').map(([r, n]) => `<tr><td>${E(r)}</td><td>${n}</td></tr>`).join('') || '<tr><td>Sin datos todavía (o entraron directo)</td></tr>'}</tbody></table></div></div>`;
+  }
   async function panelAdmin() {
     const caja = $('#admin-lista'); if (!caja) return;
     if (!esAdmin) { caja.innerHTML = '<p class="ayuda">Ingresá con tu cuenta de administrador para ver esta página.</p>'; return; }
@@ -659,7 +697,7 @@
     await cargarReputaciones();
     pintarSesion();
     if (usuario && !perfil) pedirPerfil();
-    contadoresPortada(); ranking(); cargarNota(); cargarConvenio(); cargarAportes(); panelAdmin();
+    contadoresPortada(); ranking(); cargarNota(); cargarConvenio(); cargarAportes(); panelAdmin(); estadisticas(); contarVisita();
     if (esAdmin) { const s = $('#sesion'); if (s && !$('#link-admin')) s.prepend(h('a', { id: 'link-admin', class: 'link-admin', href: 'admin.html' }, 'Administración')); }
   }
   iniciar();
