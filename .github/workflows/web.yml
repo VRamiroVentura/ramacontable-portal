@@ -27,6 +27,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Instalar librerías (imágenes para compartir y certificados)
+        run: pip install pillow certifi
       - name: Armar la web
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -38,3 +40,6 @@ jobs:
           path: sitio
       - id: deploy
         uses: actions/deploy-pages@v4
+      - name: Avisar a Bing y buscadores (IndexNow)
+        continue-on-error: true
+        run: sleep 20 && python indexnow.py
