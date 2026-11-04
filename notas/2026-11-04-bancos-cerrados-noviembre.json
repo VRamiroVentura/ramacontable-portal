@@ -1,0 +1,26 @@
+{
+  "slug": "bancos-cerrados-6-al-11-noviembre-2026-feriado-bancario-papa",
+  "fecha": "2026-11-04",
+  "seccion": "profesion",
+  "antetitulo": "Feriado bancario | BCRA Com. A 8487 · Decreto 1103/2026",
+  "titulo": "Bancos cerrados del viernes 6 al miércoles 11 de noviembre en provincia de Buenos Aires",
+  "clave": "El último día con bancos abiertos es el jueves 5",
+  "encorto": "En la provincia de Buenos Aires los bancos no atienden desde el viernes 6 hasta el miércoles 11 de noviembre de 2026 y vuelven el jueves 12; en el resto del país vuelven el miércoles 11. El jueves 5 es el último día para hacer trámites por ventanilla, depositar cheques o retirar efectivo en sucursal.",
+  "cuerpo": [
+    {"h": "¿Qué días cierran los bancos?"},
+    {"p": "Viernes 6 de noviembre: Día del Bancario, no hay atención. Sábado 7 y domingo 8: fin de semana. Lunes 9: feriado nacional dispuesto por el Decreto 1103/2026 por la visita del papa León XIV. Martes 10: el Banco Central lo declaró feriado bancario en todo el país (Comunicación A 8487). Miércoles 11: el decreto lo fijó como feriado solo en la provincia de Buenos Aires, por lo que los bancos de territorio bonaerense tampoco abren."},
+    {"h": "¿Cuándo vuelven a atender?"},
+    {"p": "En la provincia de Buenos Aires, el jueves 12 de noviembre. En el resto del país, el miércoles 11."},
+    {"h": "¿Qué sigue funcionando?"},
+    {"p": "Home banking, billeteras virtuales, transferencias, pagos con tarjeta y cajeros automáticos. Los cajeros pueden quedarse sin efectivo después de tantos días sin reposición, así que conviene retirar antes."},
+    {"h": "Qué conviene revisar en el estudio"},
+    {"p": "Depósitos de cheques, pagos por ventanilla y cualquier trámite presencial tienen que resolverse hasta el jueves 5. Revisá también los vencimientos de esa semana: para pagos que se hacen por medios bancarios, chequeá en la norma de cada organismo cómo se traslada la fecha cuando cae en día no hábil bancario."}
+  ],
+  "preguntas": [
+    {"p": "¿El lunes 9 de noviembre de 2026 es feriado?", "r": "Sí, es feriado nacional dispuesto por el Decreto 1103/2026 por la visita del papa León XIV."},
+    {"p": "¿Abren los bancos el martes 10 de noviembre?", "r": "No. El BCRA lo declaró feriado bancario en todo el país."},
+    {"p": "¿Cuándo abren los bancos en La Plata?", "r": "El jueves 12 de noviembre, porque el miércoles 11 es feriado en la provincia de Buenos Aires."}
+  ],
+  "fuente": "BCRA, Comunicación A 8487; Decreto 1103/2026.",
+  "verificada": true
+}
