@@ -64,6 +64,8 @@ class Fabrica:
             return set()
         try:
             return {f["fuente"] for f in self.db.select("radar", {"select": "fuente", "limit": "5000"})}
+        except gemini.SinTiempo:
+            raise
         except Exception:  # noqa
             return set()
 
@@ -83,6 +85,8 @@ class Fabrica:
             try:
                 for c in self.db.select("convenios", {"select": "*"}):
                     base[c["slug"]] = c
+            except gemini.SinTiempo:
+                raise
             except Exception as e:  # noqa
                 util.log("No pude leer convenios:", util.ocultar(str(e)))
         return base
@@ -106,6 +110,8 @@ class Fabrica:
             if convs:
                 try:
                     self.db.insertar_si_no_existe("convenios", convs, "slug")
+                except gemini.SinTiempo:
+                    raise
                 except Exception as e:  # noqa
                     util.avisar("No pude guardar los convenios (¿falta correr esquema.sql en Supabase?)", str(e))
 
@@ -117,6 +123,8 @@ class Fabrica:
                 nuevos = fuentes.leer(f)
                 util.log(f"{f['nombre']}: {len(nuevos)} novedades")
                 items += nuevos
+            except gemini.SinTiempo:
+                raise
             except Exception as e:  # noqa
                 util.avisar(f"No pude leer {f['nombre']}", str(e))
         return items
@@ -210,6 +218,8 @@ class Fabrica:
             if loc.get("oficial"):
                 try:
                     url, tipo, contenido = fuentes.documento_oficial(loc["oficial"], loc.get("buscar_doc") or ())
+                except gemini.SinTiempo:
+                    raise
                 except Exception as e:  # noqa
                     util.avisar(f"No pude leer la escala oficial de {c['nombre']}", str(e))
             if not url and loc.get("buscar_portal"):
@@ -237,6 +247,8 @@ class Fabrica:
                 adjunto, textos = None, [f"--- FUENTE OFICIAL (página del sindicato): {url}\n{contenido}"]
             try:
                 self.actualizar_convenio({"convenio": slug, "tema": c["nombre"]}, None, textos, adjunto, url)
+            except gemini.SinTiempo:
+                raise
             except Exception as e:  # noqa
                 util.avisar(f"No pude actualizar la escala de {c['nombre']}", str(e))
 
@@ -251,6 +263,8 @@ class Fabrica:
         try:
             cfg = json.loads((util.RAIZ / "vencimientos" / "fuentes.json").read_text(encoding="utf-8"))
             previos = {r["mes"]: r for r in self.db.select("vencimientos", {"select": "mes,actualizado"})}
+        except gemini.SinTiempo:
+            raise
         except Exception as e:  # noqa
             util.avisar("No pude leer la agenda de vencimientos (¿falta correr esquema.sql?)", str(e))
             return
@@ -280,6 +294,8 @@ class Fabrica:
                 continue
             try:
                 r = gemini.gemini(_prompt("vencimientos.md"), f"MES: {nombre_mes} {anio}\n\nFUENTES:\n" + "\n\n".join(textos), temperatura=0.1)
+            except gemini.SinTiempo:
+                raise
             except Exception as e:  # noqa
                 util.avisar(f"No pude armar los vencimientos de {nombre_mes}", str(e))
                 continue
@@ -357,14 +373,12 @@ class Fabrica:
             self.db.upsert("radar", [{"url": it["url"], "fuente": it["fuente"], "tipo": it["tipo"], "titulo": it["titulo"][:300],
                                       "texto": (it.get("texto") or "")[:4000], "fecha": it.get("fecha")} for it in nuevos], "url")
         if not items:
-            self.escribir_guias()
-            self.revisar_escalas_oficiales()
-            self.actualizar_vencimientos()
-            self.vigilar_ignacio()
-            self.cierre()
+            self.tareas_finales()
             return
         try:
             grupos = self.agrupar(items, recientes)
+        except gemini.SinTiempo:
+            raise
         except Exception as e:  # noqa  (las novedades quedan en el radar y se procesan en la próxima vuelta)
             util.avisar("No pude agrupar las novedades (quedan para la próxima vuelta)", str(e))
             grupos = []
@@ -395,6 +409,9 @@ class Fabrica:
             try:
                 nota, control = self.redactar(g, miembros, recientes)
                 fila = self.armar_fila(g, miembros, nota, control, usados_slug)
+            except gemini.SinTiempo:
+                self.esperando.append((g.get("tema"), "sin tiempo en esta vuelta: queda para la próxima"))
+                continue
             except Exception as e:  # noqa
                 util.avisar(f"No pude escribir «{g.get('tema')}»", str(e))
                 continue
@@ -411,13 +428,31 @@ class Fabrica:
             if g.get("escala") and fila.get("convenio"):
                 try:
                     self.actualizar_convenio(g, fila["slug"] if fila["estado"] == "publicada" else None)
+                except gemini.SinTiempo:
+                    raise
                 except Exception as e:  # noqa
                     util.avisar(f"No pude actualizar el convenio {fila['convenio']}", str(e))
-        self.escribir_guias()
-        self.revisar_escalas_oficiales()
-        self.actualizar_vencimientos()
-        self.vigilar_ignacio()
-        self.cierre()
+        self.tareas_finales()
+
+    def tareas_finales(self):
+        """Guías, escalas, vencimientos y vigilancia, en ese orden. Si se acaba el tiempo, lo que falta queda
+        para la próxima vuelta y la vuelta cierra igual (publica la web, manda el mail y deja el resumen)."""
+        try:
+            for nombre, tarea in [("guías", self.escribir_guias), ("escalas oficiales", self.revisar_escalas_oficiales),
+                                  ("vencimientos", self.actualizar_vencimientos), ("vigilancia de Ignacio", self.vigilar_ignacio)]:
+                try:
+                    gemini._queda()
+                    tarea()
+                except gemini.SinTiempo:
+                    self.observaciones.append(("⏱️ Sin tiempo", f"{nombre} y lo que sigue quedan para la próxima vuelta"))
+                    util.log(f"Sin tiempo: {nombre} y lo que sigue quedan para la próxima vuelta")
+                    break
+                except gemini.SinTiempo:
+                    raise
+                except Exception as e:  # noqa
+                    util.avisar(f"Falló el paso de {nombre} (sigue el resto)", str(e))
+        finally:
+            self.cierre()
 
     def cierre(self):
         if self.activo:
@@ -432,6 +467,8 @@ class Fabrica:
         """Escribe de a poco las guías del catálogo que todavía no existen (máximo guias_por_dia)."""
         try:
             catalogo = json.loads((util.RAIZ / "guias" / "catalogo.json").read_text(encoding="utf-8"))
+        except gemini.SinTiempo:
+            raise
         except Exception:  # noqa
             return
         por_dia = int(self.cfg.get("guias_por_dia", 2))
@@ -439,6 +476,8 @@ class Fabrica:
         if self.db:
             try:
                 filas = self.db.select("notas", {"select": "slug,fecha", "tipo": "eq.guia", "limit": "1000"})
+            except gemini.SinTiempo:
+                raise
             except Exception as e:  # noqa
                 util.avisar("No pude leer las guías (¿falta correr esquema.sql en Supabase?)", str(e))
                 return
@@ -451,6 +490,8 @@ class Fabrica:
         for g in pendientes[:max(0, min(por_dia, int(self.cfg.get("guias_por_vuelta", 3))))]:
             try:
                 self.escribir_guia(g)
+            except gemini.SinTiempo:
+                raise
             except Exception as e:  # noqa
                 util.avisar(f"No pude escribir la guía «{g['titulo']}»", str(e))
 
@@ -487,6 +528,8 @@ class Fabrica:
         try:
             filas = self.db.select("radar", {"select": "url,titulo,texto,nota", "fuente": f"eq.{CONFIABLE}", "usado": "eq.true",
                                              "nota": "not.is.null", "visto": f"gte.{desde}", "limit": "200"})
+        except gemini.SinTiempo:
+            raise
         except Exception as e:  # noqa
             util.log("No pude leer el radar para vigilar a Ignacio:", util.ocultar(str(e)))
             return

@@ -83,9 +83,25 @@ def _mensaje(r):
         return (getattr(r, "text", "") or "")[:220]
 
 
+import time as _time
+INICIO = _time.time()
+
+
+class SinTiempo(RuntimeError):
+    """Se acabó el tiempo de la vuelta: no se arrancan pedidos nuevos para poder guardar y cerrar a tiempo."""
+
+
+def _queda(segundos=0):
+    limite = float(util.config().get("minutos_max_vuelta", 38)) * 60
+    if _time.time() - INICIO + segundos > limite:
+        raise SinTiempo(f"se llegó al límite de {limite / 60:.0f} minutos de la vuelta")
+
+
 def gemini(sistema, usuario, temperatura=0.9):
-    """Si Google está saturado (503/429 en todos los modelos), espera y reintenta hasta 3 veces antes de rendirse."""
+    """Si Google está saturado (503/429 en todos los modelos), espera y reintenta hasta 3 veces antes de rendirse.
+    Si la vuelta ya usó su tiempo, no arranca pedidos nuevos (SinTiempo)."""
     import time
+    _queda()
     for intento in range(3):
         try:
             return _gemini(sistema, usuario, temperatura)
@@ -95,6 +111,7 @@ def gemini(sistema, usuario, temperatura=0.9):
             saturado = " 503 " in str(e) or " 429 " in str(e) or "high demand" in str(e)
             if not saturado or intento == 2:
                 raise
+            _queda(60 * (intento + 1) + 120)
             util.log(f"Gemini saturado; espero {60 * (intento + 1)} s y reintento")
             time.sleep(60 * (intento + 1))
 
