@@ -293,3 +293,31 @@ table.feriados tr.prox-f td{background:var(--bronce-suave);font-weight:600}
 .barras{display:flex;align-items:flex-end;gap:3px;height:120px;background:#fff;border:1px solid var(--linea);padding:8px;margin:12px 0}
 .barras div{flex:1;height:100%;display:flex;align-items:flex-end}.barras i{display:block;width:100%;background:var(--verde);min-height:1px}
 #admin-estadisticas{margin-bottom:28px}
+
+/* ===== portadas livianas (HTML + ícono vectorial, sin imágenes) ===== */
+.portada{--pf:#13271F;--pt:#fff;--pa:#B08C52;position:relative;display:flex;align-items:center;justify-content:space-between;gap:14px;background:var(--pf);color:var(--pa);padding:16px 18px;overflow:hidden}
+.portada .p-tx{min-width:0}
+.portada .p-ante{display:block;font:700 11px/1.3 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--pa);opacity:.95;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.portada .p-dato,.portada .p-tema{display:block;font-family:var(--serif);color:var(--pa);line-height:1.1;margin-top:6px}
+.portada .p-dato{font-size:26px}.portada .p-tema{font-size:20px;color:var(--pt)}
+.portada svg{flex:0 0 auto;width:52px;height:52px;color:var(--pa)}
+.p-sueldos{--pf:#13271F}.p-profesion{--pf:#2B2F2C}.p-guia{--pf:#1D3A2E}
+.p-impuestos{--pf:#F4EFE3;--pt:#1B2520;--pa:#8A6A36;background-image:linear-gradient(90deg,transparent 30px,rgba(214,120,110,.7) 30px,rgba(214,120,110,.7) 32px,transparent 32px),repeating-linear-gradient(transparent 0 25px,#D6DEE4 25px 26px);padding-left:46px}
+.p-chica{min-height:96px}
+.p-grande{min-height:170px;padding:24px 28px}.p-grande .p-dato{font-size:44px}.p-grande .p-tema{font-size:30px}.p-grande svg{width:96px;height:96px}
+.p-grande.p-impuestos{padding-left:56px}
+.p-nota{min-height:120px;margin:-6px 0 22px}.p-nota .p-dato{font-size:34px}.p-nota svg{width:72px;height:72px}
+@media(max-width:620px){.p-grande .p-dato{font-size:32px}.p-grande svg{width:64px;height:64px}.p-grande{min-height:130px}}
+/* más aire */
+.tarjetas{gap:22px}
+.tarjeta{border-top:0}
+.tarjeta .tx{padding:18px 20px 20px}
+.nota-contenido p{line-height:1.7;margin:0 0 1.05em}
+.nota-contenido h2{margin-top:1.6em}
+.tarjetas>*,.grilla>*,.tarjeta,.portada{min-width:0}
+.portada .p-dato,.portada .p-tema{margin-top:0;overflow-wrap:anywhere}
+.portada .p-clave{display:block;font-family:var(--serif);color:var(--pt);font-size:19px;line-height:1.3}
+.p-grande .p-clave{font-size:26px}.p-nota .p-clave{font-size:22px}
+.portada .p-sec{display:block;font:700 12px/1.3 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--pa)}
+.portada .p-sec+.p-tema{margin-top:4px}
+.p-grande .p-tema{font-size:40px}.p-nota .p-tema{font-size:28px}@media(max-width:620px){.p-grande .p-tema{font-size:30px}}

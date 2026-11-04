@@ -20,7 +20,8 @@ Formato de respuesta: SOLO JSON:
 {
  "antetitulo": "Guía | norma principal (ej.: Guía | Ley de Contrato de Trabajo, arts. 150 a 157)",
  "titulo": "Título de la guía, máximo 110 caracteres",
- "encorto": "2 o 3 oraciones: qué resuelve esta guía",
+ "encorto": "2 o 3 oraciones. La PRIMERA responde directo la pregunta principal de la guía con el dato concreto (ej.: 'El aguinaldo es el 50% de la mejor remuneración mensual del semestre y se paga hasta el 18 de diciembre.'); después, qué resuelve la guía",
+ "clave": "el dato práctico más útil de la guía en hasta 60 caracteres, que NO repita el título (ej.: '14 a 35 días según antigüedad'); solo con datos de las fuentes o null",
  "cuerpo": [{"h": "subtítulo"}, {"p": "párrafo"}, {"tabla": [["encabezado1","encabezado2"],["fila","fila"]]}],
  "seo_titulo": "máximo 65 caracteres, con lo que un contador escribiría en Google (ej.: Vacaciones: cuántos días corresponden y cómo se calculan)",
  "descripcion_seo": "entre 120 y 155 caracteres",

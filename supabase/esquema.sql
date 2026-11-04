@@ -372,3 +372,6 @@ begin
 end $$;
 revoke all on function public.sumar_visita(text, boolean, text) from public;
 grant execute on function public.sumar_visita(text, boolean, text) to anon, authenticated;
+
+-- ===== v23: frase clave de cada nota (lo que la tarjeta muestra y no está en el título) =====
+alter table public.notas add column if not exists clave text check (char_length(clave) <= 120);

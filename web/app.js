@@ -86,7 +86,7 @@
     if (usuario && !perfil) { pedirPerfil(); return false; }
     abrirModal(h('div', {},
       h('h2', {}, 'Ingresá para participar'),
-      h('p', {}, 'Con tu cuenta de Google podés subir paso a paso, opinar y votar. No guardamos contraseñas y tu mail no se muestra a nadie.'),
+      h('p', {}, 'Con tu cuenta de Google podés subir explicaciones, opinar y votar. No guardamos contraseñas y tu mail no se muestra a nadie.'),
       h('button', { class: 'btn ancho', onclick: ingresar }, 'Ingresar con Google')));
     return false;
   }
@@ -147,7 +147,7 @@
   }
   function borrar(tipo, item) {
     abrirModal(h('div', {},
-      h('h2', {}, tipo === 'paso' ? '¿Borrar tu explicativo?' : '¿Borrar tu opinión?'),
+      h('h2', {}, tipo === 'paso' ? '¿Borrar tu explicación?' : '¿Borrar tu opinión?'),
       h('p', {}, 'Se borra para siempre, junto con sus votos.'),
       h('div', { class: 'fila-btn' },
         h('button', { class: 'btn sec', onclick: cerrarModal }, 'Cancelar'),
@@ -265,7 +265,7 @@
       const cont = h('div', { class: 'contenido-paso' });
       cont.innerHTML = window.RCEditor ? RCEditor.limpiar(p.contenido) : '';
       cont.querySelectorAll('table').forEach(t => { const w = h('div', { class: 'tabla-scroll' }); t.replaceWith(w); w.append(t); });
-      cont.querySelectorAll('img').forEach(i => { i.loading = 'lazy'; i.alt = i.alt || 'Imagen del paso a paso'; i.title = 'Tocá para ampliar'; i.addEventListener('click', () => ampliar(i.src)); });
+      cont.querySelectorAll('img').forEach(i => { i.loading = 'lazy'; i.alt = i.alt || 'Imagen de la explicación'; i.title = 'Tocá para ampliar'; i.addEventListener('click', () => ampliar(i.src)); });
       lp.append(h('div', { class: 'aporte' },
         accionesPropias('paso', p),
         autorBloque(p, p.creado),
@@ -311,7 +311,7 @@
       document.execCommand('insertHTML', false, html);
     };
     const subirCanvas = async c => {
-      if (imgs >= 15) throw new Error('Máximo 15 imágenes por paso a paso.');
+      if (imgs >= 15) throw new Error('Máximo 15 imágenes por explicación.');
       const blob = await ed.aJpg(c);
       const ruta = `${usuario.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
       const { error } = await sb.storage.from('pasos').upload(ruta, blob, { contentType: 'image/jpeg', upsert: false });
@@ -321,7 +321,7 @@
     };
     const conAviso = async (txt, fn) => {
       mostrar('⏳ ' + txt, 'cargando'); procesando = true;
-      try { await fn(); mostrar('✅ Listo, ya está en tu paso a paso. Revisalo abajo antes de publicar.', 'ok'); }
+      try { await fn(); mostrar('✅ Listo, ya está en tu explicación. Revisalo abajo antes de publicar.', 'ok'); }
       catch (e) { mostrar('⚠️ ' + ((e && e.message && !/Failed|fetch|import/i.test(e.message)) ? e.message : 'No se pudo procesar el archivo. Probá exportarlo de nuevo a PDF o copiá y pegá el contenido.'), 'error'); }
       finally { procesando = false; }
     };
@@ -354,11 +354,11 @@
     const selector = h('input', { type: 'file', accept: '.xlsx,.docx,.pdf,.png,.jpg,.jpeg,.webp', hidden: true, onchange: () => { if (selector.files[0]) procesarArchivo(selector.files[0]); selector.value = ''; } });
     const selPdf = h('input', { type: 'file', accept: '.pdf', hidden: true, onchange: () => { if (selPdf.files[0]) procesarArchivo(selPdf.files[0]); selPdf.value = ''; } });
     const f = h('form', {},
-      h('h2', {}, existente ? 'Editar tu explicativo' : 'Mostrá cómo se aplica'),
+      h('h2', {}, existente ? 'Editar tu explicación' : 'Explicá cómo se aplica'),
       existente ? h('p', { class: 'nota-chica' }, 'Se va a mostrar que lo editaste y a qué hora.') : null,
       h('label', {}, 'Título del caso', h('input', { name: 'titulo', required: true, minlength: 5, maxlength: 140, placeholder: 'Ej.: Vendedor B, 5 años de antigüedad, octubre 2026' })),
       h('label', {}, 'Nivel', h('select', { name: 'nivel' }, h('option', { value: 'basico' }, 'Básico'), h('option', { value: 'intermedio' }, 'Intermedio'), h('option', { value: 'avanzado' }, 'Avanzado'))),
-      h('label', {}, 'Tu paso a paso'),
+      h('label', {}, 'Tu explicación'),
       h('div', { class: 'subir-pdf' },
         h('button', { type: 'button', class: 'btn', onclick: () => selPdf.click() }, '📄 Subir PDF'),
         h('span', {}, 'Lo más fácil: guardá tu Excel o Word como PDF y subilo. Se ve en la página tal cual.'), selPdf),
@@ -375,7 +375,7 @@
       if (procesando) { $('.error', f).textContent = 'Esperá a que termine de procesar el archivo.'; return; }
       const contenido = ed.limpiar(editor.innerHTML);
       const texto = editor.innerText.trim();
-      if (texto.length < 10 && !contenido.includes('<img')) { $('.error', f).textContent = 'Falta el paso a paso: pegá o escribí el contenido.'; return; }
+      if (texto.length < 10 && !contenido.includes('<img')) { $('.error', f).textContent = 'Falta la explicación: pegá o escribí el contenido.'; return; }
       const fila = { nota: notaId, titulo: f.titulo.value.trim(), nivel: f.nivel.value, contenido, porque: f.porque.value.trim(), sin_datos_reales: f.sindatos.checked, texto_pdf: textoPdf || null };
       const err = revisarTexto([fila.titulo, fila.porque, texto].join(' '));
       if (err) { $('.error', f).textContent = err; return; }
@@ -399,7 +399,7 @@
     const slugs = marcas.map(m => m.dataset.contador);
     const { data } = sb ? await sb.from('pasos').select('nota').in('nota', slugs) : { data: [] };
     const c = {}; (data || []).forEach(p => { c[p.nota] = (c[p.nota] || 0) + 1; });
-    marcas.forEach(m => { const n = c[m.dataset.contador] || 0; m.textContent = n ? `${n} paso a paso` : 'Sin paso a paso aún'; });
+    marcas.forEach(m => { const n = c[m.dataset.contador] || 0; m.textContent = n ? `${n} ${n === 1 ? 'explicación' : 'explicaciones'}` : 'Sin explicaciones aún'; });
     $$('#esperando li').forEach(li => { const s = li.querySelector('a').getAttribute('href').replace('nota-', '').replace('.html#aplica', ''); if (c[s]) li.remove(); });
   }
   async function ranking() {

@@ -98,7 +98,8 @@ def pasos_estaticos(lista):
     return "".join(items)
 
 
-VENC = []  # filas de la tabla vencimientos (la arma la fábrica a diario)
+VENC = []
+PORTADAS_OK = set()  # notas que ya tienen su imagen para compartir  # filas de la tabla vencimientos (la arma la fábrica a diario)
 
 
 def cargar_vencimientos():
@@ -314,9 +315,9 @@ def pagina_convenio(c, notas, aportes=None):
 </section>
 <section class="bloque-aplica" id="aplica">
 <h2 class="tit-bloque">¿Cómo se liquida? <span data-n="pasos">0</span></h2>
-<p class="ayuda">Mostrá cómo se liquida este convenio, paso a paso y explicando el porqué. Los más votados quedan arriba.</p>
+<p class="ayuda">Explicá cómo se liquida este convenio: un caso práctico, un recibo de ejemplo o una aclaración de la norma. Las más votadas quedan arriba.</p>
 <div id="lista-pasos" class="lista">{pasos_estaticos(aportes or [])}</div>
-<button class="btn ancho" data-nuevo-paso>Subir mi explicativo</button>
+<button class="btn ancho" data-nuevo-paso>Subir una explicación</button>
 </section>
 </article>{lateral(notas)}</div>"""
     seo_t = f"Escala {c['nombre']} {periodo} ({c['cct']}): básicos, NR y cómo liquidar".replace("  ", " ")
@@ -367,7 +368,7 @@ def pagina_guias(guias, notas, catalogo):
         items += "".join(f'<li class="prox"><b>{e(c["titulo"])}</b><span>Próximamente</span></li>' for c in prox)
         bloques += f'<section class="rama-guias" id="{k}"><h2>{e(titulo)}</h2><ul class="lista-guias">{items}</ul></section>'
     otras = '<p class="ayuda">¿Buscás novedades de la profesión? <a href="profesion.html">Ver notas de Profesión →</a></p>'
-    cuerpo = f'<div class="grilla"><section><h1 class="titsec">Guías prácticas</h1><p class="ayuda">Guías completas de sueldos, impuestos y temas contables, basadas en la norma oficial y actualizadas cuando cambia algo. Debajo de cada una, la comunidad suma su explicación paso a paso.</p>{bloques}{otras}</section>{lateral(notas)}</div>'
+    cuerpo = f'<div class="grilla"><section><h1 class="titsec">Guías prácticas</h1><p class="ayuda">Guías completas de sueldos, impuestos y temas contables, basadas en la norma oficial y actualizadas cuando cambia algo. Debajo de cada una, la comunidad suma sus explicaciones y casos prácticos.</p>{bloques}{otras}</section>{lateral(notas)}</div>'
     return pagina("Guías prácticas de sueldos, impuestos y contabilidad | Ramacontable", cuerpo, "guias",
                   "Guías prácticas para contadores y liquidadores: vacaciones, liquidación final, Ganancias, IVA, Monotributo, Ingresos Brutos y más.", "guias.html", migas=[("Guías", "guias.html")])
 
@@ -451,7 +452,7 @@ def herramienta_ld(nombre, descripcion, ruta):
         "inLanguage": "es-AR", "offers": {"@type": "Offer", "price": "0", "priceCurrency": "ARS"}}, ensure_ascii=False) + "</script>"
 
 
-def pagina(titulo, cuerpo, actual="", descripcion="", ruta="", extra_head="", migas=None):
+def pagina(titulo, cuerpo, actual="", descripcion="", ruta="", extra_head="", migas=None, imagen="compartir.png"):
     sub = {
         "sueldos": [("sueldos.html", "Novedades de sueldos"), ("convenios.html", "Escalas por convenio"), ("guias.html#sueldos", "Guías de sueldos"),
                     ("sueldo-comercio.html", "Calculadora de sueldo de Comercio")],
@@ -473,7 +474,7 @@ def pagina(titulo, cuerpo, actual="", descripcion="", ruta="", extra_head="", mi
 <link rel="canonical" href="{sitio_url()}{ruta}">
 <meta property="og:site_name" content="Ramacontable"><meta property="og:locale" content="es_AR">
 <meta property="og:title" content="{e(titulo)}"><meta property="og:description" content="{e(descripcion or 'Novedades de la profesión contable')}">
-<meta property="og:url" content="{sitio_url()}{ruta}"><meta property="og:image" content="{sitio_url()}compartir.png">
+<meta property="og:url" content="{sitio_url()}{ruta}"><meta property="og:image" content="{sitio_url()}{imagen}">
 <meta name="twitter:card" content="summary_large_image">
 {extra_head}
 {datos_sitio(migas)}
@@ -510,10 +511,50 @@ document.addEventListener('click',function(ev){{if(!ev.target.closest('.cab .men
 </body></html>"""
 
 
+ICONOS_SVG = {
+    "recibo": '<rect x="10" y="6" width="34" height="48" rx="3"/><path d="M17 18h14M17 26h20M17 34h12M17 44h20"/><circle cx="46" cy="14" r="9" fill="currentColor"/><path d="M46 9v10M49 11.5c-1-1.2-5-1.5-5 .8 0 2.6 6 1.4 6 4.2 0 2.3-4 2.2-5.8.8" stroke="var(--pf)" stroke-width="1.6"/>',
+    "calendario": '<rect x="6" y="10" width="48" height="44" rx="4"/><path d="M6 22h48M18 4v12M42 4v12"/><path d="M14 32h6M27 32h6M40 32h6M14 42h6M27 42h6" stroke-width="3"/><rect x="39" y="39" width="8" height="6" fill="currentColor"/>',
+    "grafico": '<path d="M6 6v48h48"/><path d="M14 46V34M24 46V26M34 46V32M44 46V16" stroke-width="5"/><path d="M12 28l12-10 10 6 14-14"/>',
+    "documento": '<path d="M10 4h24l12 12v38H10z"/><path d="M34 4v12h12M17 26h20M17 34h20M17 42h12"/><circle cx="44" cy="46" r="9"/><path d="M40 46l3 3 6-6"/>',
+}
+
+
+def clase_portada(n):
+    return "guia" if n.get("tipo") == "guia" else (n.get("seccion") if n.get("seccion") in ("sueldos", "impuestos") else "profesion")
+
+
+def portada_html(n, tam="chica"):
+    """Portada liviana hecha con HTML y un ícono vectorial: no agrega descargas a la página."""
+    import portadas
+    icono = ICONOS_SVG[portadas.tema_icono(n)]
+    ante = n.get("antetitulo") or ("Guía práctica" if n.get("tipo") == "guia" else "")
+    dato = (n.get("dato") or "").strip()
+    clave = (n.get("clave") or "").strip()
+    titulo = portadas._norm(n.get("titulo", ""))
+    nuevo = lambda t: t and portadas._norm(t) not in titulo  # que no repita lo que ya dice el título
+    if not clave:  # notas viejas sin frase clave: primera oración del "En corto", acortada
+        frase = re.split(r"(?<=[.;:])\s", (n.get("encorto") or "").strip())[0].rstrip(".;:")
+        if 25 <= len(frase) and portadas._norm(frase[:35]) not in titulo:
+            clave = frase if len(frase) <= 90 else frase[:87].rsplit(" ", 1)[0] + "…"
+    if nuevo(clave):
+        principal = f'<b class="p-clave">{e(clave)}</b>'
+    elif nuevo(dato):
+        principal = f'<b class="p-dato">{e(dato)}</b>'
+    else:
+        # sin dato nuevo: sección y tema chiquitos, sin repetir el título en grande
+        sec = "Guía práctica" if n.get("tipo") == "guia" else SECCIONES.get(n.get("seccion"), "")
+        tema = (ante.split("|")[0] or "").strip()
+        # el tema va grande (y la sección chiquita arriba); si no hay tema, la sección misma va grande
+        grande_txt = tema or sec
+        principal = (f'<span class="p-sec">{e(sec)}</span>' if tema and portadas._norm(tema) != portadas._norm(sec) else "") + f'<b class="p-tema">{e(grande_txt)}</b>'
+    return (f'<div class="portada p-{clase_portada(n)} p-{tam}" aria-hidden="true"><div class="p-tx">{principal}</div>'
+            f'<svg viewBox="0 0 60 60" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">{icono}</svg></div>')
+
+
 def tarjeta(n, grande=False):
     clase = "tarjeta grande" if grande else "tarjeta"
-    pastilla = f'<span class="pastilla">{e(n["dato"])}</span>' if n.get("dato") else ""
-    return f"""<a class="{clase}" href="nota-{n['slug']}.html"><div class="tx">
+    pastilla = ""
+    return f"""<a class="{clase}" href="nota-{n['slug']}.html">{portada_html(n, "grande" if grande else "chica")}<div class="tx">
 <p class="ante">{e(n['antetitulo'])}</p><h2>{e(n['titulo'])}</h2>
 {f"<p class='resumen'>{e(n['encorto'])}</p>" if grande else ""}
 <p class="meta">{pastilla}{fecha_larga(n['fecha'])} · <span data-contador="{n['slug']}"></span></p></div></a>"""
@@ -530,10 +571,10 @@ def lateral(notas):
 
 def _lateral(notas, caja_venc):
     esperando = "".join(
-        f'<li><a href="nota-{n["slug"]}.html#aplica">{e(n["titulo"])}</a><span>Sé el primero en explicarlo</span></li>'
+        f'<li><a href="nota-{n["slug"]}.html#aplica">{e(n["titulo"])}</a><span>Sé el primero en explicarla</span></li>'
         for n in notas[:4])
     return f"""<aside class="lateral">
-<section class="caja"><h3>Notas esperando su paso a paso</h3><ul class="esperando" id="esperando">{esperando}</ul></section>
+<section class="caja"><h3>Notas esperando una explicación</h3><ul class="esperando" id="esperando">{esperando}</ul></section>
 <a class="caja caja-calc" href="aguinaldo.html"><b>Calculadora de aguinaldo</b><span>Diciembre 2026 · paso a paso, con descuentos y neto</span></a>
 <a class="caja caja-calc" href="sueldo-comercio.html"><b>Calculadora de sueldo de Comercio</b><span>Con escala vigente, antigüedad, presentismo y neto</span></a>
 {caja_venc}
@@ -587,8 +628,45 @@ def sitemaps(notas, convenios=()):
         f"<url><loc>{base}nota-{n['slug']}.html</loc><news:news><news:publication><news:name>Ramacontable</news:name>"
         f"<news:language>es</news:language></news:publication><news:publication_date>{str(n['fecha'])[:10]}</news:publication_date>"
         f"<news:title>{e(n['titulo'])}</news:title></news:news></url>" for n in recientes) + "</urlset>")
-    robots = f"User-agent: *\nAllow: /\nDisallow: /admin.html\nSitemap: {base}sitemap.xml\nSitemap: {base}sitemap-noticias.xml\n"
+    bots = ["GPTBot", "OAI-SearchBot", "ChatGPT-User", "ClaudeBot", "Claude-SearchBot", "Claude-User", "PerplexityBot",
+            "Perplexity-User", "Google-Extended", "Bingbot", "Applebot-Extended", "CCBot", "meta-externalagent", "DuckAssistBot"]
+    robots = "".join(f"User-agent: {b}\nAllow: /\nDisallow: /admin.html\n\n" for b in bots)
+    robots += f"User-agent: *\nAllow: /\nDisallow: /admin.html\n\nSitemap: {base}sitemap.xml\nSitemap: {base}sitemap-noticias.xml\n"
     return mapa, noticias, robots
+
+
+def llms_txt(notas, convenios):
+    """Resumen del sitio para asistentes de IA (formato llms.txt)."""
+    base = sitio_url()
+    l = ["# Ramacontable", "",
+         "> Portal argentino para contadores y liquidadores de sueldos: novedades de ARCA y laborales, escalas salariales "
+         "por convenio, vencimientos, guías y calculadoras gratuitas. Cada nota cita la fuente oficial y la fecha.", "",
+         "## Secciones", f"- [Sueldos]({base}sueldos.html): novedades laborales y de liquidación de sueldos",
+         f"- [Impuestos]({base}impuestos.html): novedades de ARCA y rentas", f"- [Guías]({base}guias.html): guías actualizadas por tema",
+         f"- [Vencimientos]({base}vencimientos.html): próximos vencimientos impositivos y previsionales",
+         f"- [Feriados]({base}feriados.html): feriados del año y cómo se pagan", "",
+         "## Escalas salariales por convenio"]
+    l += [f"- [{c.get('nombre', c['slug'])}]({base}escala-{c['slug']}.html)" for c in convenios]
+    l += ["", "## Calculadoras"] + [f"- [{t}]({base}{a}.html)" for a, t in [
+        ("sueldo-comercio", "Sueldo de Comercio"), ("sueldo-casas-particulares", "Casas particulares"), ("aguinaldo", "Aguinaldo"),
+        ("liquidacion-final", "Liquidación final e indemnización"), ("vacaciones", "Vacaciones"), ("horas-extras", "Horas extras"),
+        ("actualizacion", "Actualización por CER, UVA, dólar, inflación y tasas"), ("dias-habiles", "Días hábiles"),
+        ("plazo-fijo", "Plazo fijo"), ("prestamos", "Préstamos"), ("iva", "IVA")]]
+    l += ["", "## Últimas notas"] + [f"- [{n['titulo']}]({base}nota-{n['slug']}.html): {(n.get('encorto') or '')[:200]}"
+                                     for n in notas[:40]]
+    return "\n".join(l) + "\n"
+
+
+def urls_indexnow(notas, convenios, minutos=90):
+    """Páginas nuevas o cambiadas en la última hora y media, para avisar a Bing/IndexNow."""
+    base = sitio_url()
+    lim = (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(minutes=minutos)).isoformat()[:16]
+    def nuevo(v):
+        v = str(v or "")
+        return len(v) > 10 and v.replace(" ", "T")[:16] >= lim
+    u = [f"{base}nota-{n['slug']}.html" for n in notas if nuevo(n.get("actualizado")) or nuevo(n.get("fecha"))]
+    u += [f"{base}escala-{c['slug']}.html" for c in convenios if nuevo(c.get("actualizado"))]
+    return ([base] if u else []) + u
 
 
 def pagina_nota(n, notas, aportes=None):
@@ -601,6 +679,7 @@ def pagina_nota(n, notas, aportes=None):
         previa = f'<p class="actualiza">Esta nota actualiza a: <a href="nota-{e(n["actualiza"])}.html">la nota anterior sobre el tema</a></p>'
     contenido = f"""<div class="grilla"><article class="nota" data-nota="{n['slug']}" data-actualizado="{e(str(n.get('actualizado') or ''))}">
 <div class="nota-contenido">
+{portada_html(n, "nota")}
 <p class="miga">{f'<a href="guias.html">Guías</a> / <a href="guias.html#{n["seccion"]}">{RAMAS_GUIAS.get(n["seccion"], sec)}</a>' if es_guia(n) else f'<a href="{n["seccion"]}.html">{sec}</a>'}</p>
 <p class="ante">{e(n['antetitulo'])}</p>
 <h1>{e(n['titulo'])}</h1>
@@ -622,9 +701,9 @@ def pagina_nota(n, notas, aportes=None):
 </section>
 <section class="bloque-aplica" id="aplica">
 <h2 class="tit-bloque">¿Cómo se aplica? <span data-n="pasos">0</span></h2>
-<p class="ayuda">Mostrá cómo se liquida o se aplica esta novedad, paso a paso y explicando el porqué. Los más votados quedan arriba.</p>
+<p class="ayuda">Explicá cómo se aplica esta novedad: un caso práctico, una liquidación de ejemplo o una aclaración de la norma. Las más votadas quedan arriba.</p>
 <div id="lista-pasos" class="lista">{pasos_estaticos(aportes or [])}</div>
-<button class="btn ancho" data-nuevo-paso>Subir mi explicativo</button>
+<button class="btn ancho" data-nuevo-paso>Subir una explicación</button>
 </section>
 </article>{lateral(notas)}</div>"""
     url = f"{sitio_url()}nota-{n['slug']}.html"
@@ -642,7 +721,8 @@ def pagina_nota(n, notas, aportes=None):
     migas = ([("Guías", "guias.html"), (RAMAS_GUIAS.get(n["seccion"], "Guías"), f"guias.html#{n['seccion']}")] if es_guia(n)
              else [(SECCIONES[n["seccion"]], f"{n['seccion']}.html")]) + [(n["titulo"][:80], f"nota-{n['slug']}.html")]
     return pagina(n.get("seo_titulo") or f"{n['titulo']} | Ramacontable", contenido, n["seccion"],
-                  n.get("descripcion_seo") or n["encorto"], f"nota-{n['slug']}.html", head, migas)
+                  n.get("descripcion_seo") or n["encorto"], f"nota-{n['slug']}.html", head, migas,
+                  f"compartir/{n['slug']}.png" if n["slug"] in PORTADAS_OK else "compartir.png")
 
 
 DESC_SECCION = {
@@ -703,6 +783,17 @@ def main():
             extra += tira_guias(guias, k)
         escribir(f"{k}.html", portada([n for n in notas if n["seccion"] == k], f"{v} | Ramacontable", k, v, extra))
     aportes = cargar_aportes()
+    import portadas
+    if portadas.disponible():
+        portadas.bajar_fuentes()
+        for n in todas:
+            try:
+                portadas.generar(n, os.path.join(SALIDA, "compartir", f"{n['slug']}.png"))
+                PORTADAS_OK.add(n["slug"])
+            except Exception as ex:
+                print("Aviso: no pude armar la portada de", n["slug"], ex)
+    else:
+        print("Aviso: falta Pillow; las notas se comparten con la imagen general")
     for n in todas:
         escribir(f"nota-{n['slug']}.html", pagina_nota(n, guias if es_guia(n) else notas, aportes.get(n['slug'])))
     escribir("herramientas.html", pagina_vencimientos(notas))
@@ -762,6 +853,10 @@ def main():
     escribir("sitemap.xml", mapa)
     escribir("sitemap-noticias.xml", noticias)
     escribir("robots.txt", robots)
+    escribir("llms.txt", llms_txt(todas, convenios))
+    clave_in = "rc" + __import__("hashlib").sha1(sitio_url().encode()).hexdigest()[:30]
+    escribir(clave_in + ".txt", clave_in)
+    escribir("indexnow.json", json.dumps({"key": clave_in, "urls": urls_indexnow(todas, convenios)}))
     escribir(".nojekyll", "")
     print(f"Listo: {len(notas)} notas en {SALIDA}")
 

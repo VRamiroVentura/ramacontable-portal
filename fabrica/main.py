@@ -321,6 +321,7 @@ class Fabrica:
             "slug": slug, "fecha": util.ahora().date().isoformat(), "seccion": grupo.get("seccion") if grupo.get("seccion") in ("sueldos", "impuestos", "profesion") else "profesion",
             "antetitulo": str(nota.get("antetitulo", ""))[:120], "titulo": str(nota.get("titulo", ""))[:160],
             "dato": (str(nota["dato"])[:40] if nota.get("dato") else None), "encorto": str(nota.get("encorto", ""))[:600],
+            "clave": (str(nota["clave"])[:80] if nota.get("clave") else None),
             "cuerpo": _bloques_ok(nota.get("cuerpo")), "fuente": str(nota.get("fuente", ""))[:300],
             "fuentes": [{"nombre": it["fuente"], "url": it["url"], "titulo": it["titulo"]} for it in items],
             "verificada": oficial and ok, "estado": "publicada" if ok else "revision", "tema": grupo.get("tema"),
