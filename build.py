@@ -669,6 +669,37 @@ def urls_indexnow(notas, convenios, minutos=90):
     return ([base] if u else []) + u
 
 
+def bloque_aportes(n, aportes):
+    """Guías: opiniones + explicaciones por separado. Novedades: un solo bloque de comentarios, con explicaciones opcionales."""
+    if es_guia(n):
+        return GUIA_APORTES.replace("@PASOS@", pasos_estaticos(aportes or []))
+    return f'''<section class="bloque-op bloque-com" id="opiniones"><span id="aplica"></span>
+<h2 class="tit-bloque">Comentarios <span data-n="total">0</span></h2>
+<form id="form-opinion" class="form-op"><textarea name="texto" rows="3" maxlength="1500" placeholder="¿Qué opinás? Si querés, explicá cómo se aplica." required></textarea>
+<label class="check chico"><input type="checkbox" name="explica"> Es una explicación o caso práctico (podés sumar tablas, imágenes o un PDF)</label>
+<button class="btn">Publicar</button></form>
+<div id="lista-pasos" class="lista lista-expl">{pasos_estaticos(aportes or [])}</div>
+<div id="lista-opiniones" class="lista"></div>
+<button type="button" class="btn sec ancho" id="ver-mas-op" hidden>Ver más comentarios</button>
+<span hidden data-n="pasos">0</span><span hidden data-n="opiniones">0</span>
+</section>'''
+
+
+GUIA_APORTES = """<section class="bloque-op" id="opiniones">
+<h2 class="tit-bloque">Opiniones <span data-n="opiniones">0</span></h2>
+<form id="form-opinion" class="form-op"><textarea name="texto" rows="3" maxlength="1500" placeholder="¿Algo para sumar o corregir en esta guía?" required></textarea><button class="btn">Publicar opinión</button></form>
+<div id="lista-opiniones" class="lista"></div>
+<button type="button" class="btn sec ancho" id="ver-mas-op" hidden>Ver más opiniones</button>
+</section>
+<section class="bloque-aplica" id="aplica">
+<h2 class="tit-bloque">¿Cómo se aplica? <span data-n="pasos">0</span></h2>
+<p class="ayuda">Explicá cómo se aplica esta guía: un caso práctico, una liquidación de ejemplo o una aclaración de la norma. Las más votadas quedan arriba.</p>
+<div id="lista-pasos" class="lista">@PASOS@</div>
+<button class="btn ancho" data-nuevo-paso>Subir una explicación</button>
+</section>
+"""
+
+
 def pagina_nota(n, notas, aportes=None):
     verif = ("Elaborada con fuentes oficiales." if n.get("verificada")
              else "Pendiente de verificación con fuente oficial.")
@@ -693,18 +724,7 @@ def pagina_nota(n, notas, aportes=None):
 </div>
 
 {relacionadas(n, notas)}
-<section class="bloque-op" id="opiniones">
-<h2 class="tit-bloque">Opiniones <span data-n="opiniones">0</span></h2>
-<form id="form-opinion" class="form-op"><textarea name="texto" rows="3" maxlength="1500" placeholder="{'¿Algo para sumar o corregir en esta guía?' if es_guia(n) else '¿Qué opinás de esta novedad?'}" required></textarea><button class="btn">Publicar opinión</button></form>
-<div id="lista-opiniones" class="lista"></div>
-<button type="button" class="btn sec ancho" id="ver-mas-op" hidden>Ver más opiniones</button>
-</section>
-<section class="bloque-aplica" id="aplica">
-<h2 class="tit-bloque">¿Cómo se aplica? <span data-n="pasos">0</span></h2>
-<p class="ayuda">Explicá cómo se aplica esta novedad: un caso práctico, una liquidación de ejemplo o una aclaración de la norma. Las más votadas quedan arriba.</p>
-<div id="lista-pasos" class="lista">{pasos_estaticos(aportes or [])}</div>
-<button class="btn ancho" data-nuevo-paso>Subir una explicación</button>
-</section>
+{bloque_aportes(n, aportes)}
 </article>{lateral(notas)}</div>"""
     url = f"{sitio_url()}nota-{n['slug']}.html"
     ld = [{"@context": "https://schema.org", "@type": "Article" if es_guia(n) else "NewsArticle", "headline": n["titulo"][:110],

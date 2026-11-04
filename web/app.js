@@ -256,11 +256,12 @@
     const puntaje = id => votosDe('paso', id).reduce((s, v) => s + (v.valor === 'neg' ? -1 : v.valor === 'sirvio' ? 2 : 1), 0);
     pasos.sort((a, b) => puntaje(b.id) - puntaje(a.id) || new Date(a.creado) - new Date(b.creado));
 
-    $('[data-n=pasos]').textContent = pasos.length;
-    $('[data-n=opiniones]').textContent = opiniones.length;
+    const combinado = !!$('.bloque-com');
+    const setN = (k, v) => { const x = $(`[data-n=${k}]`); if (x) x.textContent = v; };
+    setN('pasos', pasos.length); setN('opiniones', opiniones.length); setN('total', pasos.length + opiniones.length);
     const NIV = { basico: 'Básico', intermedio: 'Intermedio', avanzado: 'Avanzado' };
     const lp = $('#lista-pasos'); lp.innerHTML = '';
-    if (!pasos.length) lp.append(h('div', { class: 'vacio-caja' }, h('b', {}, 'Todavía nadie mostró cómo se aplica'), 'Sé el primero: ganás reputación y ayudás a colegas y estudiantes.'));
+    if (!pasos.length && !combinado) lp.append(h('div', { class: 'vacio-caja' }, h('b', {}, 'Todavía nadie mostró cómo se aplica'), 'Sé el primero: ganás reputación y ayudás a colegas y estudiantes.'));
     pasos.forEach(p => {
       const cont = h('div', { class: 'contenido-paso' });
       cont.innerHTML = window.RCEditor ? RCEditor.limpiar(p.contenido) : '';
@@ -269,6 +270,7 @@
       lp.append(h('div', { class: 'aporte' },
         accionesPropias('paso', p),
         autorBloque(p, p.creado),
+        combinado ? h('span', { class: 'nivel expl' }, 'Explicación') : null,
         h('span', { class: 'nivel' }, NIV[p.nivel]),
         h('h4', {}, p.titulo),
         cont,
@@ -277,10 +279,10 @@
         botonesVoto('paso', p, votosDe('paso', p.id), nombres)));
     });
     const lo = $('#lista-opiniones'); lo.innerHTML = '';
-    if (!opiniones.length) lo.append(h('p', { class: 'ayuda' }, 'Todavía no hay opiniones.'));
+    if (!opiniones.length && !(combinado && pasos.length)) lo.append(h('p', { class: 'ayuda' }, combinado ? 'Todavía no hay comentarios. ¡Sé el primero!' : 'Todavía no hay opiniones.'));
     opiniones.forEach((o, i) => lo.append(h('div', { class: 'aporte', hidden: i >= 2 && !verTodasOp }, accionesPropias('opinion', o), autorBloque(o, o.creado), h('p', {}, o.texto), botonesVoto('opinion', o, votosDe('opinion', o.id), nombres))));
     const vm = $('#ver-mas-op');
-    if (vm) { vm.hidden = opiniones.length <= 2 || verTodasOp; vm.textContent = `Ver más opiniones (${opiniones.length - 2})`; }
+    if (vm) { vm.hidden = opiniones.length <= 2 || verTodasOp; vm.textContent = `Ver más ${combinado ? 'comentarios' : 'opiniones'} (${opiniones.length - 2})`; }
   }
 
   function ampliar(src) {
@@ -288,11 +290,12 @@
     modal.querySelector('.ventana').classList.add('ventana-ancha');
   }
 
-  function formPaso(existente) {
+  function formPaso(existente, inicial) {
     if (!exigirSesion()) return;
     const ed = window.RCEditor; ed.configurar(cfg.url);
     let imgs = 0, textoPdf = existente && existente.texto_pdf || '';
     const editor = h('div', { class: 'editor', contenteditable: 'true', 'data-vacio': 'Pegá acá tu liquidación o explicación (desde Excel o Word, mantiene el formato) o escribila directamente.' });
+    if (inicial) editor.innerText = inicial;
     const estado = h('div', { class: 'estado', 'aria-live': 'polite', hidden: true });
     let procesando = false;
     const mostrar = (txt, tipo) => {
@@ -507,7 +510,7 @@
     const construida = new Date(cfg.build || 0);
     if (dinamica || data.estado !== 'publicada' || new Date(data.actualizado) > construida || esAdmin) pintarNota(data);
     barraAdmin(data);
-    if (dinamica && (data.estado === 'publicada' || esAdmin)) { $('#opiniones').hidden = false; $('#aplica').hidden = false; }
+    if (dinamica && (data.estado === 'publicada' || esAdmin)) { $('#opiniones').hidden = false; if ($('#aplica')) $('#aplica').hidden = false; }
   }
   // ---------- contador de visitas (sin cookies: solo cuenta, no identifica a nadie) ----------
   // días en hora de Argentina (igual que el servidor)
@@ -677,6 +680,7 @@
     ev.preventDefault();
     if (!exigirSesion()) return;
     const texto = fo.texto.value.trim();
+    if (fo.explica && fo.explica.checked) { formPaso(null, texto); fo.reset(); return; }
     const err = revisarTexto(texto); if (err) return aviso(err);
     const { error } = await sb.from('opiniones').insert({ nota: notaId, texto });
     if (error) return aviso(mensajeError(error));

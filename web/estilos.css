@@ -321,3 +321,7 @@ table.feriados tr.prox-f td{background:var(--bronce-suave);font-weight:600}
 .portada .p-sec{display:block;font:700 12px/1.3 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--pa)}
 .portada .p-sec+.p-tema{margin-top:4px}
 .p-grande .p-tema{font-size:40px}.p-nota .p-tema{font-size:28px}@media(max-width:620px){.p-grande .p-tema{font-size:30px}}
+
+.nivel.expl{background:#1F3A5F;color:#fff;margin-right:6px;padding:2px 7px;border-radius:4px}
+.form-op .check.chico{display:flex;gap:6px;align-items:flex-start;font-size:.85rem;color:#555;margin:6px 0}
+.bloque-com .lista-expl:empty{display:none}
