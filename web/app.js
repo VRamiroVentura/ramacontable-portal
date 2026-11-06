@@ -526,7 +526,7 @@
         const h = new URL(document.referrer).hostname.replace(/^(www|l|lm|m|mobile)\./, '');
         if (h && h !== location.hostname.replace(/^www\./, '')) origen = h;
       }
-      sb.rpc('sumar_visita', { p_ruta: location.pathname.replace(/^\//, '') || 'index.html', p_nuevo: nuevo, p_origen: origen.slice(0, 60) });
+      sb.rpc('sumar_visita', { p_ruta: location.pathname.replace(/^\//, '') || 'index.html', p_nuevo: nuevo, p_origen: origen.slice(0, 60) }).then(r => { if (r && r.error) console.warn('Contador:', r.error.message); }, () => {});
     } catch (e) { /* el contador nunca rompe la página */ }
   }
   async function estadisticas() {
