@@ -375,3 +375,27 @@ grant execute on function public.sumar_visita(text, boolean, text) to anon, auth
 
 -- ===== v23: frase clave de cada nota (lo que la tarjeta muestra y no está en el título) =====
 alter table public.notas add column if not exists clave text check (char_length(clave) <= 120);
+
+-- ===== v31: datos al día, pregunta de la comunidad y preguntas/respuestas en los comentarios =====
+create table if not exists public.respuestas (
+  slug text primary key,
+  titulo text not null,
+  datos jsonb not null default '{}'::jsonb,
+  fuentes jsonb not null default '[]'::jsonb,
+  historial jsonb not null default '[]'::jsonb,
+  revisado timestamptz,
+  cambiado timestamptz
+);
+alter table public.respuestas enable row level security;
+drop policy if exists "todos leen respuestas" on public.respuestas;
+create policy "todos leen respuestas" on public.respuestas for select to anon, authenticated using (true);
+grant select on public.respuestas to anon, authenticated;
+
+alter table public.notas add column if not exists pregunta_comunidad text check (char_length(pregunta_comunidad) <= 240);
+
+alter table public.opiniones add column if not exists tipo text not null default 'comentario';
+do $$ begin
+  alter table public.opiniones add constraint opiniones_tipo_ok check (tipo in ('comentario','pregunta','respuesta'));
+exception when duplicate_object then null; end $$;
+alter table public.opiniones add column if not exists responde bigint references public.opiniones(id) on delete cascade;
+create index if not exists opiniones_responde on public.opiniones(responde);

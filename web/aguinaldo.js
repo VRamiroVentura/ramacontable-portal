@@ -60,6 +60,15 @@
   const form = document.getElementById('calc-sac');
   if (!form) { window.RCAguinaldo = { calcular, numero, semestre }; return; }
   const cajaMeses = document.getElementById('meses');
+  // tope de aportes: se toma la base máxima vigente de los datos del día (si está verificada)
+  fetch('datos/datos-del-dia.json').then(r => r.json()).then(d => {
+    const x = d['tope-aportes-base-maxima'], b = x && x.estructurado && x.estructurado.base_maxima;
+    if (b && form.tope) {
+      form.tope.value = b.toLocaleString('es-AR', { maximumFractionDigits: 2 });
+      const o = document.getElementById('origen-tope');
+      if (o) o.innerHTML = `Base máxima vigente${x.mes_vigente ? ' de ' + x.mes_vigente.slice(5) + '/' + x.mes_vigente.slice(0, 4) : ''}, verificada el ${x.revisado.slice(8, 10)}/${x.revisado.slice(5, 7)} (<a href="tope-aportes-base-maxima.html">ver el dato</a>).`;
+    }
+  }).catch(() => {});
   const salida = document.getElementById('resultado-sac');
   const err = document.getElementById('err-sac');
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));

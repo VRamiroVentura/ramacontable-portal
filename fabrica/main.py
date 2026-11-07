@@ -12,6 +12,8 @@ from datetime import timedelta
 
 from . import fuentes, gemini, mail, util
 
+FUENTES_EXTRA = [{"nombre": "Tributum", "tipo": "portal", "url": "https://tributum.news/feed/"}, {"nombre": "Estudio Vilaplana", "tipo": "portal", "url": "https://www.estudiovilaplana.com.ar/feed/"}, {"nombre": "iProfesional Impuestos", "tipo": "apoyo", "url": "https://www.iprofesional.com/rss/impuestos.xml", "filtro": ["arca", "afip", "anses", "monotribut", "ganancias", "iva", "bienes personales", "ingresos brutos", "arba", "agip", "impuesto", "boletin oficial", "resolucion general", "decreto", "convenio", "paritaria", "escala", "salari", "sueldo", "aguinaldo", "indemniz", "aportes", "contribuciones", "seguridad social", "art ", "feriado", "vencimiento", "bcra", "comunicacion a", "reforma laboral"]}, {"nombre": "Calcular Sueldo", "tipo": "apoyo", "url": "https://calcularsueldo.com.ar/feed/", "filtro": ["arca", "afip", "anses", "monotribut", "ganancias", "iva", "bienes personales", "ingresos brutos", "arba", "agip", "impuesto", "boletin oficial", "resolucion general", "decreto", "convenio", "paritaria", "escala", "salari", "sueldo", "aguinaldo", "indemniz", "aportes", "contribuciones", "seguridad social", "art ", "feriado", "vencimiento", "bcra", "comunicacion a", "reforma laboral"]}, {"nombre": "Econoblog", "tipo": "apoyo", "url": "https://www.econoblog.com.ar/feed/", "filtro": ["arca", "afip", "anses", "monotribut", "ganancias", "iva", "bienes personales", "ingresos brutos", "arba", "agip", "impuesto", "boletin oficial", "resolucion general", "decreto", "convenio", "paritaria", "escala", "salari", "sueldo", "aguinaldo", "indemniz", "aportes", "contribuciones", "seguridad social", "art ", "feriado", "vencimiento", "bcra", "comunicacion a", "reforma laboral"]}]
+
 CONFIABLE = "Ignacio Online"  # lo que publica Ignacio se toma como correcto (pedido de Ramiro); se vigila si después lo edita o borra
 
 
@@ -118,7 +120,10 @@ class Fabrica:
     # ---------- pasos ----------
     def leer_fuentes(self):
         items = []
-        for f in self.cfg.get("fuentes", []):
+        lista = list(self.cfg.get("fuentes", []))
+        ya = {f.get("nombre") for f in lista}
+        lista += [f for f in FUENTES_EXTRA if f["nombre"] not in ya]  # se suman solas, sin tocar config.json
+        for f in lista:
             try:
                 nuevos = fuentes.leer(f)
                 util.log(f"{f['nombre']}: {len(nuevos)} novedades")
@@ -403,6 +408,30 @@ class Fabrica:
                 self.descartes.append((g.get("tema"), "nota propia de un portal (investigación u opinión): no se replica"))
                 self.marcar(urls, g.get("tema"), None)
                 continue
+            # Regla de fuentes: se publica si hay fuente oficial, si lo trae Ignacio Online, si lo publicaron
+            # al menos 2 portales, o si la nota del portal cita la fuente oficial y la podemos leer para chequear.
+            # Los blogs de "apoyo" (generalistas) nunca arrancan una nota solos: solo confirman un tema
+            # que ya trae una fuente oficial o un blog contable principal.
+            principales = {m["fuente"] for m in miembros if m["tipo"] == "portal"}
+            if not oficial and not principales:
+                self.esperando.append((g.get("tema"), f"solo en blogs de apoyo ({', '.join(sorted(portales))}): espera un blog contable o la fuente oficial"))
+                continue
+            if not oficial and CONFIABLE not in portales and len(portales) < int(self.cfg.get("portales_minimos", 2)):
+                citada = None
+                for m in [x for x in miembros if x["tipo"] == "portal"][:2]:
+                    try:
+                        citada = fuentes.fuente_oficial_citada(m["url"])
+                    except Exception:  # noqa
+                        citada = None
+                    if citada and not citada.get("pdf"):
+                        break
+                    citada = None
+                if not citada:
+                    self.esperando.append((g.get("tema"), f"solo en {', '.join(sorted(portales))} y sin fuente oficial para chequear: espera un segundo portal"))
+                    continue
+                miembros = miembros + [citada]
+                oficial = True
+                self.observaciones.append((g.get("tema") or "", f"Un solo portal; se chequeó con la fuente oficial que cita: {citada['url']}"))
             if hechas >= self.cfg.get("max_notas_por_vuelta", 6):
                 self.esperando.append((g.get("tema"), "queda para la próxima vuelta"))
                 continue
@@ -417,6 +446,10 @@ class Fabrica:
                 continue
             hechas += 1
             (self.publicadas if fila["estado"] == "publicada" else self.revision).append(fila)
+            try:
+                self.datos_por_nota(fila, miembros)
+            except gemini.SinTiempo:
+                pass
             if self.activo and self.db:
                 self.db.upsert("notas", [fila], "slug")
                 self.marcar(urls, g.get("tema"), fila["slug"])
@@ -438,7 +471,7 @@ class Fabrica:
         """Guías, escalas, vencimientos y vigilancia, en ese orden. Si se acaba el tiempo, lo que falta queda
         para la próxima vuelta y la vuelta cierra igual (publica la web, manda el mail y deja el resumen)."""
         try:
-            for nombre, tarea in [("guías", self.escribir_guias), ("escalas oficiales", self.revisar_escalas_oficiales),
+            for nombre, tarea in [("datos al día", self.actualizar_respuestas), ("guías", self.escribir_guias), ("escalas oficiales", self.revisar_escalas_oficiales),
                                   ("vencimientos", self.actualizar_vencimientos), ("vigilancia de Ignacio", self.vigilar_ignacio)]:
                 try:
                     gemini._queda()
@@ -453,6 +486,170 @@ class Fabrica:
                     util.avisar(f"Falló el paso de {nombre} (sigue el resto)", str(e))
         finally:
             self.cierre()
+
+    # ---------- datos del día (páginas respuesta) ----------
+    def _temas_y_previos(self):
+        if not hasattr(self, "_resp_cache"):
+            temas = json.load(open(util.RAIZ / "respuestas" / "temas.json", encoding="utf-8"))
+            previos = {r["slug"]: r for r in self.db.select("respuestas", {"select": "*"})} if self.db else {}
+            try:
+                ipc = json.load(open(util.RAIZ / "respuestas" / "ipc.json", encoding="utf-8")).get("fechas", [])
+            except Exception:  # noqa
+                ipc = []
+            self._resp_cache = (temas, previos, ipc)
+            self.pedidos_datos = 0
+        return self._resp_cache
+
+    @staticmethod
+    def _dia(v):
+        try:
+            return util.ahora().date().fromisoformat(str(v)[:10])
+        except Exception:  # noqa
+            return None
+
+    def _toca(self, t, prev, ipc):
+        """Motivo para rechequear hoy un dato (o None). Ciclo: semanal en espera; ventana diaria solo
+        alrededor de la fecha esperada y mientras no haya cambiado; rechequeo único al día siguiente de un cambio."""
+        hoy = util.ahora().date()
+        rev, camb = self._dia(prev.get("revisado")), self._dia(prev.get("cambiado"))
+        if not prev:
+            return "primera carga"
+        if rev == hoy:
+            return None
+        if camb and rev and (hoy - camb).days in (1, 2) and rev <= camb:
+            return "rechequeo después del cambio"
+        c = t.get("ciclo") or {}
+        tipo = c.get("tipo")
+        if tipo == "movilidad":
+            fechas = [self._dia(x) for x in ipc]
+            for m in (hoy.replace(day=1) - timedelta(days=1), hoy):  # mes sin fecha oficial cargada: se estima el 13
+                if not any(x and (x.year, x.month) == (m.year, m.month) for x in fechas):
+                    fechas.append(m.replace(day=13))
+            for d in [x for x in fechas if x]:
+                if 4 <= (hoy - d).days <= 7 and (not camb or camb < d):
+                    return "fecha esperada (después del IPC del INDEC)"
+                if (hoy - d).days == 8 and (not camb or camb < d):
+                    self.alertas.append(f"Dato «{t['titulo']}»: pasó la fecha esperada (IPC del {d:%d/%m}) y todavía no se confirmó el cambio")
+        for v in c.get("ventanas") or []:
+            ini, fin = v.split("/")
+            i = hoy.replace(month=int(ini[:2]), day=int(ini[3:]))
+            f = hoy.replace(month=int(fin[:2]), day=int(fin[3:]))
+            if i > f:  # ventana que cruza el año (ej.: 26/12 al 10/02)
+                i = i.replace(year=hoy.year - 1) if hoy <= f else i
+                f = f if hoy <= f else f.replace(year=hoy.year + 1)
+            if i <= hoy <= f and (not camb or camb < i) and (not rev or (hoy - rev).days >= 2):
+                return "ventana de actualización"
+        if c.get("diario_desde") and self._dia(c["diario_desde"]) and self._dia(c["diario_desde"]) <= hoy \
+                and (not camb or camb < self._dia(c["diario_desde"])) and (not rev or (hoy - rev).days >= 2):
+            return "se espera un acuerdo nuevo"
+        if not rev or (hoy - rev).days >= 7 * int(c.get("semanas", 1)):
+            return "chequeo semanal"
+        return None
+
+    def _chequear(self, t, prev, textos, usadas, motivo):
+        hoy = util.ahora().date().isoformat()
+        pedido = (f"FECHA DE HOY: {hoy}\nTEMA: {t['titulo']}\nPREGUNTA: {t['pregunta']}\nQUÉ HAY QUE INFORMAR: {t['pide']}\n"
+                  f"FORMATO ESTRUCTURADO: {t.get('estructura') or 'null'}\n\n"
+                  f"DATO ANTERIOR: {json.dumps(prev.get('datos') or {}, ensure_ascii=False)}\n\nFUENTES:\n" + "\n\n".join(textos))
+        self.pedidos_datos += 1
+        r = gemini.gemini(_prompt("respuesta.md"), pedido, temperatura=0.1)
+        nombres = {u["nombre"] for u in usadas}
+        confirman = [c for c in (r.get("confirman") or []) if c in nombres]
+        fuerte = any(c.startswith("Fuente oficial") or c == CONFIABLE for c in confirman) or len(set(confirman)) >= 2
+        if not r.get("ok") or r.get("dudas") or not fuerte or not r.get("valor"):
+            self.observaciones.append((t["titulo"], f"Dato del día sin confirmar ({motivo}); queda el anterior: "
+                                       + "; ".join(map(str, r.get("dudas") or ["no lo confirmaron 2 fuentes"]))[:300]))
+            return False
+        ahora = util.ahora().isoformat()
+        cambio = not prev or (prev.get("datos") or {}).get("valor") != r.get("valor")
+        hist = list(prev.get("historial") or [])
+        if cambio:
+            hist = ([{"fecha": hoy, "valor": r["valor"], "norma": r.get("norma")}] + hist)[:24]
+        fila = {"slug": t["slug"], "titulo": t["titulo"], "datos": r,
+                "fuentes": [u for u in usadas if u["nombre"] in confirman][:6], "revisado": ahora,
+                "cambiado": ahora if cambio else (prev.get("cambiado") or ahora), "historial": hist}
+        if self.activo:
+            self.db.upsert("respuestas", [fila], "slug")
+            self.vencimientos_cambio = True
+        self._resp_cache[1][t["slug"]] = fila
+        self.vencimientos_info.append(f"Dato del día «{t['titulo']}» ({motivo}): {'CAMBIÓ a ' if cambio else 'sin cambios, '}{r['valor']} (confirman: {', '.join(confirman)})")
+        return True
+
+    def datos_por_nota(self, fila, miembros):
+        """La nota nueva sobre un tema actualiza su dato del día con las mismas fuentes (1 pedido, solo ese día)."""
+        if not self.db or fila.get("estado") != "publicada":
+            return
+        try:
+            temas, previos, _ = self._temas_y_previos()
+        except Exception:  # noqa
+            return
+        texto = (fila.get("titulo", "") + " " + fila.get("encorto", "")).lower()
+        hoy = util.ahora().date()
+        for t in temas:
+            if not any(c.lower() in texto for c in t.get("claves", [])):
+                continue
+            prev = previos.get(t["slug"]) or {}
+            camb = self._dia(prev.get("cambiado"))
+            if self._dia(prev.get("revisado")) == hoy or (camb and (hoy - camb).days < 5):
+                continue  # ya se revisó hoy o el ciclo ya cerró con un cambio reciente
+            textos = [f"[{m['fuente']}] {m['titulo']} {m['url']}\n{(m.get('texto') or '')[:6000]}" for m in miembros]
+            usadas = [{"nombre": ("Fuente oficial (" + m["url"].split("/")[2].replace("www.", "") + ")") if m["tipo"] == "oficial" else m["fuente"],
+                       "url": m["url"], "titulo": m["titulo"]} for m in miembros]
+            textos = [x.replace(f"[{m['fuente']}]", f"[{u['nombre']}]", 1) for x, m, u in zip(textos, miembros, usadas)]
+            try:
+                self._chequear(t, prev, textos, usadas, "nota nueva: " + fila.get("titulo", "")[:80])
+            except gemini.SinTiempo:
+                raise
+            except Exception as e:  # noqa
+                util.avisar(f"No pude actualizar el dato «{t['titulo']}» con la nota", str(e))
+
+    def actualizar_respuestas(self):
+        """Chequeos programados de los datos del día, solo en días hábiles de 9 a 20 y como mucho 2 por vuelta."""
+        if not self.db:
+            return
+        try:
+            temas, previos, ipc = self._temas_y_previos()
+        except gemini.SinTiempo:
+            raise
+        except Exception as e:  # noqa
+            util.avisar("No pude leer los datos del día (¿falta correr esquema.sql en Supabase?)", str(e))
+            return
+        ahora = util.ahora()
+        primera = any(t["slug"] not in previos for t in temas)
+        if not primera and (ahora.weekday() >= 5 or not 9 <= ahora.hour < 20):
+            return
+        hechos = 0
+        for t in temas:
+            if hechos >= int(self.cfg.get("respuestas_por_vuelta", 2)):
+                break
+            prev = previos.get(t["slug"]) or {}
+            motivo = self._toca(t, prev, ipc)
+            if not motivo:
+                continue
+            textos, usadas = [], []
+            for u in t.get("oficial") or []:
+                try:
+                    tx, _ = fuentes.detalle(u, largo=8000)
+                except gemini.SinTiempo:
+                    raise
+                except Exception:  # noqa
+                    tx = ""
+                if len(tx) > 200:
+                    nombre = "Fuente oficial (" + u.split("/")[2].replace("www.", "") + ")"
+                    textos.append(f"[{nombre}] {u}\n{tx}"); usadas.append({"nombre": nombre, "url": u, "oficial": True})
+            for it in fuentes.buscar_portales(t["busqueda"], por_portal=2):
+                textos.append(f"[{it['fuente']}] {it['titulo']} {it['url']}\n{it['texto'][:5000]}")
+                usadas.append({"nombre": it["fuente"], "url": it["url"], "titulo": it["titulo"]})
+            hechos += 1
+            if not textos:
+                self.observaciones.append((t["titulo"], f"Dato del día ({motivo}): no encontré fuentes para rechequear"))
+                continue
+            try:
+                self._chequear(t, prev, textos, usadas, motivo)
+            except gemini.SinTiempo:
+                raise
+            except Exception as e:  # noqa
+                util.avisar(f"No pude rechequear «{t['titulo']}»", str(e))
 
     def cierre(self):
         if self.activo:
@@ -602,7 +799,8 @@ class Fabrica:
                 md.append(f"**Escala {c['nombre']} {c['periodo']}**\n\n| " + " | ".join(t[0]) + " |\n|" + "---|" * len(t[0]) + "\n" + "\n".join("| " + " | ".join(f) + " |" for f in t[1:]) + "\n")
         md.append(f"## 🚨 Ignacio editó o borró ({len(self.alertas)})\n" + "".join(f"- {a['que']}: [{a['titulo']}]({a['url']}) → nuestra nota `{a['nota']}`\n" for a in self.alertas))
         md.append(f"## 📝 Publicadas con observaciones por venir de Ignacio ({len(self.observaciones)})\n" + "".join(f"- {t}: {o}\n" for t, o in self.observaciones))
-        md.append("## 📅 Vencimientos\n" + ("\n".join(f"- {x}" for x in self.vencimientos_info) or "Sin cambios (ya actualizados hoy).") + "\n")
+        md.append(f"**Pedidos a Gemini en esta vuelta:** {gemini.PEDIDOS[0]} (datos del día: {getattr(self, 'pedidos_datos', 0)})\n")
+        md.append("## 📅 Vencimientos y datos del día\n" + ("\n".join(f"- {x}" for x in self.vencimientos_info) or "Sin cambios (ya actualizados hoy).") + "\n")
         md.append(f"## 📘 Guías\n{self.guias_info or 'Sin datos.'}\n")
         md.append(f"## ⏳ Esperando segunda fuente ({len(self.esperando)})\n" + "".join(f"- {t} ({d})\n" for t, d in self.esperando))
         md.append(f"## 🚫 Descartadas ({len(self.descartes)})\n" + "".join(f"- {t}: {d}\n" for t, d in self.descartes))

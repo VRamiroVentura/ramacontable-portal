@@ -1,0 +1,22 @@
+<div class="grilla"><article class="nota calc">
+<p class="ante">Herramientas | ARCA</p>
+<h1>Calculadora de intereses resarcitorios de ARCA</h1>
+<p class="firma">Redacción Ramacontable · Con la tasa vigente verificada</p>
+<div class="encorto"><b>En corto</b><p>Calculá cuántos intereses se pagan por abonar tarde un impuesto o un aporte a ARCA, según los días de atraso y la tasa vigente.</p></div>
+<p class="ayuda" id="origen-dato"></p>
+<form id="calc2" data-calc="intereses" class="form-calc" novalidate>
+<label>Monto del impuesto o aporte<input name="monto" inputmode="decimal" placeholder="Ej.: 500.000"></label>
+<div class="fila2"><label>Fecha de vencimiento<input type="date" name="vence"></label><label>Fecha de pago<input type="date" name="paga" data-hoy></label></div>
+<label>Tasa de interés resarcitorio mensual (%)<input name="tasa" inputmode="decimal"></label>
+<p class="error" id="err"></p>
+<button class="btn ancho">Calcular</button>
+</form>
+<section id="resultado" class="resultado" hidden></section>
+<h2>¿Cómo se calculan?</h2><p>Los intereses resarcitorios corren desde el vencimiento hasta el pago: monto × tasa mensual ÷ 30 × días de atraso. Si la tasa cambió durante el período, cada tramo se calcula con la tasa de ese momento.</p><p><a href="intereses-resarcitorios-arca.html">Ver la tasa vigente</a></p>
+<section class="faq"><h2>Preguntas frecuentes</h2><details><summary>¿Qué son los intereses resarcitorios?</summary><p>Son los intereses que cobra ARCA por pagar un impuesto o aporte después del vencimiento, sin necesidad de un reclamo judicial.</p></details><details><summary>¿Y los punitorios?</summary><p>Los intereses punitorios se aplican cuando la deuda se reclama por vía judicial, con una tasa propia.</p></details></section>
+<p class="aviso">Herramienta de carácter general. El resultado es una estimación y no reemplaza el análisis profesional de cada caso.</p>
+</article>
+<aside class="lateral"><a class="caja caja-calc" href="calculadoras.html"><b>Todas las calculadoras</b><span>Sueldos, aguinaldo, actualización de montos, plazo fijo y más</span></a><a class="caja caja-calc" href="datos-al-dia.html"><b>Datos del día</b><span>Salario mínimo, Monotributo, jubilación, dólar y más</span></a></aside>
+</div>
+<script src="calcs2.js?v=1"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "¿Qué son los intereses resarcitorios?", "acceptedAnswer": {"@type": "Answer", "text": "Son los intereses que cobra ARCA por pagar un impuesto o aporte después del vencimiento, sin necesidad de un reclamo judicial."}}, {"@type": "Question", "name": "¿Y los punitorios?", "acceptedAnswer": {"@type": "Answer", "text": "Los intereses punitorios se aplican cuando la deuda se reclama por vía judicial, con una tasa propia."}}]}</script>

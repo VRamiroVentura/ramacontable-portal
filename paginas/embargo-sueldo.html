@@ -1,0 +1,25 @@
+<div class="grilla"><article class="nota calc">
+<p class="ante">Herramientas | Sueldos</p>
+<h1>Calculadora de embargo de sueldo 2026 (Decreto 484/87)</h1>
+<p class="firma">Redacción Ramacontable · Con el salario mínimo vigente de este mes</p>
+<div class="encorto"><b>En corto</b><p>Calculá cuánto se puede embargar de un sueldo: hasta 1 salario mínimo es inembargable, y sobre lo que excede se aplica el 10% o el 20% según el tramo.</p></div>
+<p class="ayuda" id="origen-dato"></p>
+<form id="calc2" data-calc="embargo" class="form-calc" novalidate>
+<label class="check"><input type="checkbox" name="alimentos"> Es por cuota alimentaria o litis expensas</label>
+<div data-escala>
+<div class="fila2"><label>Remuneración bruta del mes<input name="bruto" inputmode="decimal" placeholder="Ej.: 1.200.000"></label>
+<label>Salario mínimo vital y móvil<input name="smvm" inputmode="decimal"></label></div>
+<label>Saldos de cada oficio, en orden de llegada (opcional, uno por línea)<textarea name="deudas" rows="2" placeholder="Ej.: 300000"></textarea></label>
+</div>
+<p class="error" id="err"></p>
+<button class="btn ancho">Calcular</button>
+</form>
+<section id="resultado" class="resultado" hidden></section>
+<h2>¿Cómo se calcula el embargo?</h2><p>Según el Decreto 484/87, las remuneraciones son inembargables hasta el importe del salario mínimo vital y móvil. Sobre lo que excede: si el sueldo no supera el doble del mínimo, se puede embargar hasta el 10% del excedente; si lo supera, hasta el 20% del excedente. Se toma la remuneración bruta y cada cuota del aguinaldo se calcula aparte.</p><p>El error más común es aplicar el 20% sobre todo el sueldo: se aplica solo sobre lo que excede el salario mínimo.</p><p><a href="salario-minimo-vital-y-movil.html">Ver el salario mínimo vigente</a></p>
+<section class="faq"><h2>Preguntas frecuentes</h2><details><summary>¿Se calcula sobre el bruto o el neto?</summary><p>Sobre la remuneración bruta en dinero (art. 2 del Decreto 484/87).</p></details><details><summary>¿Se embarga el aguinaldo?</summary><p>Sí: cada cuota del aguinaldo se trata como un período aparte, con la misma escala.</p></details><details><summary>¿Y si es por cuota alimentaria?</summary><p>Las cuotas alimentarias y las litis expensas no siguen esta escala: las fija el juez (art. 4 del Decreto 484/87).</p></details></section>
+<p class="aviso">Herramienta de carácter general. El resultado es una estimación y no reemplaza el análisis profesional de cada caso.</p>
+</article>
+<aside class="lateral"><a class="caja caja-calc" href="calculadoras.html"><b>Todas las calculadoras</b><span>Sueldos, aguinaldo, actualización de montos, plazo fijo y más</span></a><a class="caja caja-calc" href="datos-al-dia.html"><b>Datos del día</b><span>Salario mínimo, Monotributo, jubilación, dólar y más</span></a></aside>
+</div>
+<script src="calcs2.js?v=1"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "¿Se calcula sobre el bruto o el neto?", "acceptedAnswer": {"@type": "Answer", "text": "Sobre la remuneración bruta en dinero (art. 2 del Decreto 484/87)."}}, {"@type": "Question", "name": "¿Se embarga el aguinaldo?", "acceptedAnswer": {"@type": "Answer", "text": "Sí: cada cuota del aguinaldo se trata como un período aparte, con la misma escala."}}, {"@type": "Question", "name": "¿Y si es por cuota alimentaria?", "acceptedAnswer": {"@type": "Answer", "text": "Las cuotas alimentarias y las litis expensas no siguen esta escala: las fija el juez (art. 4 del Decreto 484/87)."}}]}</script>

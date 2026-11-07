@@ -256,7 +256,7 @@
         const r = atras ? { ...base, total: r2(monto / base.coef) } : base;
         let comp = '';
         if (form.comparar.checked) {
-          const claves = ['ipc', 'cer', 'uva', 'icl', 'dolar_minorista', 'dolar_mayorista', 'justicia', 'plazo_fijo', 'badlar'];
+          const claves = ['ipc', 'cer', 'uva', 'icl', 'dolar_minorista', 'dolar_mayorista', 'dolar_mep', 'dolar_ccl', 'justicia', 'plazo_fijo', 'badlar'];
           const filas = [];
           for (const k of claves) {
             try { const s = await serie(k); const x = actualizar(s, monto, desde, hasta, 'simple'); filas.push([esc(s.nombre), fmt(atras ? monto / x.coef : x.total), pct((x.coef - 1) * 100)]); } catch (e) { /* sin datos para esa fecha */ }
@@ -311,6 +311,7 @@
   }
 
   if (tipo === 'prestamo') {
+    serie('personales').then(x => { if (form.tna && !form.tna.value) { form.tna.value = String(x.v[x.v.length - 1]).replace('.', ','); const o = document.getElementById('origen-tasa'); if (o) o.textContent = `Tasa promedio de préstamos personales informada por el BCRA al ${fd(x.f[x.f.length - 1])}. Cambiala por la de tu banco si la tenés.`; } }).catch(() => {});
     form.addEventListener('submit', ev => {
       ev.preventDefault(); err.textContent = '';
       try {

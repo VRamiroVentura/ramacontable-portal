@@ -24,7 +24,7 @@ REDES = {
     "TikTok": "https://www.tiktok.com/@ramacontable",
 }
 MAIL = "ramacontable@gmail.com"
-MENU = {"sueldos": "Sueldos", "impuestos": "Impuestos", "guias": "Guías"}
+MENU = {"sueldos": "Sueldos", "impuestos": "Impuestos", "guias": "Guías", "datos-al-dia": "Datos del día"}
 RAMAS_GUIAS = {"sueldos": "Guías de sueldos", "impuestos": "Guías de impuestos", "profesion": "Guías contables y de la profesión"}
 GRUPOS_GUIAS = {"sueldos": "Guías de sueldos", "impuestos": "Guías de impuestos", "contables": "Guías contables",
                 "tramites": "Sociedades y trámites", "otras": "Otras guías"}
@@ -455,13 +455,14 @@ def herramienta_ld(nombre, descripcion, ruta):
 def pagina(titulo, cuerpo, actual="", descripcion="", ruta="", extra_head="", migas=None, imagen="compartir.png"):
     sub = {
         "sueldos": [("sueldos.html", "Novedades de sueldos"), ("convenios.html", "Escalas por convenio"), ("guias.html#sueldos", "Guías de sueldos"),
-                    ("sueldo-comercio.html", "Calculadora de sueldo de Comercio")],
-        "impuestos": [("impuestos.html", "Novedades de impuestos")] + [(f"impuesto-{s}.html", n) for s, n, _, _ in IMPUESTOS] + [("guias.html#impuestos", "Guías de impuestos")],
+                    ("sueldo-comercio.html", "Calculadora de sueldo de Comercio"), ("datos-al-dia.html#sueldos", "Datos del día de sueldos")],
+        "impuestos": [("impuestos.html", "Novedades de impuestos")] + [(f"impuesto-{s}.html", n) for s, n, _, _ in IMPUESTOS] + [("guias.html#impuestos", "Guías de impuestos"), ("datos-al-dia.html#impuestos", "Datos del día de impuestos")],
         "guias": [(f"guias.html#{k}", v) for k, v in GRUPOS_GUIAS.items()] + [("guias.html", "Todas las guías")],
+        "datos-al-dia": [x for gid, nombre, items in grupos_datos() for x in [("#g", nombre)] + [(f"{sl}.html", ti) for sl, ti, _ in items][:7]],
     }
     menu = "".join(
-        f'<div class="dd"><a href="{k}.html"{" aria-current=page" if k == actual else ""}>{v}</a>'
-        f'<div class="dd-m">' + "".join(f'<a href="{u}"{" class=sep" if "guias.html" in u and k != "guias" else ""}>{e(t)}</a>' for u, t in sub.get(k, [])) + '</div></div>'
+        f'<div class="dd{" dd-datos" if k == "datos-al-dia" else ""}"><a href="{k}.html"{" aria-current=page" if k == actual else ""}>{v}</a>'
+        f'<div class="dd-m">' + "".join((f'<span class="dd-g">{e(t)}</span>' if u == "#g" else f'<a href="{u}"{" class=sep" if ("guias.html" in u or "datos-al-dia.html#" in u) and k in ("sueldos", "impuestos") else ""}>{e(t)}</a>') for u, t in sub.get(k, [])) + '</div></div>'
         for k, v in list(MENU.items()))
     redes = "".join(
         f'<a href="{u}" target="_blank" rel="noopener" aria-label="{n}">{ICONOS[n]}</a>'
@@ -570,11 +571,11 @@ def lateral(notas):
 
 
 def _lateral(notas, caja_venc):
-    esperando = "".join(
-        f'<li><a href="nota-{n["slug"]}.html#aplica">{e(n["titulo"])}</a><span>Sé el primero en explicarla</span></li>'
-        for n in notas[:4])
+    datos = "".join(
+        f'<li><a href="{t["slug"]}.html">{e(t["titulo"])}</a><b>{e((ajustar_tramo((RESP.get(t["slug"]) or {}).get("datos") or {}).get("valor") or "").split(" (")[0][:28])}</b></li>'
+        for t in TEMAS_RESP[:6])
     return f"""<aside class="lateral">
-<section class="caja"><h3>Notas esperando una explicación</h3><ul class="esperando" id="esperando">{esperando}</ul></section>
+<section class="caja"><h3>Datos del día</h3><ul class="datos-lat">{datos}</ul><a class="mas" href="datos-al-dia.html">Ver todos</a></section>
 <a class="caja caja-calc" href="aguinaldo.html"><b>Calculadora de aguinaldo</b><span>Diciembre 2026 · paso a paso, con descuentos y neto</span></a>
 <a class="caja caja-calc" href="sueldo-comercio.html"><b>Calculadora de sueldo de Comercio</b><span>Con escala vigente, antigüedad, presentismo y neto</span></a>
 {caja_venc}
@@ -617,7 +618,7 @@ def sitemaps(notas, convenios=()):
     base = sitio_url()
     hoy = datetime.date.today().isoformat()
     urls = [f"<url><loc>{base}</loc><lastmod>{hoy}</lastmod></url>"] + [
-        f"<url><loc>{base}{k}.html</loc><lastmod>{hoy}</lastmod></url>" for k in list(SECCIONES) + ["aguinaldo", "herramientas", "convenios", "guias", "calculadoras", "feriados", "sueldo-comercio", "sueldo-casas-particulares", "actualizacion", "dias-habiles", "plazo-fijo", "prestamos", "vacaciones", "liquidacion-final", "horas-extras", "iva"] + [f"impuesto-{i[0]}" for i in IMPUESTOS]] + [
+        f"<url><loc>{base}{k}.html</loc><lastmod>{hoy}</lastmod></url>" for k in list(SECCIONES) + ["aguinaldo", "herramientas", "convenios", "guias", "calculadoras", "feriados", "sueldo-comercio", "sueldo-casas-particulares", "actualizacion", "dias-habiles", "plazo-fijo", "prestamos", "vacaciones", "liquidacion-final", "horas-extras", "iva", "conversor-dolar", "monotributo-categoria", "intereses-arca", "actualizacion-alquiler", "embargo-sueldo", "cuando-cambia-cada-dato"] + [f"impuesto-{i[0]}" for i in IMPUESTOS] + ["datos-al-dia", "dolar-hoy"] + [t["slug"] for t in TEMAS_RESP] + [b[0] for b in BCRA_RESP] + [x[0] for x in DOLARES]] + [
         f"<url><loc>{base}escala-{c['slug']}.html</loc><lastmod>{str(c.get('actualizado') or hoy)[:10]}</lastmod></url>" for c in convenios] + [
         f"<url><loc>{base}nota-{n['slug']}.html</loc><lastmod>{str(n.get('actualizado') or n['fecha'])[:10]}</lastmod></url>" for n in notas]
     mapa = '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' + "".join(urls) + "</urlset>"
@@ -644,14 +645,21 @@ def llms_txt(notas, convenios):
          "## Secciones", f"- [Sueldos]({base}sueldos.html): novedades laborales y de liquidación de sueldos",
          f"- [Impuestos]({base}impuestos.html): novedades de ARCA y rentas", f"- [Guías]({base}guias.html): guías actualizadas por tema",
          f"- [Vencimientos]({base}vencimientos.html): próximos vencimientos impositivos y previsionales",
-         f"- [Feriados]({base}feriados.html): feriados del año y cómo se pagan", "",
-         "## Escalas salariales por convenio"]
+         f"- [Feriados]({base}feriados.html): feriados del año y cómo se pagan",
+         f"- [Datos del día]({base}datos-al-dia.html): datos vigentes revisados todos los días", "",
+         "## Datos al día (revisados a diario contra fuentes oficiales)"]
+    l += [f"- [{t['titulo']}]({base}{t['slug']}.html): {(((RESP.get(t['slug']) or {}).get('datos') or {}).get('respuesta') or t['pregunta'])[:200]}" for t in TEMAS_RESP]
+    l += [f"- [{b[2]}]({base}{b[0]}.html): serie oficial del BCRA" for b in BCRA_RESP]
+    l += [f"- [Dólar hoy]({base}dolar-hoy.html): oficial, mayorista, MEP, CCL, tarjeta, cripto y blue (informativo), cada hora"]
+    l += ["", "## Escalas salariales por convenio"]
     l += [f"- [{c.get('nombre', c['slug'])}]({base}escala-{c['slug']}.html)" for c in convenios]
     l += ["", "## Calculadoras"] + [f"- [{t}]({base}{a}.html)" for a, t in [
         ("sueldo-comercio", "Sueldo de Comercio"), ("sueldo-casas-particulares", "Casas particulares"), ("aguinaldo", "Aguinaldo"),
         ("liquidacion-final", "Liquidación final e indemnización"), ("vacaciones", "Vacaciones"), ("horas-extras", "Horas extras"),
         ("actualizacion", "Actualización por CER, UVA, dólar, inflación y tasas"), ("dias-habiles", "Días hábiles"),
-        ("plazo-fijo", "Plazo fijo"), ("prestamos", "Préstamos"), ("iva", "IVA")]]
+        ("plazo-fijo", "Plazo fijo"), ("prestamos", "Préstamos"), ("iva", "IVA"), ("conversor-dolar", "Conversor de dólar"),
+        ("monotributo-categoria", "Categoría del Monotributo"), ("intereses-arca", "Intereses resarcitorios de ARCA"),
+        ("actualizacion-alquiler", "Actualización de alquiler (ICL / IPC)"), ("embargo-sueldo", "Embargo de sueldo (Decreto 484/87)")]]
     l += ["", "## Últimas notas"] + [f"- [{n['titulo']}]({base}nota-{n['slug']}.html): {(n.get('encorto') or '')[:200]}"
                                      for n in notas[:40]]
     return "\n".join(l) + "\n"
@@ -666,6 +674,7 @@ def urls_indexnow(notas, convenios, minutos=90):
         return len(v) > 10 and v.replace(" ", "T")[:16] >= lim
     u = [f"{base}nota-{n['slug']}.html" for n in notas if nuevo(n.get("actualizado")) or nuevo(n.get("fecha"))]
     u += [f"{base}escala-{c['slug']}.html" for c in convenios if nuevo(c.get("actualizado"))]
+    u += [f"{base}{sl}.html" for sl, r in RESP.items() if nuevo(r.get("cambiado"))]
     return ([base] if u else []) + u
 
 
@@ -675,9 +684,9 @@ def bloque_aportes(n, aportes):
         return GUIA_APORTES.replace("@PASOS@", pasos_estaticos(aportes or []))
     return f'''<section class="bloque-op bloque-com" id="opiniones"><span id="aplica"></span>
 <h2 class="tit-bloque">Comentarios <span data-n="total">0</span></h2>
-<form id="form-opinion" class="form-op"><textarea name="texto" rows="3" maxlength="1500" placeholder="¿Qué opinás? Si querés, explicá cómo se aplica." required></textarea>
-<label class="check chico"><input type="checkbox" name="explica"> Es una explicación o caso práctico (podés sumar tablas, imágenes o un PDF)</label>
+<form id="form-opinion" class="form-op"><textarea name="texto" rows="3" maxlength="1500" placeholder="Dejá tu comentario o explicación sobre «{e(n.get("titulo") or "este tema")}»" required></textarea>
 <button class="btn">Publicar</button></form>
+<button type="button" class="link-expl" data-nuevo-paso>¿Querés subir una explicación con tablas, imágenes o PDF? Hacelo acá</button>
 <div id="lista-pasos" class="lista lista-expl">{pasos_estaticos(aportes or [])}</div>
 <div id="lista-opiniones" class="lista"></div>
 <button type="button" class="btn sec ancho" id="ver-mas-op" hidden>Ver más comentarios</button>
@@ -700,10 +709,441 @@ GUIA_APORTES = """<section class="bloque-op" id="opiniones">
 """
 
 
+# ---------- Datos al día (páginas respuesta) ----------
+RESP = {}       # slug -> fila de Supabase (datos verificados por la fábrica)
+TEMAS_RESP = []  # respuestas/temas.json
+BCRA_RESP = [   # páginas que se arman solas con la serie oficial del BCRA
+    ("valor-uva-hoy", "uva", "Valor de la UVA hoy", "¿Cuánto vale la UVA hoy?", "UVA", "sueldos"),
+    ("cer-hoy", "cer", "Valor del CER hoy", "¿Cuánto vale el CER hoy?", "CER", "impuestos"),
+    ("inflacion-mensual-ipc", "ipc", "Inflación mensual (IPC)", "¿Cuánto fue la última inflación mensual?", "inflación", "impuestos"),
+    ("icl-alquileres-hoy", "icl", "Índice ICL para alquileres hoy", "¿Cuánto vale el ICL hoy?", "ICL", "impuestos"),
+    ("tasa-badlar-hoy", "badlar", "Tasa BADLAR hoy", "¿Cuál es la tasa BADLAR hoy?", "BADLAR", "impuestos"),
+    ("tasa-tamar-hoy", "tamar", "Tasa TAMAR hoy", "¿Cuál es la tasa TAMAR hoy?", "TAMAR", "impuestos"),
+    ("tasa-plazo-fijo-hoy", "plazo_fijo", "Tasa de plazo fijo hoy", "¿Cuánto paga un plazo fijo hoy?", "tasa de plazo fijo", "impuestos"),
+]
+DOLARES = [  # cotizaciones de mercado (DolarAPI); historial de ArgentinaDatos
+    ("dolar-oficial-hoy", "oficial", "Dólar oficial hoy (Banco Nación)", "dólar oficial"),
+    ("dolar-mayorista-hoy", "mayorista", "Dólar mayorista hoy", "dólar mayorista"),
+    ("dolar-mep-hoy", "bolsa", "Dólar MEP hoy", "dólar MEP"),
+    ("dolar-ccl-hoy", "contadoconliqui", "Dólar contado con liquidación (CCL) hoy", "dólar CCL"),
+    ("dolar-tarjeta-hoy", "tarjeta", "Dólar tarjeta hoy", "dólar tarjeta"),
+    ("dolar-cripto-hoy", "cripto", "Dólar cripto hoy", "dólar cripto"),
+    ("dolar-blue-hoy", "blue", "Dólar blue hoy", "dólar blue"),
+]
+DOLAR = {}
+
+
+def cargar_respuestas():
+    global RESP, TEMAS_RESP
+    try:
+        TEMAS_RESP = json.load(open(os.path.join(RAIZ, "respuestas", "temas.json"), encoding="utf-8"))
+    except Exception:
+        TEMAS_RESP = []
+    url = os.environ.get("SUPABASE_URL", "").strip().rstrip("/")
+    key = os.environ.get("SUPABASE_PUBLISHABLE_KEY", "").strip()
+    if url and key:
+        try:
+            req = urllib.request.Request(url + "/rest/v1/respuestas?select=*", headers={"apikey": key, "Authorization": "Bearer " + key})
+            RESP = {r["slug"]: r for r in json.load(urllib.request.urlopen(req, timeout=30))}
+        except Exception as ex:
+            print("Aviso: no se pudieron leer los datos al día:", ex)
+    for archivo in glob.glob(os.path.join(RAIZ, "respuestas", "prueba-*.json")):  # solo para pruebas locales
+        r = json.load(open(archivo, encoding="utf-8"))
+        RESP.setdefault(r["slug"], r)
+
+
+def _fecha_hora(iso):
+    try:
+        d = datetime.datetime.fromisoformat(str(iso).replace("Z", "+00:00")).astimezone(datetime.timezone(datetime.timedelta(hours=-3)))
+        return f"{d.day}/{d.month}/{d.year} a las {d.hour:02d}:{d.minute:02d}"
+    except Exception:
+        return fecha_larga(str(iso)[:10])
+
+
+MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
+
+
+def _num(x):
+    return f"{x:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
+
+def _ultimo_serie(clave):
+    try:
+        sr = json.load(open(os.path.join(SALIDA, "datos", f"serie-{clave}.json"), encoding="utf-8"))
+        return sr["f"][-1], sr["v"][-1]
+    except Exception:
+        return None, None
+
+
+def _ipc_fechas():
+    try:
+        return json.load(open(os.path.join(RAIZ, "respuestas", "ipc.json"), encoding="utf-8")).get("fechas", [])
+    except Exception:
+        return []
+
+
+def ajustar_tramo(d):
+    """Si el dato trae los tramos mes a mes ya fijados (salario mínimo), se toma solo el del mes actual."""
+    tr = ((d.get("estructurado") or {}).get("tramos") or [])
+    mes = datetime.date.today().strftime("%Y-%m")
+    vig = [x for x in tr if str(x.get("desde", "")) <= mes and x.get("mensual")]
+    if not vig:
+        return d
+    x = max(vig, key=lambda z: z["desde"])
+    d = dict(d, monto=x["mensual"], mes_vigente=mes,
+             valor=f"$ {_num(x['mensual'])} por mes" + (f" ($ {_num(x['hora'])} la hora)" if x.get("hora") else ""))
+    sig = [z for z in tr if str(z.get("desde", "")) > mes]
+    if sig:
+        z = min(sig, key=lambda q: q["desde"])
+        d["proximo"] = f"$ {_num(z['mensual'])} desde {MESES[int(z['desde'][5:7]) - 1]} {z['desde'][:4]}"
+    return d
+
+
+def bloque_dato_hoy(t, d):
+    """Lo que cambia de verdad todos los días: equivalencias con el dólar y la UVA de hoy, días que faltan y cálculo anticipado."""
+    hoy = datetime.date.today()
+    filas = []
+    monto = d.get("monto")
+    dol = ((DOLAR.get("actual") or {}).get("oficial") or {}).get("venta")
+    if isinstance(monto, (int, float)) and monto > 0:
+        if dol:
+            filas.append(f"Equivale a <b>US$ {_num(monto / dol)}</b> al dólar oficial de hoy (Banco Nación, $ {_num(dol)}).")
+        fu, uva = _ultimo_serie("uva")
+        if uva:
+            filas.append(f"Equivale a <b>{_num(monto / uva)} UVA</b> (UVA del {fecha_corta(fu)}: $ {_num(uva)}).")
+    c = t.get("ciclo") or {}
+    if c.get("tipo") == "movilidad":
+        prox = [x for x in _ipc_fechas() if x >= hoy.isoformat()]
+        if prox:
+            dias = (datetime.date.fromisoformat(prox[0]) - hoy).days
+            filas.append(f"Próximo dato de inflación del INDEC: <b>{fecha_corta(prox[0])}</b> ({'hoy' if dias == 0 else f'faltan {dias} días'}). ANSES confirma los nuevos montos en los días siguientes.")
+        fi, ipc = _ultimo_serie("ipc")
+        mv = d.get("mes_vigente")
+        if ipc is not None and fi and mv and isinstance(monto, (int, float)):
+            y, m = int(mv[:4]), int(mv[5:7])
+            ant = (y, m - 1) if m > 1 else (y - 1, 12)
+            if (int(fi[:4]), int(fi[5:7])) == ant:
+                sig = (y, m + 1) if m < 12 else (y + 1, 1)
+                filas.append(f"<b>Cálculo anticipado para {MESES[sig[1] - 1]} {sig[0]}: $ {_num(monto * (1 + ipc / 100))}</b> "
+                             f"(+{_num(ipc)}%, la inflación de {MESES[ant[1] - 1]}), según la fórmula de movilidad mensual del Decreto 274/2024. "
+                             "Es un cálculo propio: se confirma con la resolución de ANSES.")
+    if t["slug"].startswith("monotributo") or "simplificado" in t["slug"]:
+        v = [x for x in proximos_vencimientos() if "monotrib" in x.get("concepto", "").lower()][:2]
+        for x in v:
+            dias = (datetime.date.fromisoformat(x["fecha"][:10]) - hoy).days
+            filas.append(f"{e(x['concepto'])}: <b>{fecha_corta(x['fecha'])}</b> ({'hoy' if dias == 0 else f'faltan {dias} días'}).")
+    if not filas:
+        return ""
+    return (f'<section class="dato-hoy"><h2>El dato hoy, {hoy.day}/{hoy.month}/{hoy.year}</h2><ul>'
+            + "".join(f"<li>{x}</li>" for x in filas) + "</ul></section>")
+
+
+def pagina_respuesta(t, r, notas, aportes=None, extra=""):
+    d = ajustar_tramo((r or {}).get("datos") or {})
+    hoy = datetime.date.today()
+    hoy_blq = bloque_dato_hoy(t, d) if d.get("valor") else ""
+    mes = f"{MESES[hoy.month - 1]} {hoy.year}"
+    titulo_h = f"{t['titulo']} ({mes})" if " hoy" in t["titulo"] else f"{t['titulo']} hoy ({mes})"
+    claves = [c.lower() for c in t.get("claves", [])]
+    rel = [n for n in notas if any(c in (n["titulo"] + " " + n.get("encorto", "")).lower() for c in claves)][:5]
+    if d.get("valor"):
+        caja = (f'<div class="resp-caja"><span class="resp-p">{e(t["pregunta"])}</span><b class="resp-v">{e(d["valor"])}</b>'
+                f'<p>{e(d.get("respuesta", ""))}</p>'
+                + (f'<p class="resp-meta">Rige desde: <b>{e(d["vigencia"])}</b></p>' if d.get("vigencia") else "")
+                + (f'<p class="resp-meta">Próximo cambio: <b>{e(d["proximo"])}</b></p>' if d.get("proximo") else "")
+                + (f'<p class="resp-meta">Norma: {e(d["norma"])}</p>' if d.get("norma") else "") + "</div>")
+        revisado = (f'<p class="resp-rev">✔ <b>Vigente hoy, {hoy.day}/{hoy.month}/{hoy.year}.</b> Última verificación con las fuentes: {_fecha_hora(r.get("revisado"))} ('
+                    + ", ".join(e(f["nombre"]) for f in (r.get("fuentes") or [])) + ")."
+                    + (f" Cuándo cambia: {e(t['cuando'])}." if t.get("cuando") else "") + "</p>")
+    else:
+        caja = f'<div class="resp-caja"><span class="resp-p">{e(t["pregunta"])}</span><p>Estamos verificando el dato vigente con las fuentes oficiales. Se publica apenas lo confirmen al menos dos fuentes.</p></div>'
+        revisado = ""
+    cuerpo = "".join(f"<p>{e(x)}</p>" for x in d.get("explicacion") or [])
+    if d.get("tabla"):
+        cuerpo += bloque({"tabla": d["tabla"]})
+    hist = r.get("historial") if r else []
+    if hist and len(hist) > 1:
+        cuerpo += "<h2>Cómo fue cambiando</h2><div class=\"tabla\"><table><thead><tr><th>Desde</th><th>Valor</th><th>Norma</th></tr></thead><tbody>" + "".join(
+            f"<tr><td>{fecha_corta(h['fecha'])}</td><td>{e(h['valor'])}</td><td>{e(h.get('norma') or '')}</td></tr>" for h in hist) + "</tbody></table></div>"
+    faq = preguntas_html({"preguntas": d.get("preguntas") or []})
+    fuentes_html = ("<p class=\"fuente\"><b>Fuentes:</b> " + " · ".join(
+        f'<a href="{e(f["url"])}" rel="nofollow noopener" target="_blank">{e(f["nombre"])}</a>' for f in (r.get("fuentes") or [])) + "</p>") if r else ""
+    rel = rel[:3]
+    rel_html = ('<section class="relacionadas novedades-dato"><h2>Últimas novedades sobre el tema</h2><ul>' + "".join(
+        f'<li><a href="nota-{x["slug"]}.html">{e(x["titulo"])}</a></li>' for x in rel) + "</ul></section>") if rel else ""
+    otros = "".join(f'<li><a href="{x["slug"]}.html">{e(x["titulo"])}</a></li>' for x in TEMAS_RESP if x["slug"] != t["slug"])
+    falsa_nota = {"slug": t["slug"], "titulo": t["titulo"].lower()}
+    contenido = f"""<div class="grilla"><article class="nota respuesta" data-nota="dato-{t['slug']}">
+<div class="nota-contenido">
+<p class="miga"><a href="datos-al-dia.html">Datos del día</a></p>
+<h1>{e(titulo_h)}</h1>
+<p class="firma">Redacción Ramacontable · Actualizado {fecha_larga(hoy.isoformat() if hoy_blq else str((r or {}).get('cambiado') or hoy.isoformat())[:10])}</p>
+{caja}{revisado}{hoy_blq}{rel_html}{cuerpo}{extra}{faq}{fuentes_html}
+<p class="aviso">Información de carácter general. Se recomienda verificar siempre en las fuentes oficiales. Cada profesional es responsable de su aplicación.</p>
+</div>
+<section class="relacionadas"><h2>Otros datos del día</h2><ul>{otros}</ul></section>
+{bloque_aportes(falsa_nota, aportes)}
+</article>{lateral(notas)}</div>"""
+    url = sitio_url() + t["slug"] + ".html"
+    ld = [{"@context": "https://schema.org", "@type": "Article", "headline": titulo_h, "inLanguage": "es-AR",
+           "description": d.get("respuesta") or t["pregunta"], "mainEntityOfPage": url,
+           "datePublished": str((r or {}).get("cambiado") or hoy.isoformat())[:10], "dateModified": hoy.isoformat() if hoy_blq else str((r or {}).get("cambiado") or hoy.isoformat())[:10],
+           "author": {"@type": "Organization", "name": "Redacción Ramacontable", "url": sitio_url()},
+           "publisher": {"@type": "Organization", "name": "Ramacontable", "logo": {"@type": "ImageObject", "url": sitio_url() + "logo.svg"}}}]
+    qs = ([{"p": t["pregunta"], "r": d["respuesta"]}] if d.get("respuesta") else []) + list(d.get("preguntas") or [])
+    if qs:
+        ld.append({"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [
+            {"@type": "Question", "name": q["p"], "acceptedAnswer": {"@type": "Answer", "text": q["r"]}} for q in qs]})
+    head = "".join(f'<script type="application/ld+json">{json.dumps(x, ensure_ascii=False).replace("</", "<\\/")}</script>' for x in ld)
+    desc = (d.get("respuesta") or t["pregunta"])[:300]
+    return pagina(f"{titulo_h}: {d.get('valor') or 'dato vigente'} | Ramacontable", contenido, "datos-al-dia",
+                  desc, t["slug"] + ".html", head, [("Datos del día", "datos-al-dia.html"), (t["titulo"], t["slug"] + ".html")])
+
+
+def pagina_bcra(slug, clave, titulo, pregunta, corto, seccion, notas):
+    try:
+        sr = json.load(open(os.path.join(SALIDA, "datos", f"serie-{clave}.json"), encoding="utf-8"))
+    except Exception:
+        return None
+    f, v = sr["f"], sr["v"]
+    ult, fecha = v[-1], f[-1]
+    num = lambda x: f"{x:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    if clave == "ipc":
+        valor = f"{num(ult)}% ({MESES[int(fecha[5:7]) - 1]} {fecha[:4]})"
+        filas = [[f"{MESES[int(a[5:7]) - 1]} {a[:4]}", num(b) + "%"] for a, b in list(zip(f, v))[-12:][::-1]]
+        resp = f"La última inflación mensual publicada fue de {num(ult)}%, correspondiente a {MESES[int(fecha[5:7]) - 1]} de {fecha[:4]}, según la serie oficial del BCRA (dato INDEC)."
+        cab = ["Mes", "Inflación mensual"]
+    elif sr.get("tipo") == "tna" or clave in ("badlar", "tamar", "plazo_fijo"):
+        valor = f"{num(ult)}% TNA"
+        filas = [[fecha_corta(a), num(b) + "%"] for a, b in list(zip(f, v))[-15:][::-1]]
+        resp = f"La tasa {corto} al {fecha_corta(fecha)} es {num(ult)}% nominal anual, según la serie oficial del Banco Central (BCRA)."
+        cab = ["Fecha", "TNA"]
+    else:
+        valor = ("$ " if clave.startswith("dolar") else "") + num(ult)
+        filas = [[fecha_corta(a), num(b)] for a, b in list(zip(f, v))[-15:][::-1]]
+        resp = f"El valor de {corto} al {fecha_corta(fecha)} es {valor}, según la serie oficial del Banco Central (BCRA)."
+        cab = ["Fecha", "Valor"]
+    t = {"slug": slug, "titulo": titulo, "pregunta": pregunta, "seccion": seccion, "claves": [corto]}
+    r = {"datos": {"valor": valor, "respuesta": resp, "tabla": [cab] + filas,
+                   "explicacion": [f"Dato tomado automáticamente de la API oficial de estadísticas del BCRA. Se actualiza solo cada hora.",
+                                   "Para actualizar un monto por este índice entre dos fechas, usá la calculadora de actualización."]},
+         "fuentes": [{"nombre": "BCRA (API de estadísticas)", "url": "https://www.bcra.gob.ar/PublicacionesEstadisticas/Principales_variables.asp"}],
+         "revisado": datetime.datetime.now(datetime.timezone.utc).isoformat(), "cambiado": fecha}
+    html = pagina_respuesta(t, r, notas, None, '<p><a class="btn" href="actualizacion.html">Ir a la calculadora de actualización</a></p>' if clave != "ipc" else "")
+    return html.replace("La fábrica lo rechequea todos los días.", "Se actualiza solo cada hora.")
+
+
+def bajar_dolares(destino):
+    """Cotizaciones del día (DolarAPI) y últimos 30 días (ArgentinaDatos). Si no responden, no se arman esas páginas."""
+    global DOLAR
+    import ssl
+    def leer(url):
+        req = urllib.request.Request(url, headers={"Accept": "application/json", "User-Agent": "ramacontable-build"})
+        try:
+            return json.load(urllib.request.urlopen(req, timeout=40, context=ssl.create_default_context()))
+        except ssl.SSLError:
+            import certifi
+            return json.load(urllib.request.urlopen(req, timeout=40, context=ssl.create_default_context(cafile=certifi.where())))
+    try:
+        actual = {d["casa"]: d for d in leer("https://dolarapi.com/v1/dolares")}
+    except Exception as ex:
+        print("Aviso: no pude leer las cotizaciones del dólar:", ex)
+        return
+    hist = {}
+    for _, casa, *_ in DOLARES:
+        try:
+            serie = leer(f"https://api.argentinadatos.com/v1/cotizaciones/dolares/{casa}")
+            hist[casa] = [[x["fecha"], x.get("compra"), x.get("venta")] for x in serie[-30:]]
+            clave = {"bolsa": "dolar_mep", "contadoconliqui": "dolar_ccl", "blue": "dolar_blue", "cripto": "dolar_cripto"}.get(casa)
+            if clave:
+                pts = {x["fecha"][:10]: x["venta"] for x in serie if x.get("venta")}
+                fs = sorted(pts)
+                nombre = {"dolar_mep": "Dólar MEP", "dolar_ccl": "Dólar contado con liquidación", "dolar_blue": "Dólar blue (informativo)", "dolar_cripto": "Dólar cripto"}[clave]
+                json.dump({"nombre": nombre, "tipo": "indice", "f": fs, "v": [pts[x] for x in fs]},
+                          open(os.path.join(destino, f"serie-{clave}.json"), "w", encoding="utf-8"), separators=(",", ":"))
+        except Exception as ex:
+            print(f"Aviso: sin historial del dólar {casa}:", ex)
+    DOLAR = {"actual": actual, "hist": hist}
+    os.makedirs(destino, exist_ok=True)
+    json.dump(DOLAR, open(os.path.join(destino, "dolares.json"), "w", encoding="utf-8"), ensure_ascii=False)
+
+
+def pagina_dolar(slug, casa, titulo, corto, notas):
+    d = (DOLAR.get("actual") or {}).get(casa)
+    if not d or not d.get("venta"):
+        return None
+    num = lambda x: "-" if x is None else f"{x:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    fecha = str(d.get("fechaActualizacion") or "")
+    informal = casa == "blue"
+    valor = f"$ {num(d['venta'])} venta"
+    resp = (f"El {corto} cotiza a $ {num(d.get('compra'))} para la compra y $ {num(d['venta'])} para la venta"
+            f" (actualizado el {_fecha_hora(fecha)}).")
+    expl = ["Las cotizaciones de mercado se toman de DolarAPI, que reúne los precios publicados por bancos, la bolsa y las plataformas, y se actualizan solas cada hora en esta página."]
+    if informal:
+        resp += " Es una cotización informativa del mercado informal: no es un tipo de cambio oficial."
+        expl.insert(0, "El dólar blue es la cotización del mercado informal. La publicamos solo como dato informativo, porque es una referencia muy consultada; para operaciones y registraciones contables se usa el tipo de cambio oficial.")
+    if casa == "tarjeta":
+        expl.insert(0, "El dólar tarjeta es el oficial más las percepciones que se cobran en los consumos en moneda extranjera con tarjeta.")
+    tabla = [["Cotización", "Compra", "Venta"]] + [[x.get("nombre", k) + (" (informativa)" if k == "blue" else ""), num(x.get("compra")), num(x.get("venta"))]
+                                                    for k, x in (DOLAR.get("actual") or {}).items()]
+    h = (DOLAR.get("hist") or {}).get(casa) or []
+    filas_h = "".join(f"<tr><td>{fecha_corta(a)}</td><td>{num(c)}</td><td>{num(v)}</td></tr>" for a, c, v in h[::-1])
+    extra = (f'<h2>Últimos 30 días</h2><div class="tabla"><table><thead><tr><th>Fecha</th><th>Compra</th><th>Venta</th></tr></thead><tbody>{filas_h}</tbody></table></div>' if filas_h else "")
+    extra += '<h2>Todas las cotizaciones de hoy</h2>' + bloque({"tabla": tabla}) + '<p><a href="dolar-hoy.html">Ver todas las cotizaciones del dólar</a></p>'
+    t = {"slug": slug, "titulo": titulo, "pregunta": f"¿A cuánto está el {corto} hoy?", "seccion": "impuestos", "claves": [corto]}
+    r = {"datos": {"valor": valor, "respuesta": resp, "explicacion": expl},
+         "fuentes": [{"nombre": "DolarAPI", "url": "https://dolarapi.com"}, {"nombre": "ArgentinaDatos (historial)", "url": "https://argentinadatos.com"}],
+         "revisado": fecha or datetime.datetime.now(datetime.timezone.utc).isoformat(), "cambiado": fecha[:10] or datetime.date.today().isoformat()}
+    return pagina_respuesta(t, r, notas, None, extra).replace("<b>Vigente hoy,", "<b>Cotización consultada hoy,")
+
+
+def pagina_dolar_hub(notas):
+    act = DOLAR.get("actual") or {}
+    if not act:
+        return None
+    num = lambda x: "-" if x is None else f"{x:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    links = {casa: slug for slug, casa, *_ in DOLARES}
+    filas = "".join(f'<tr><td><a href="{links.get(k, "dolar-hoy")}.html">{e(x.get("nombre", k))}</a>{" <small>(informativa, mercado informal)</small>" if k == "blue" else ""}</td>'
+                    f'<td>{num(x.get("compra"))}</td><td>{num(x.get("venta"))}</td><td>{_fecha_hora(x.get("fechaActualizacion"))}</td></tr>' for k, x in act.items())
+    cuerpo = f"""<div class="grilla"><div class="nota-contenido"><p class="miga"><a href="datos-al-dia.html">Datos del día</a></p>
+<h1>Dólar hoy: todas las cotizaciones</h1><p class="ayuda">Oficial, mayorista, MEP, contado con liquidación, tarjeta, cripto y blue (cotización informativa del mercado informal). Se actualiza sola cada hora. Fuente: DolarAPI.</p>
+<div class="tabla"><table><thead><tr><th>Cotización</th><th>Compra</th><th>Venta</th><th>Actualizado</th></tr></thead><tbody>{filas}</tbody></table></div></div>{lateral(notas)}</div>"""
+    return pagina("Dólar hoy: oficial, MEP, CCL, tarjeta, cripto y blue | Ramacontable", cuerpo, "datos-al-dia",
+                  "Cotización del dólar hoy en Argentina: oficial Banco Nación, mayorista, MEP, CCL, tarjeta, cripto y blue informativo. Actualizado cada hora.",
+                  "dolar-hoy.html", migas=[("Datos del día", "datos-al-dia.html"), ("Dólar hoy", "dolar-hoy.html")])
+
+
+def grupos_datos():
+    """[(id, nombre, [(slug, titulo, valor)])] para el menú, la página general y la barra lateral."""
+    val = lambda sl: (ajustar_tramo((RESP.get(sl) or {}).get("datos") or {}).get("valor") or "")
+    g = [("sueldos", "Sueldos", [(t["slug"], t["titulo"], val(t["slug"])) for t in TEMAS_RESP if t.get("seccion") == "sueldos"]),
+         ("impuestos", "Impuestos", [(t["slug"], t["titulo"], val(t["slug"])) for t in TEMAS_RESP if t.get("seccion") == "impuestos"]),
+         ("indices", "Índices y tasas", [(b[0], b[2], "") for b in BCRA_RESP]),
+         ("dolar", "Dólar y cripto", [("dolar-hoy", "Dólar hoy: todas las cotizaciones", "")] + [(x[0], x[2], "") for x in DOLARES]),
+         ("calendario", "Calendario", [("cuando-cambia-cada-dato", "Cuándo cambia cada dato", "")])]
+    return g
+
+
+def datos_para_calculadoras():
+    """sitio/datos/datos-del-dia.json: lo que usan las calculadoras (monto, tablas y fecha de verificación)."""
+    out = {}
+    for t in TEMAS_RESP:
+        r = RESP.get(t["slug"]) or {}
+        d = ajustar_tramo(r.get("datos") or {})
+        if d.get("valor"):
+            out[t["slug"]] = {"valor": d.get("valor"), "monto": d.get("monto"), "estructurado": d.get("estructurado"),
+                              "mes_vigente": d.get("mes_vigente"), "norma": d.get("norma"), "revisado": str(r.get("revisado") or "")[:10]}
+    return out
+
+
+def proximo_cambio(t):
+    hoy = datetime.date.today()
+    c = t.get("ciclo") or {}
+    if c.get("tipo") == "movilidad":
+        prox = [x for x in _ipc_fechas() if x >= hoy.isoformat()]
+        return f"INDEC: {fecha_corta(prox[0])}; ANSES, días después" if prox else "Mediados de cada mes"
+    for v in c.get("ventanas") or []:
+        ini = v.split("/")[0]
+        d = hoy.replace(month=int(ini[:2]), day=int(ini[3:]))
+        if d < hoy:
+            continue
+        return f"Desde {MESES[d.month - 1]} {d.year}"
+    if c.get("ventanas"):
+        ini = c["ventanas"][0].split("/")[0]
+        return f"Desde {MESES[int(ini[:2]) - 1]} {hoy.year + 1}"
+    if c.get("diario_desde"):
+        x = c["diario_desde"]
+        return f"Desde {MESES[int(x[5:7]) - 1]} {x[:4]}"
+    return "Sin fecha fija"
+
+
+def pagina_calendario_datos(notas):
+    filas = "".join(f'<tr><td><a href="{t["slug"]}.html">{e(t["titulo"])}</a></td><td>{e(t.get("cuando", ""))}</td><td>{e(proximo_cambio(t))}</td></tr>' for t in TEMAS_RESP)
+    filas += ('<tr><td><a href="dolar-hoy.html">Dólar (oficial, MEP, CCL, tarjeta)</a></td><td>Días hábiles de 10 a 17</td><td>Se actualiza cada hora</td></tr>'
+              '<tr><td><a href="dolar-cripto-hoy.html">Dólar cripto</a></td><td>Todos los días, las 24 horas</td><td>Se actualiza cada hora</td></tr>'
+              '<tr><td><a href="valor-uva-hoy.html">UVA, CER, ICL y tasas</a></td><td>El BCRA los publica todos los días</td><td>Todos los días</td></tr>')
+    ipc = "".join(f"<li>{fecha_corta(x)}</li>" for x in _ipc_fechas() if x >= datetime.date.today().isoformat())
+    qs = [{"p": "¿Cuándo aumentan las jubilaciones?", "r": "Todos los meses, por la inflación de dos meses antes (Decreto 274/2024). El INDEC publica la inflación a mitad de mes y ANSES confirma los nuevos haberes en los días siguientes."},
+          {"p": "¿Cuándo se actualiza el Monotributo?", "r": "Dos veces por año. Los montos nuevos se conocen alrededor de mediados de enero y de julio, y la recategorización vence en febrero y agosto."},
+          {"p": "¿Cuándo cambian las deducciones de Ganancias?", "r": "Dos veces por año: hay tablas para enero a junio y para julio a diciembre."}]
+    cuerpo = f"""<div class="grilla"><div class="nota-contenido"><p class="miga"><a href="datos-al-dia.html">Datos del día</a></p>
+<h1>Cuándo cambia cada dato: calendario de actualizaciones</h1>
+<p class="ayuda">Cuándo se actualizan la jubilación, la AUH, el Monotributo, Ganancias, el salario mínimo y los demás datos que usamos todos los días.</p>
+<div class="tabla"><table><thead><tr><th>Dato</th><th>Cuándo cambia</th><th>Próximo cambio</th></tr></thead><tbody>{filas}</tbody></table></div>
+{('<h2>Próximas publicaciones de la inflación (INDEC)</h2><ul>' + ipc + '</ul>') if ipc else ''}
+{preguntas_html({"preguntas": qs})}
+<p class="aviso">Las fechas de ANSES, Monotributo y Ganancias son estimadas según cómo se publicaron en los últimos años. Las del INDEC salen de su calendario oficial.</p>
+</div>{lateral(notas)}</div>"""
+    ld = '<script type="application/ld+json">' + json.dumps({"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [
+        {"@type": "Question", "name": q["p"], "acceptedAnswer": {"@type": "Answer", "text": q["r"]}} for q in qs]}, ensure_ascii=False) + "</script>"
+    return pagina("Cuándo cambia cada dato: jubilaciones, AUH, Monotributo, Ganancias y salario mínimo | Ramacontable", cuerpo, "datos-al-dia",
+                  "Calendario de actualizaciones: cuándo aumentan las jubilaciones y la AUH, cuándo se actualiza el Monotributo, Ganancias y el salario mínimo.",
+                  "cuando-cambia-cada-dato.html", ld, [("Datos del día", "datos-al-dia.html"), ("Cuándo cambia cada dato", "cuando-cambia-cada-dato.html")])
+
+
+def pagina_datos(notas):
+    existe = lambda sl: os.path.exists(os.path.join(SALIDA, sl + ".html")) or any(t["slug"] == sl for t in TEMAS_RESP)
+    bloques = ""
+    for gid, nombre, items in grupos_datos():
+        lis = "".join(f'<li><a href="{sl}.html"><b>{e(ti)}</b><span>{e(v or "Ver el dato")}</span></a></li>' for sl, ti, v in items if existe(sl))
+        if lis:
+            bloques += f'<h2 id="{gid}">{e(nombre)}</h2><ul class="lista-datos">{lis}</ul>'
+    items = [bloques + '<p><a class="btn sec" href="cuando-cambia-cada-dato.html">Ver cuándo cambia cada dato →</a></p>']
+    cuerpo = f"""<div class="grilla"><div><h1>Datos del día</h1>
+<p class="ayuda">Los datos que más se consultan, en una página fija cada uno y siempre actualizados: la fábrica los rechequea todos los días contra las fuentes oficiales y solo publica lo que confirman al menos dos fuentes.</p>
+{''.join(items)}</div>{lateral(notas)}</div>"""
+    return pagina("Datos del día: salario mínimo, Monotributo, jubilación, dólar, UVA y más | Ramacontable", cuerpo, "datos-al-dia",
+                  "Salario mínimo, jubilación mínima, AUH, Monotributo, Ganancias, UVA, CER y dólar oficial: los datos vigentes hoy, revisados todos los días.",
+                  "datos-al-dia.html", migas=[("Datos del día", "datos-al-dia.html")])
+
+
+# Enlaces internos automáticos: la primera mención de cada tema en una nota enlaza a su página fija
+def _destinos_enlaces(convenios):
+    d = []
+    for t in TEMAS_RESP:
+        for c in t.get("claves", []):
+            d.append((c, t["slug"] + ".html"))
+    for c in convenios:
+        for nombre in {c.get("nombre", ""), *(c.get("alias") or [])}:
+            if nombre and len(nombre) > 3:
+                d.append((nombre, f"escala-{c['slug']}.html"))
+    d += [("aguinaldo", "aguinaldo.html"), ("UVA", "valor-uva-hoy.html"), ("CER", "cer-hoy.html"),
+          ("indemnización", "liquidacion-final.html"), ("liquidación final", "liquidacion-final.html"), ("horas extras", "horas-extras.html"),
+          ("vacaciones", "vacaciones.html"), ("dólar blue", "dolar-blue-hoy.html"), ("dólar MEP", "dolar-mep-hoy.html"),
+          ("contado con liquidación", "dolar-ccl-hoy.html"), ("dólar tarjeta", "dolar-tarjeta-hoy.html"), ("dólar oficial", "dolar-oficial-hoy.html"),
+          ("ICL", "icl-alquileres-hoy.html"), ("BADLAR", "tasa-badlar-hoy.html"), ("TAMAR", "tasa-tamar-hoy.html"), ("días hábiles", "dias-habiles.html"), ("plazo fijo", "plazo-fijo.html")]
+    return sorted(d, key=lambda x: -len(x[0]))
+
+
+ENLACES = []
+
+
+def enlazar(html_txt, propio=""):
+    """Agrega como máximo 1 enlace por destino y 5 por nota, solo en texto de párrafos (nunca en títulos ni dentro de otro enlace)."""
+    usados, puestos = set(), [0]
+    def en_parrafo(m):
+        txt = m.group(1)
+        for frase, destino in ENLACES:
+            if destino in usados or destino == propio or puestos[0] >= 5:
+                continue
+            rx = re.compile(r"(?<![\w>])(" + re.escape(e(frase)) + r")(?![\w<])", re.I)
+            partes = re.split(r"(<a [^>]*>.*?</a>)", txt)
+            for i, parte in enumerate(partes):
+                if parte.startswith("<a "):
+                    continue
+                nuevo, n = rx.subn(lambda x: f'<a href="{destino}">{x.group(1)}</a>', parte, count=1)
+                if n:
+                    partes[i] = nuevo; usados.add(destino); puestos[0] += 1
+                    break
+            txt = "".join(partes)
+        return "<p>" + txt + "</p>"
+    return re.sub(r"<p>(.*?)</p>", en_parrafo, html_txt, flags=re.S)
+
+
 def pagina_nota(n, notas, aportes=None):
     verif = ("Elaborada con fuentes oficiales." if n.get("verificada")
              else "Pendiente de verificación con fuente oficial.")
-    cuerpo = "".join(bloque(b) for b in n["cuerpo"])
+    cuerpo = enlazar("".join(bloque(b) for b in n["cuerpo"]), f"nota-{n['slug']}.html")
     sec = SECCIONES[n["seccion"]]
     previa = ""
     if n.get("actualiza"):
@@ -770,6 +1210,7 @@ def main():
     shutil.copytree(os.path.join(RAIZ, "web"), SALIDA)
     global VENC
     VENC = cargar_vencimientos()
+    cargar_respuestas()
     notas = cargar_notas()
     with open(os.path.join(SALIDA, "config.js"), "w", encoding="utf-8") as f:
         f.write("window.RC_CONFIG=" + json.dumps({
@@ -779,6 +1220,7 @@ def main():
         }) + ";")
     escribir = lambda nombre, txt: open(os.path.join(SALIDA, nombre), "w", encoding="utf-8").write(txt)
     convenios = cargar_convenios()
+    ENLACES[:] = _destinos_enlaces(convenios)
     todas = notas
     guias = [n for n in todas if es_guia(n)]
     notas = [n for n in todas if not es_guia(n)]
@@ -832,6 +1274,25 @@ def main():
     if os.environ.get("RC_SIN_SERIES") != "1":
         bajar_series(os.path.join(SALIDA, "datos"))
     escribir_feriados(os.path.join(SALIDA, "datos"))
+    if os.environ.get("RC_SIN_SERIES") != "1":
+        bajar_dolares(os.path.join(SALIDA, "datos"))
+    for t in TEMAS_RESP:
+        escribir(t["slug"] + ".html", pagina_respuesta(t, RESP.get(t["slug"]), notas, aportes.get("dato-" + t["slug"])))
+    for x in DOLARES:
+        h = pagina_dolar(*x, notas)
+        if h:
+            escribir(x[0] + ".html", h)
+    h = pagina_dolar_hub(notas)
+    if h:
+        escribir("dolar-hoy.html", h)
+    for b in BCRA_RESP:
+        h = pagina_bcra(*b, notas)
+        if h:
+            escribir(b[0] + ".html", h)
+    escribir("cuando-cambia-cada-dato.html", pagina_calendario_datos(notas))
+    escribir("datos-al-dia.html", pagina_datos(notas))
+    os.makedirs(os.path.join(SALIDA, "datos"), exist_ok=True)
+    escribir(os.path.join("datos", "datos-del-dia.json"), json.dumps(datos_para_calculadoras(), ensure_ascii=False))
     por_slug = {c["slug"]: c for c in convenios}
     def calc_conv(archivo, salida_html, slug, titulo, desc):
         c = por_slug.get(slug) or {}
@@ -851,7 +1312,12 @@ def main():
              ("vacaciones.html", "Calculadora de vacaciones 2026: días y cuánto se cobra", "Calculá los días de vacaciones según antigüedad y cuánto se cobra: sueldo ÷ 25 y plus vacacional (LCT arts. 150 a 157)."),
              ("liquidacion-final.html", "Calculadora de liquidación final e indemnización por despido 2026", "Calculá la liquidación final por renuncia o despido: indemnización art. 245, preaviso, integración, SAC y vacaciones proporcionales."),
              ("horas-extras.html", "Calculadora de horas extras al 50% y al 100%", "Calculá el valor de las horas extras al 50% y al 100% a partir del sueldo y la jornada (art. 201 LCT)."),
-             ("iva.html", "Calculadora de IVA: agregar o quitar IVA", "Sumá o quitá el IVA de un importe con alícuotas del 21%, 10,5%, 27% y otras.")]
+             ("iva.html", "Calculadora de IVA: agregar o quitar IVA", "Sumá o quitá el IVA de un importe con alícuotas del 21%, 10,5%, 27% y otras."),
+             ("conversor-dolar.html", "Conversor de dólar a pesos: oficial, MEP, CCL, tarjeta, cripto y blue", "Convertí pesos a dólares y dólares a pesos con las cotizaciones de hoy: oficial, mayorista, MEP, CCL, tarjeta, cripto y blue."),
+             ("monotributo-categoria.html", "Calculadora de categoría del Monotributo 2026", "Cargá lo que facturaste en los últimos 12 meses y mirá en qué categoría del Monotributo estás y cuánto pagás por mes."),
+             ("intereses-arca.html", "Calculadora de intereses resarcitorios de ARCA", "Calculá los intereses por pagar tarde un impuesto o aporte a ARCA, con la tasa vigente y los días de atraso."),
+             ("actualizacion-alquiler.html", "Calculadora de actualización de alquiler por ICL o IPC", "Calculá cuánto aumenta tu alquiler por ICL o por inflación (IPC) entre dos fechas, con datos oficiales del BCRA."),
+             ("embargo-sueldo.html", "Calculadora de embargo de sueldo 2026 (Decreto 484/87)", "Calculá cuánto se puede embargar de un sueldo según el salario mínimo vigente: inembargable hasta 1 SMVM, 10% y 20% del excedente.")]
     for archivo, titulo, desc in CALCS:
         with open(os.path.join(RAIZ, "paginas", archivo), encoding="utf-8") as f:
             escribir(archivo, pagina(titulo + " | Ramacontable", f.read(), "", desc, archivo, herramienta_ld(titulo, desc, archivo),

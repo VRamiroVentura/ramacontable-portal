@@ -6,6 +6,7 @@
 <form id="calc" data-calc="prestamo" class="form-calc" novalidate>
 <label>Monto del préstamo<input name="monto" inputmode="decimal" placeholder="Ej.: 5.000.000"></label>
 <div class="fila2"><label>Tasa nominal anual (TNA %)<input name="tna" inputmode="decimal" placeholder="Ej.: 60"></label><label>Cantidad de cuotas mensuales<input name="cuotas" inputmode="numeric" value="12"></label></div>
+<p class="ayuda" id="origen-tasa"></p>
 <label>Sistema de amortización<select name="sistema"><option value="frances">Francés (cuota fija)</option><option value="aleman">Alemán (capital fijo, cuota decreciente)</option></select></label>
 <p class="error" id="err"></p>
 <button class="btn ancho">Calcular</button>
@@ -17,5 +18,5 @@
 </article>
 <aside class="lateral"><a class="caja caja-calc" href="calculadoras.html"><b>Todas las calculadoras</b><span>Sueldos, aguinaldo, actualización de montos, plazo fijo y más</span></a></aside>
 </div>
-<script src="calcs.js?v=1"></script>
+<script src="calcs.js?v=2"></script>
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "¿Qué es el CFT?", "acceptedAnswer": {"@type": "Answer", "text": "El costo financiero total incluye intereses, IVA sobre intereses, seguros y gastos. Siempre es mayor que la TNA: comparalo antes de tomar un préstamo."}}, {"@type": "Question", "name": "¿Cómo se calcula la tasa mensual?", "acceptedAnswer": {"@type": "Answer", "text": "Se toma la TNA dividida por 12."}}]}</script>

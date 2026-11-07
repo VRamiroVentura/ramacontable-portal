@@ -1,0 +1,23 @@
+<div class="grilla"><article class="nota calc">
+<p class="ante">Herramientas | Alquileres</p>
+<h1>Calculadora de actualización de alquiler por ICL o IPC</h1>
+<p class="firma">Redacción Ramacontable · Con datos oficiales del BCRA</p>
+<div class="encorto"><b>En corto</b><p>Calculá cuánto aumenta un alquiler por el Índice de Contratos de Locación (ICL) o por la inflación (IPC) entre dos fechas.</p></div>
+<p class="ayuda" id="origen-dato"></p>
+<form id="calc2" data-calc="alquiler" class="form-calc" novalidate>
+<label>Alquiler actual<input name="monto" inputmode="decimal" placeholder="Ej.: 450.000"></label>
+<div class="fila2"><label>Fecha del último ajuste o inicio<input type="date" name="desde"></label><label>Fecha del nuevo ajuste<input type="date" name="hasta" data-hoy></label></div>
+<label>Índice<select name="indice"><option value="icl">ICL (Índice para Contratos de Locación)</option><option value="ipc">Inflación (IPC del INDEC)</option></select></label>
+<p class="error" id="err"></p>
+<button class="btn ancho">Calcular</button>
+</form>
+<section id="resultado" class="resultado" hidden></section>
+<h2>¿Qué índice corresponde?</h2><p>Depende de lo que diga el contrato. El ICL se usa en los contratos firmados con la Ley 27.551, antes de su derogación por el DNU 70/2023; en los contratos posteriores las partes pueden pactar el índice, y el más usado es la inflación (IPC).</p><p><a href="icl-alquileres-hoy.html">Ver el ICL de hoy</a> · <a href="inflacion-mensual-ipc.html">Ver la última inflación</a></p>
+<section class="faq"><h2>Preguntas frecuentes</h2><details><summary>¿Cómo se calcula con el ICL?</summary><p>Se divide el valor del ICL del día del ajuste por el del día de inicio del período, y se multiplica el alquiler por ese coeficiente.</p></details><details><summary>¿Cómo se calcula con la inflación?</summary><p>Se acumula la inflación mensual del INDEC de los meses del período y se aplica sobre el alquiler.</p></details></section>
+<p class="aviso">Herramienta de carácter general. El resultado es una estimación y no reemplaza el análisis profesional de cada caso.</p>
+</article>
+<aside class="lateral"><a class="caja caja-calc" href="calculadoras.html"><b>Todas las calculadoras</b><span>Sueldos, aguinaldo, actualización de montos, plazo fijo y más</span></a><a class="caja caja-calc" href="datos-al-dia.html"><b>Datos del día</b><span>Salario mínimo, Monotributo, jubilación, dólar y más</span></a></aside>
+</div>
+<script src="calcs.js?v=2"></script>
+<script src="calcs2.js?v=1"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "¿Cómo se calcula con el ICL?", "acceptedAnswer": {"@type": "Answer", "text": "Se divide el valor del ICL del día del ajuste por el del día de inicio del período, y se multiplica el alquiler por ese coeficiente."}}, {"@type": "Question", "name": "¿Cómo se calcula con la inflación?", "acceptedAnswer": {"@type": "Answer", "text": "Se acumula la inflación mensual del INDEC de los meses del período y se aplica sobre el alquiler."}}]}</script>

@@ -85,6 +85,7 @@ def _mensaje(r):
 
 import time as _time
 INICIO = _time.time()
+PEDIDOS = [0]  # pedidos a Gemini en esta vuelta (para el resumen)
 
 
 class SinTiempo(RuntimeError):
@@ -102,6 +103,7 @@ def gemini(sistema, usuario, temperatura=0.9):
     Si la vuelta ya usó su tiempo, no arranca pedidos nuevos (SinTiempo)."""
     import time
     _queda()
+    PEDIDOS[0] += 1
     for intento in range(3):
         try:
             return _gemini(sistema, usuario, temperatura)

@@ -1,0 +1,231 @@
+[
+ {
+  "slug": "salario-minimo-vital-y-movil",
+  "titulo": "Salario mínimo vital y móvil",
+  "seccion": "sueldos",
+  "pregunta": "¿Cuánto es el salario mínimo vital y móvil hoy?",
+  "pide": "Monto mensual vigente del salario mínimo vital y móvil, valor por hora para jornalizados, desde cuándo rige, norma (resolución del Consejo del Salario) y los próximos tramos ya fijados.",
+  "busqueda": "salario minimo vital y movil",
+  "claves": [
+   "salario mínimo",
+   "smvm"
+  ],
+  "oficial": [
+   "https://www.argentina.gob.ar/trabajo/consejodelsalario"
+  ],
+  "ciclo": {
+   "tipo": "tramos",
+   "diario_desde": "2027-04-01",
+   "nota": "Res. 4/2026 fijó los montos mes a mes hasta abril de 2027"
+  },
+  "estructura": "estructurado: {\"tramos\": [{\"desde\": \"aaaa-mm\", \"mensual\": numero, \"hora\": numero}]} con TODOS los tramos fijados por la resolución vigente",
+  "cuando": "Cuando se fija un nuevo acuerdo del Consejo del Salario (los montos vigentes llegan hasta abril de 2027)"
+ },
+ {
+  "slug": "jubilacion-minima-y-bono",
+  "titulo": "Jubilación mínima y bono",
+  "seccion": "sueldos",
+  "pregunta": "¿Cuánto cobra un jubilado con la mínima este mes?",
+  "pide": "Haber mínimo jubilatorio del mes, bono previsional, total a cobrar, haber máximo, porcentaje de aumento por movilidad del mes y norma.",
+  "busqueda": "jubilacion minima bono",
+  "claves": [
+   "jubilación mínima",
+   "haber mínimo",
+   "movilidad jubilatoria"
+  ],
+  "oficial": [
+   "https://www.anses.gob.ar/jubilaciones-y-pensiones"
+  ],
+  "ciclo": {
+   "tipo": "movilidad"
+  },
+  "estructura": "monto = haber mínimo SIN bono (número). estructurado: {\"haber_minimo\": numero, \"bono\": numero, \"haber_maximo\": numero, \"aumento_pct\": numero}",
+  "cuando": "Todos los meses, por la inflación de dos meses antes: ANSES lo confirma unos días después del dato del INDEC"
+ },
+ {
+  "slug": "tope-aportes-base-maxima",
+  "titulo": "Bases mínima y máxima de aportes",
+  "seccion": "sueldos",
+  "pregunta": "¿Cuál es el tope (base máxima) de aportes y contribuciones este mes?",
+  "pide": "Base imponible mínima y máxima para aportes y contribuciones del SIPA vigentes para el mes, desde cuándo rigen y norma de ANSES.",
+  "busqueda": "base imponible maxima aportes",
+  "claves": [
+   "base máxima",
+   "tope de aportes",
+   "base imponible"
+  ],
+  "oficial": [],
+  "ciclo": {
+   "tipo": "movilidad"
+  },
+  "estructura": "monto = base máxima (número). estructurado: {\"base_minima\": numero, \"base_maxima\": numero}",
+  "cuando": "Todos los meses, junto con la movilidad jubilatoria"
+ },
+ {
+  "slug": "asignaciones-familiares-auh",
+  "titulo": "Asignaciones familiares y AUH",
+  "seccion": "sueldos",
+  "pregunta": "¿Cuánto es la AUH y la asignación por hijo este mes?",
+  "pide": "Montos del mes de AUH y de la asignación por hijo del primer tramo de ingresos, topes de ingreso del grupo familiar, porcentaje de aumento y norma.",
+  "busqueda": "asignaciones familiares auh montos",
+  "claves": [
+   "asignaciones familiares",
+   "AUH",
+   "asignación por hijo"
+  ],
+  "oficial": [
+   "https://www.anses.gob.ar/asignacion-universal-por-hijo"
+  ],
+  "ciclo": {
+   "tipo": "movilidad"
+  },
+  "estructura": "monto = AUH por hijo (número). estructurado: {\"auh\": numero, \"hijo_primer_tramo\": numero}",
+  "cuando": "Todos los meses, junto con la movilidad jubilatoria"
+ },
+ {
+  "slug": "monotributo-categorias-vigentes",
+  "titulo": "Monotributo: categorías y cuotas vigentes",
+  "seccion": "impuestos",
+  "pregunta": "¿Cuáles son las categorías y cuotas del Monotributo vigentes?",
+  "pide": "Tabla de categorías del Monotributo vigentes: ingresos brutos anuales máximos y cuota mensual total por categoría (servicios y venta de bienes), desde cuándo rige, próxima actualización y norma de ARCA.",
+  "busqueda": "monotributo categorias cuotas",
+  "claves": [
+   "monotributo",
+   "recategorización"
+  ],
+  "oficial": [
+   "https://www.arca.gob.ar/monotributo/categorias.asp"
+  ],
+  "ciclo": {
+   "tipo": "semestral",
+   "ventanas": [
+    "01-10/02-10",
+    "07-10/08-10"
+   ]
+  },
+  "estructura": "estructurado: {\"categorias\": [{\"categoria\": \"A\", \"ingresos_max\": numero, \"cuota_servicios\": numero, \"cuota_bienes\": numero}]}, una fila por categoría A a K, todos números",
+  "cuando": "Dos veces por año: los montos nuevos se conocen alrededor de mediados de enero y de julio, y la recategorización vence en febrero y agosto"
+ },
+ {
+  "slug": "ganancias-deducciones-sueldos",
+  "titulo": "Ganancias: deducciones y escala para sueldos",
+  "seccion": "impuestos",
+  "pregunta": "¿Desde qué sueldo se paga Ganancias y cuáles son las deducciones vigentes?",
+  "pide": "Deducciones personales vigentes para empleados en relación de dependencia (ganancia no imponible, deducción especial, cónyuge, hijo) y la escala del artículo 94 del período, con desde cuándo rige y norma.",
+  "busqueda": "ganancias deducciones personales escala art 94",
+  "claves": [
+   "Ganancias",
+   "deducciones personales",
+   "cuarta categoría"
+  ],
+  "oficial": [],
+  "ciclo": {
+   "tipo": "semestral",
+   "ventanas": [
+    "12-26/02-10",
+    "06-26/08-10"
+   ]
+  },
+  "estructura": "estructurado: {\"ganancia_no_imponible\": numero, \"deduccion_especial\": numero, \"conyuge\": numero, \"hijo\": numero, \"periodo\": \"texto\"} (valores anuales)",
+  "cuando": "Dos veces por año: tablas de enero a junio y de julio a diciembre"
+ },
+ {
+  "slug": "intereses-resarcitorios-arca",
+  "titulo": "Intereses resarcitorios y punitorios de ARCA",
+  "seccion": "impuestos",
+  "pregunta": "¿Qué tasa de interés cobra ARCA por pagar tarde?",
+  "pide": "Tasa mensual vigente de intereses resarcitorios y punitorios de ARCA, desde cuándo rige y la resolución que la fija.",
+  "busqueda": "intereses resarcitorios arca tasa",
+  "claves": [
+   "intereses resarcitorios",
+   "interés resarcitorio"
+  ],
+  "oficial": [],
+  "ciclo": {
+   "tipo": "libre"
+  },
+  "estructura": "estructurado: {\"resarcitorio_mensual\": numero, \"punitorio_mensual\": numero} (porcentajes mensuales, ej. 2.5)",
+  "cuando": "Cuando ARCA dicta una resolución nueva (sin fecha fija)"
+ },
+ {
+  "slug": "autonomos-categorias-aportes",
+  "titulo": "Autónomos: categorías y aportes",
+  "seccion": "sueldos",
+  "pregunta": "¿Cuánto paga un autónomo por mes según su categoría?",
+  "pide": "Tabla de categorías de trabajadores autónomos con la renta de referencia y el aporte mensual vigente de cada una, desde cuándo rige y norma.",
+  "busqueda": "autonomos categorias aportes",
+  "claves": [
+   "autónomos"
+  ],
+  "oficial": [],
+  "ciclo": {
+   "tipo": "movilidad"
+  },
+  "estructura": "monto = aporte de la categoría más baja (número). estructurado: {\"categorias\": [{\"categoria\": \"texto\", \"aporte\": numero}]}",
+  "cuando": "Todos los meses, junto con la movilidad jubilatoria"
+ },
+ {
+  "slug": "seguro-de-desempleo-montos",
+  "titulo": "Seguro de desempleo: montos",
+  "seccion": "sueldos",
+  "pregunta": "¿Cuánto se cobra de seguro de desempleo?",
+  "pide": "Monto mínimo y máximo vigente de la prestación por desempleo, cómo se calcula, desde cuándo rige y norma.",
+  "busqueda": "seguro de desempleo monto minimo maximo",
+  "claves": [
+   "seguro de desempleo",
+   "prestación por desempleo"
+  ],
+  "oficial": [
+   "https://www.anses.gob.ar/prestacion-por-desempleo"
+  ],
+  "ciclo": {
+   "tipo": "tramos",
+   "diario_desde": "2027-04-01"
+  },
+  "estructura": "estructurado: {\"minimo\": numero, \"maximo\": numero}",
+  "cuando": "Va atado al salario mínimo"
+ },
+ {
+  "slug": "ingresos-brutos-arba-regimen-simplificado",
+  "titulo": "Ingresos Brutos ARBA: régimen simplificado",
+  "seccion": "impuestos",
+  "pregunta": "¿Cuánto se paga de Ingresos Brutos simplificado en provincia de Buenos Aires?",
+  "pide": "Categorías del régimen simplificado de Ingresos Brutos de ARBA (provincia de Buenos Aires) con los ingresos máximos y el importe mensual de cada una, desde cuándo rige y norma.",
+  "busqueda": "ingresos brutos regimen simplificado arba",
+  "claves": [
+   "régimen simplificado de Ingresos Brutos",
+   "Ingresos Brutos simplificado"
+  ],
+  "oficial": [],
+  "ciclo": {
+   "tipo": "semestral",
+   "ventanas": [
+    "01-10/02-10",
+    "07-10/08-10"
+   ]
+  },
+  "estructura": "estructurado: {\"categorias\": [{\"categoria\": \"texto\", \"ingresos_max\": numero, \"importe\": numero}]}",
+  "cuando": "Dos veces por año, junto con el Monotributo unificado (febrero y agosto)"
+ },
+ {
+  "slug": "bienes-personales-minimo-no-imponible",
+  "titulo": "Bienes Personales: mínimo no imponible y alícuotas",
+  "seccion": "impuestos",
+  "pregunta": "¿Desde qué patrimonio se paga Bienes Personales?",
+  "pide": "Mínimo no imponible de Bienes Personales del período fiscal vigente, exención de casa habitación, escala de alícuotas y norma.",
+  "busqueda": "bienes personales minimo no imponible",
+  "claves": [
+   "Bienes Personales"
+  ],
+  "oficial": [],
+  "ciclo": {
+   "tipo": "anual",
+   "ventanas": [
+    "12-01/01-31"
+   ],
+   "semanas": 4
+  },
+  "estructura": "estructurado: {\"minimo_no_imponible\": numero, \"casa_habitacion\": numero, \"periodo\": \"aaaa\"}",
+  "cuando": "Una vez por año, para cada período fiscal"
+ }
+]

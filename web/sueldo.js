@@ -16,7 +16,7 @@
 
   // ---------- cálculos puros (se exportan para probarlos) ----------
   function comercio({ basico, nr = 0, horas = 48, anios = 0, presentismo = true, nrAdicionales = false, osNr = true,
-    faecys = 0.5, sindicato = 2 }) {
+    faecys = 0.5, sindicato = 2, tope = 0 }) {
     if (!(basico > 0)) throw new Error('Elegí una categoría o cargá el sueldo básico.');
     if (!(horas > 0 && horas <= 48)) throw new Error('Las horas semanales tienen que estar entre 1 y 48.');
     if (anios < 0 || anios > 60) throw new Error('Revisá los años de antigüedad.');
@@ -25,15 +25,18 @@
     const rem = r2(b + ant + pres);
     const nrB = r2(nr * prop), nrAnt = nrAdicionales ? r2(nrB * anios / 100) : 0, nrPres = nrAdicionales && presentismo ? r2((nrB + nrAnt) / 12) : 0;
     const nrTot = r2(nrB + nrAnt + nrPres);
+    // la base máxima de aportes (tope) limita jubilación, PAMI y obra social; no limita FAECYS ni el aporte sindical
+    const cap = b => tope > 0 ? Math.min(b, tope) : b;
+    const topeAplicado = tope > 0 && (osNr ? rem + nrTot : rem) > tope;
     const desc = [
-      { n: 'Jubilación (SIPA)', p: 11, base: rem },
-      { n: 'Ley 19.032 (PAMI)', p: 3, base: rem },
-      { n: 'Obra social', p: 3, base: osNr ? rem + nrTot : rem },
+      { n: 'Jubilación (SIPA)', p: 11, base: cap(rem) },
+      { n: 'Ley 19.032 (PAMI)', p: 3, base: cap(rem) },
+      { n: 'Obra social', p: 3, base: cap(osNr ? rem + nrTot : rem) },
       { n: 'Aporte FAECYS (art. 100 CCT)', p: faecys, base: rem + nrTot },
       { n: 'Cuota o aporte sindical', p: sindicato, base: rem + nrTot },
     ].filter(d => d.p > 0).map(d => ({ ...d, monto: r2(d.base * d.p / 100) }));
     const totalDesc = r2(desc.reduce((s, d) => s + d.monto, 0));
-    return { prop, b, ant, pres, rem, nrB, nrAnt, nrPres, nrTot, desc, totalDesc, bruto: r2(rem + nrTot), neto: r2(rem + nrTot - totalDesc) };
+    return { prop, b, ant, pres, rem, nrB, nrAnt, nrPres, nrTot, desc, totalDesc, topeAplicado, tope, bruto: r2(rem + nrTot), neto: r2(rem + nrTot - totalDesc) };
   }
 
   function casas({ mensual, hora, modo = 'mensual', horasMes = 0, anios = 0, zona = 0 }) {
@@ -102,7 +105,7 @@
       if (tipo === 'comercio') {
         const r = comercio({ basico: numero(form.basico.value), nr: numero(form.nr.value), horas: numero(form.horas.value), anios: numero(form.anios.value),
           presentismo: form.presentismo.checked, nrAdicionales: form.nrAdic.checked, osNr: form.osNr.checked,
-          faecys: numero(form.faecys.value), sindicato: numero(form.sindicato.value) });
+          faecys: numero(form.faecys.value), sindicato: numero(form.sindicato.value), tope: TOPE });
         const parcial = r.prop < 1 ? ` × ${numero(form.horas.value)} ÷ 48 horas` : '';
         const filasR = [['Sueldo básico' + (parcial ? ' (proporcional a la jornada)' : ''), r.b], ['Antigüedad (' + numero(form.anios.value) + '% del básico)', r.ant]];
         if (r.pres) filasR.push(['Presentismo (1/12 de básico + antigüedad)', r.pres]);
@@ -115,6 +118,7 @@
           <table class="tabla-desc"><thead><tr><th>Descuento</th><th>%</th><th>Importe</th></tr></thead><tbody>
           ${r.desc.map(d => `<tr><td>${esc(d.n)}</td><td>${d.p}%</td><td>${fmt(d.monto)}</td></tr>`).join('')}
           <tr class="tot"><td>Total</td><td></td><td>${fmt(r.totalDesc)}</td></tr></tbody></table>
+          ${r.topeAplicado ? `<p class="nota-chica">Se aplicó el tope de la base máxima de aportes (${fmt(r.tope)}) a jubilación, PAMI y obra social.</p>` : ''}
           <p class="nota-chica">No incluye horas extras, adicionales particulares (cajero, idioma, etc.), OSECAC, retención de Ganancias ni otros descuentos de la empresa.</p>`;
       } else {
         const r = casas({ mensual: numero(form.mensual.value), hora: numero(form.hora.value), modo: form.modo.value, horasMes: numero(form.horasMes.value),
@@ -134,6 +138,10 @@
     } catch (e) { err.textContent = e.message; salida.hidden = true; }
   });
 
+  let TOPE = 0;
+  fetch('datos/datos-del-dia.json').then(r => r.json()).then(d => {
+    const x = d['tope-aportes-base-maxima']; TOPE = (x && x.estructurado && x.estructurado.base_maxima) || 0;
+  }).catch(() => {});
   pintarCategorias();
   // Si el administrador actualizó la escala después de la última publicación, se usa la más nueva.
   const cfg = window.RC_CONFIG || {};

@@ -280,9 +280,36 @@
     });
     const lo = $('#lista-opiniones'); lo.innerHTML = '';
     if (!opiniones.length && !(combinado && pasos.length)) lo.append(h('p', { class: 'ayuda' }, combinado ? 'Todavía no hay comentarios. ¡Sé el primero!' : 'Todavía no hay opiniones.'));
-    opiniones.forEach((o, i) => lo.append(h('div', { class: 'aporte', hidden: i >= 2 && !verTodasOp }, accionesPropias('opinion', o), autorBloque(o, o.creado), h('p', {}, o.texto), botonesVoto('opinion', o, votosDe('opinion', o.id), nombres))));
+    const hijos = {}; opiniones.filter(o => o.responde).forEach(o => { (hijos[o.responde] = hijos[o.responde] || []).push(o); });
+    const tops = opiniones.filter(o => !o.responde);
+    // las preguntas sin responder quedan arriba, para que los colegas las vean primero
+    tops.sort((a, b) => ((b.tipo === 'pregunta' && !hijos[b.id]) - (a.tipo === 'pregunta' && !hijos[a.id])) || new Date(b.creado) - new Date(a.creado));
+    tops.forEach((o, i) => {
+      const resp = (hijos[o.id] || []).sort((a, b) => new Date(a.creado) - new Date(b.creado));
+      const caja = h('div', { class: 'aporte' + (o.tipo === 'pregunta' ? ' es-pregunta' : ''), hidden: i >= 2 && !verTodasOp },
+        accionesPropias('opinion', o), autorBloque(o, o.creado),
+        o.tipo === 'pregunta' ? h('span', { class: 'nivel preg' }, resp.length ? 'Pregunta · respondida' : 'Pregunta · sin responder') : null,
+        h('p', {}, o.texto), botonesVoto('opinion', o, votosDe('opinion', o.id), nombres));
+      if (resp.length) caja.append(h('div', { class: 'respuestas' }, ...resp.map(x => h('div', { class: 'aporte resp' }, accionesPropias('opinion', x), autorBloque(x, x.creado), h('p', {}, x.texto), botonesVoto('opinion', x, votosDe('opinion', x.id), nombres)))));
+      const br = h('button', { type: 'button', class: 'btn sec chico' }, o.tipo === 'pregunta' ? 'Responder' : 'Responder');
+      br.addEventListener('click', () => {
+        if (!exigirSesion()) return;
+        br.hidden = true;
+        const f = h('form', { class: 'form-op form-resp' }, h('textarea', { name: 'texto', rows: 2, maxlength: 1500, required: true, placeholder: 'Tu respuesta…' }), h('button', { class: 'btn' }, 'Publicar respuesta'));
+        f.addEventListener('submit', async ev => {
+          ev.preventDefault();
+          const texto = f.texto.value.trim(); const err = revisarTexto(texto); if (err) return aviso(err);
+          const { error } = await sb.from('opiniones').insert({ nota: notaId, texto, tipo: 'respuesta', responde: o.id });
+          if (error) return aviso(mensajeError(error));
+          cargarAportes();
+        });
+        caja.append(f); f.texto.focus();
+      });
+      caja.append(br);
+      lo.append(caja);
+    });
     const vm = $('#ver-mas-op');
-    if (vm) { vm.hidden = opiniones.length <= 2 || verTodasOp; vm.textContent = `Ver más ${combinado ? 'comentarios' : 'opiniones'} (${opiniones.length - 2})`; }
+    if (vm) { vm.hidden = tops.length <= 2 || verTodasOp; vm.textContent = `Ver más ${combinado ? 'comentarios' : 'opiniones'} (${tops.length - 2})`; }
   }
 
   function ampliar(src) {
@@ -400,9 +427,9 @@
   async function contadoresPortada() {
     const marcas = $$('[data-contador]'); if (!marcas.length) return;
     const slugs = marcas.map(m => m.dataset.contador);
-    const { data } = sb ? await sb.from('pasos').select('nota').in('nota', slugs) : { data: [] };
-    const c = {}; (data || []).forEach(p => { c[p.nota] = (c[p.nota] || 0) + 1; });
-    marcas.forEach(m => { const n = c[m.dataset.contador] || 0; m.textContent = n ? `${n} ${n === 1 ? 'explicación' : 'explicaciones'}` : 'Sin explicaciones aún'; });
+    const [ps, os] = sb ? await Promise.all([sb.from('pasos').select('nota').in('nota', slugs), sb.from('opiniones').select('nota').in('nota', slugs)]) : [{ data: [] }, { data: [] }];
+    const c = {}; [].concat(ps.data || [], os.data || []).forEach(p => { c[p.nota] = (c[p.nota] || 0) + 1; });
+    marcas.forEach(m => { const n = c[m.dataset.contador] || 0; m.textContent = n ? `${n} ${n === 1 ? 'comentario' : 'comentarios'}` : 'Sé el primero en comentar'; });
     $$('#esperando li').forEach(li => { const s = li.querySelector('a').getAttribute('href').replace('nota-', '').replace('.html#aplica', ''); if (c[s]) li.remove(); });
   }
   async function ranking() {
@@ -680,9 +707,10 @@
     ev.preventDefault();
     if (!exigirSesion()) return;
     const texto = fo.texto.value.trim();
-    if (fo.explica && fo.explica.checked) { formPaso(null, texto); fo.reset(); return; }
+    const tipo = fo.tipo ? fo.tipo.value : 'comentario';
+    if (tipo === 'explicacion') { formPaso(null, texto); fo.reset(); return; }
     const err = revisarTexto(texto); if (err) return aviso(err);
-    const { error } = await sb.from('opiniones').insert({ nota: notaId, texto });
+    const { error } = await sb.from('opiniones').insert(tipo === 'pregunta' ? { nota: notaId, texto, tipo } : { nota: notaId, texto });
     if (error) return aviso(mensajeError(error));
     fo.reset(); cargarAportes();
   });

@@ -223,6 +223,32 @@ def _art(norm, marca, desde=0):
     return hit.start() if hit else -1
 
 
+_OFICIALES = re.compile(r'href=["\'](https?://(?:[\w-]+\.)*(?:gob\.ar|gov\.ar|bcra\.gob\.ar|boletinoficial\.gob\.ar|'
+                        r'argentina\.gob\.ar|arca\.gob\.ar|afip\.gob\.ar|infoleg\.gob\.ar|saij\.gob\.ar|gba\.gob\.ar|'
+                        r'arba\.gov\.ar|agip\.gob\.ar)[^"\'#\s]*)', re.I)
+_NO_NORMA = ("/login", "/contacto", "/buscar", "facebook", "twitter", "/home", "/inicio")
+
+
+def fuente_oficial_citada(url):
+    """Busca en una nota de un portal el link a la fuente oficial (ARCA, Boletín Oficial, BCRA, Infoleg...) y la baja.
+    Devuelve {titulo, url, texto, tipo: oficial} o None. Sirve para chequear una nota que vino de un solo portal."""
+    r = _bajar(url)
+    if r is None:
+        return None
+    vistos = []
+    for u in _OFICIALES.findall(r.text):
+        u = u.rstrip(").,;")
+        if u not in vistos and not any(x in u.lower() for x in _NO_NORMA) and len(u.split("/", 3)[-1]) > 3:
+            vistos.append(u)
+    for u in vistos[:3]:
+        if u.lower().endswith(".pdf"):
+            return {"titulo": "Documento oficial citado", "url": u, "texto": "", "tipo": "oficial", "fuente": "Fuente oficial citada", "pdf": True}
+        texto, _ = detalle(u, largo=8000)
+        if len(texto) > 300:
+            return {"titulo": "Fuente oficial citada", "url": u, "texto": texto, "tipo": "oficial", "fuente": "Fuente oficial citada"}
+    return None
+
+
 def texto_oficial(ref):
     """Fragmento de una norma (por ejemplo, de ARTICULO 150 a ARTICULO 158) para que la guía se apoye en el texto legal."""
     r = _bajar(ref["url"])
