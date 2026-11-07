@@ -455,9 +455,9 @@ def herramienta_ld(nombre, descripcion, ruta):
 def pagina(titulo, cuerpo, actual="", descripcion="", ruta="", extra_head="", migas=None, imagen="compartir.png"):
     sub = {
         "sueldos": [("sueldos.html", "Novedades de sueldos"), ("convenios.html", "Escalas por convenio"), ("guias.html#sueldos", "Guías de sueldos"),
-                    ("sueldo-comercio.html", "Calculadora de sueldo de Comercio"), ("datos-al-dia.html#sueldos", "Datos del día de sueldos")],
+                    ("sueldo-comercio.html", "Calculadora de sueldo de Comercio"), ("datos-al-dia.html#sueldos", "Datos del día de sueldos"), ("comparador-escalas.html", "Aumentos vs. inflación")],
         "impuestos": [("impuestos.html", "Novedades de impuestos")] + [(f"impuesto-{s}.html", n) for s, n, _, _ in IMPUESTOS] + [("guias.html#impuestos", "Guías de impuestos"), ("datos-al-dia.html#impuestos", "Datos del día de impuestos")],
-        "guias": [(f"guias.html#{k}", v) for k, v in GRUPOS_GUIAS.items()] + [("guias.html", "Todas las guías")],
+        "guias": [(f"guias.html#{k}", v) for k, v in GRUPOS_GUIAS.items()] + [("guias.html", "Todas las guías"), ("glosario.html", "Glosario")],
         "datos-al-dia": [x for gid, nombre, items in grupos_datos() for x in [("#g", nombre)] + [(f"{sl}.html", ti) for sl, ti, _ in items][:7]],
     }
     menu = "".join(
@@ -618,7 +618,7 @@ def sitemaps(notas, convenios=()):
     base = sitio_url()
     hoy = datetime.date.today().isoformat()
     urls = [f"<url><loc>{base}</loc><lastmod>{hoy}</lastmod></url>"] + [
-        f"<url><loc>{base}{k}.html</loc><lastmod>{hoy}</lastmod></url>" for k in list(SECCIONES) + ["aguinaldo", "herramientas", "convenios", "guias", "calculadoras", "feriados", "sueldo-comercio", "sueldo-casas-particulares", "actualizacion", "dias-habiles", "plazo-fijo", "prestamos", "vacaciones", "liquidacion-final", "horas-extras", "iva", "conversor-dolar", "monotributo-categoria", "intereses-arca", "actualizacion-alquiler", "embargo-sueldo", "cuando-cambia-cada-dato"] + [f"impuesto-{i[0]}" for i in IMPUESTOS] + ["datos-al-dia", "dolar-hoy"] + [t["slug"] for t in TEMAS_RESP] + [b[0] for b in BCRA_RESP] + [x[0] for x in DOLARES]] + [
+        f"<url><loc>{base}{k}.html</loc><lastmod>{hoy}</lastmod></url>" for k in list(SECCIONES) + ["aguinaldo", "herramientas", "convenios", "guias", "calculadoras", "feriados", "sueldo-comercio", "sueldo-casas-particulares", "actualizacion", "dias-habiles", "plazo-fijo", "prestamos", "vacaciones", "liquidacion-final", "horas-extras", "iva", "conversor-dolar", "monotributo-categoria", "intereses-arca", "actualizacion-alquiler", "embargo-sueldo", "cuando-cambia-cada-dato", "glosario", "comparador-escalas", "agenda-vencimientos", "retencion-ganancias"] + [f"impuesto-{i[0]}" for i in IMPUESTOS] + ["datos-al-dia", "dolar-hoy"] + [t["slug"] for t in TEMAS_RESP] + [b[0] for b in BCRA_RESP] + [x[0] for x in DOLARES]] + [
         f"<url><loc>{base}escala-{c['slug']}.html</loc><lastmod>{str(c.get('actualizado') or hoy)[:10]}</lastmod></url>" for c in convenios] + [
         f"<url><loc>{base}nota-{n['slug']}.html</loc><lastmod>{str(n.get('actualizado') or n['fecha'])[:10]}</lastmod></url>" for n in notas]
     mapa = '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' + "".join(urls) + "</urlset>"
@@ -659,7 +659,9 @@ def llms_txt(notas, convenios):
         ("actualizacion", "Actualización por CER, UVA, dólar, inflación y tasas"), ("dias-habiles", "Días hábiles"),
         ("plazo-fijo", "Plazo fijo"), ("prestamos", "Préstamos"), ("iva", "IVA"), ("conversor-dolar", "Conversor de dólar"),
         ("monotributo-categoria", "Categoría del Monotributo"), ("intereses-arca", "Intereses resarcitorios de ARCA"),
-        ("actualizacion-alquiler", "Actualización de alquiler (ICL / IPC)"), ("embargo-sueldo", "Embargo de sueldo (Decreto 484/87)")]]
+        ("actualizacion-alquiler", "Actualización de alquiler (ICL / IPC)"), ("embargo-sueldo", "Embargo de sueldo (Decreto 484/87)"),
+        ("retencion-ganancias", "Retención de Ganancias sobre el sueldo"), ("agenda-vencimientos", "Agenda de vencimientos por CUIT"),
+        ("comparador-escalas", "Aumentos por convenio vs. inflación"), ("glosario", "Glosario contable, impositivo y laboral")]]
     l += ["", "## Últimas notas"] + [f"- [{n['titulo']}]({base}nota-{n['slug']}.html): {(n.get('encorto') or '')[:200]}"
                                      for n in notas[:40]]
     return "\n".join(l) + "\n"
@@ -1081,6 +1083,67 @@ def pagina_calendario_datos(notas):
                   "cuando-cambia-cada-dato.html", ld, [("Datos del día", "datos-al-dia.html"), ("Cuándo cambia cada dato", "cuando-cambia-cada-dato.html")])
 
 
+def pagina_glosario(notas):
+    try:
+        terms = json.load(open(os.path.join(RAIZ, "glosario", "terminos.json"), encoding="utf-8"))
+    except Exception:
+        return None
+    terms.sort(key=lambda x: unicodedata.normalize("NFD", x[1].lower()))
+    letras, items = [], []
+    for slug, nombre, defi, link in terms:
+        l = unicodedata.normalize("NFD", nombre[0].upper())[0]
+        if l not in letras:
+            letras.append(l); items.append(f'<h2 id="letra-{l}">{l}</h2>')
+        items.append(f'<div class="termino" id="{slug}"><h3>{e(nombre)}</h3><p>{e(defi)}</p>'
+                     + (f'<p><a href="{link}">Ver más →</a></p>' if link else "") + "</div>")
+    indice = " ".join(f'<a href="#letra-{l}">{l}</a>' for l in letras)
+    cuerpo = f"""<div class="grilla"><div class="nota-contenido"><h1>Glosario contable, impositivo y laboral</h1>
+<p class="ayuda">Los términos que más se usan al liquidar sueldos e impuestos en Argentina, explicados en una línea y con el enlace a su dato o calculadora.</p>
+<p class="indice-letras">{indice}</p>{''.join(items)}</div>{lateral(notas)}</div>"""
+    ld = {"@context": "https://schema.org", "@type": "DefinedTermSet", "name": "Glosario contable, impositivo y laboral", "url": sitio_url() + "glosario.html",
+          "hasDefinedTerm": [{"@type": "DefinedTerm", "name": n, "description": d, "url": f"{sitio_url()}glosario.html#{sl}"} for sl, n, d, _ in terms]}
+    head = '<script type="application/ld+json">' + json.dumps(ld, ensure_ascii=False).replace("</", "<\\/") + "</script>"
+    return pagina("Glosario contable e impositivo: SAC, SMVM, base imponible, Monotributo y más | Ramacontable", cuerpo, "",
+                  "Glosario de términos contables, impositivos y laborales de Argentina: aguinaldo, base imponible, SIPA, F.931, Monotributo, ICL, UVA y más.",
+                  "glosario.html", head, [("Glosario", "glosario.html")])
+
+
+def pagina_comparador(convenios, notas):
+    fi, _ = _ultimo_serie("ipc")
+    ipc12 = None
+    try:
+        sr = json.load(open(os.path.join(SALIDA, "datos", "serie-ipc.json"), encoding="utf-8"))
+        c = 1.0
+        for v in sr["v"][-12:]:
+            c *= 1 + v / 100
+        ipc12 = (c - 1) * 100 if len(sr["v"]) >= 12 else None
+    except Exception:
+        pass
+    hace = (datetime.date.today() - datetime.timedelta(days=365)).isoformat()
+    filas = []
+    for cv in sorted(convenios, key=lambda x: x["nombre"]):
+        h = [x for x in (cv.get("historial") or []) if str(x.get("fecha", "")) >= hace and isinstance(x.get("aumento_pct"), (int, float))]
+        if h:
+            acum = 1.0
+            for x in sorted(h, key=lambda z: z["fecha"]):
+                acum *= 1 + x["aumento_pct"] / 100
+            acum = (acum - 1) * 100
+            dif = f"{acum - ipc12:+.1f} p.p.".replace(".", ",") if ipc12 is not None else "-"
+            filas.append((acum, f'<tr><td><a href="escala-{cv["slug"]}.html">{e(cv["nombre"])}</a></td><td>{len(h)}</td><td><b>{_num(acum)}%</b></td><td>{dif}</td><td>{e(h[-1].get("periodo", ""))}</td></tr>'))
+        else:
+            filas.append((-999, f'<tr><td><a href="escala-{cv["slug"]}.html">{e(cv["nombre"])}</a></td><td>-</td><td colspan="3">Juntando datos: se completa con cada acuerdo nuevo</td></tr>'))
+    filas.sort(key=lambda x: -x[0])
+    cuerpo = f"""<div class="grilla"><div class="nota-contenido"><p class="miga"><a href="convenios.html">Escalas por convenio</a></p>
+<h1>Comparador de aumentos por convenio vs. inflación</h1>
+<p class="ayuda">Cuánto aumentaron los básicos de cada convenio en los últimos 12 meses, acuerdo por acuerdo, comparado con la inflación del mismo período{f' ({_num(ipc12)}% según el INDEC, hasta {MESES[int(fi[5:7]) - 1]} {fi[:4]})' if ipc12 is not None and fi else ''}.</p>
+<div class="tabla"><table><thead><tr><th>Convenio</th><th>Acuerdos</th><th>Aumento 12 meses</th><th>Contra la inflación</th><th>Último acuerdo</th></tr></thead><tbody>{''.join(f for _, f in filas)}</tbody></table></div>
+<p class="aviso">El aumento acumulado sale de los porcentajes de cada acuerdo publicado; no incluye sumas no remunerativas ni adicionales. El comparador se completa a medida que la fábrica registra cada acuerdo nuevo.</p>
+</div>{lateral(notas)}</div>"""
+    return pagina("Aumentos por convenio vs. inflación: comparador de paritarias | Ramacontable", cuerpo, "sueldos",
+                  "Compará cuánto aumentó cada convenio colectivo en los últimos 12 meses contra la inflación: Comercio, UOCRA, UOM, Sanidad y más.",
+                  "comparador-escalas.html", migas=[("Escalas por convenio", "convenios.html"), ("Comparador", "comparador-escalas.html")])
+
+
 def pagina_datos(notas):
     existe = lambda sl: os.path.exists(os.path.join(SALIDA, sl + ".html")) or any(t["slug"] == sl for t in TEMAS_RESP)
     bloques = ""
@@ -1290,6 +1353,11 @@ def main():
         if h:
             escribir(b[0] + ".html", h)
     escribir("cuando-cambia-cada-dato.html", pagina_calendario_datos(notas))
+    g = pagina_glosario(notas)
+    if g:
+        escribir("glosario.html", g)
+    escribir("comparador-escalas.html", pagina_comparador(convenios, notas))
+    escribir(os.path.join("datos", "vencimientos.json"), json.dumps(proximos_vencimientos(), ensure_ascii=False))
     escribir("datos-al-dia.html", pagina_datos(notas))
     os.makedirs(os.path.join(SALIDA, "datos"), exist_ok=True)
     escribir(os.path.join("datos", "datos-del-dia.json"), json.dumps(datos_para_calculadoras(), ensure_ascii=False))
@@ -1317,6 +1385,8 @@ def main():
              ("monotributo-categoria.html", "Calculadora de categoría del Monotributo 2026", "Cargá lo que facturaste en los últimos 12 meses y mirá en qué categoría del Monotributo estás y cuánto pagás por mes."),
              ("intereses-arca.html", "Calculadora de intereses resarcitorios de ARCA", "Calculá los intereses por pagar tarde un impuesto o aporte a ARCA, con la tasa vigente y los días de atraso."),
              ("actualizacion-alquiler.html", "Calculadora de actualización de alquiler por ICL o IPC", "Calculá cuánto aumenta tu alquiler por ICL o por inflación (IPC) entre dos fechas, con datos oficiales del BCRA."),
+             ("agenda-vencimientos.html", "Agenda de vencimientos por CUIT", "Cargá la terminación de CUIT de tus clientes y mirá solo sus vencimientos de ARCA, con descarga al calendario."),
+             ("retencion-ganancias.html", "Calculadora de retención de Ganancias sobre el sueldo 2026", "Estimá cuánto te retienen de Ganancias por mes en el sueldo, con las deducciones y la escala vigentes."),
              ("embargo-sueldo.html", "Calculadora de embargo de sueldo 2026 (Decreto 484/87)", "Calculá cuánto se puede embargar de un sueldo según el salario mínimo vigente: inembargable hasta 1 SMVM, 10% y 20% del excedente.")]
     for archivo, titulo, desc in CALCS:
         with open(os.path.join(RAIZ, "paginas", archivo), encoding="utf-8") as f:

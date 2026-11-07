@@ -47,7 +47,36 @@
     const interes = r2(monto * tasaMensual / 100 / 30 * dias);
     return { dias, interes, total: r2(monto + interes) };
   }
-  window.RCCalcs2 = { embargo, repartir, categoriaMono, interesesArca, numero };
+
+  // Ganancias, cuarta categoría: método acumulado con sueldo igual todos los meses (estimación, sin SAC).
+  function impuestoEscala(escala, base, mes) {
+    let imp = 0;
+    for (const t of escala) {
+      const desde = t.desde * mes / 12, hasta = t.hasta == null ? Infinity : t.hasta * mes / 12;
+      if (base > desde && base <= hasta) { imp = t.fijo * mes / 12 + (base - desde) * t.pct / 100; break; }
+    }
+    return imp;
+  }
+  function ganancias(d, { bruto, mes, conyuge, hijos, otras = 0, tope = 0 }) {
+    if (!d || !d.escala || !d.escala.length || !d.ganancia_no_imponible) throw new Error('Las tablas vigentes de Ganancias todavía están en verificación.');
+    if (!(bruto > 0)) throw new Error('Cargá el sueldo bruto mensual.');
+    if (!(mes >= 1 && mes <= 12)) throw new Error('Elegí el mes.');
+    const ded = (d.ganancia_no_imponible + (d.deduccion_especial_dependencia || 0) + (conyuge ? d.conyuge || 0 : 0) + (hijos || 0) * (d.hijo || 0)) / 12;
+    const aportes = 0.17 * (tope > 0 ? Math.min(bruto, tope) : bruto);
+    const acum = m => { const base = Math.max(0, (bruto - aportes - otras - ded) * m); return { base, imp: impuestoEscala(d.escala, base, m) }; };
+    const a = acum(mes), b = mes > 1 ? acum(mes - 1) : { imp: 0 };
+    return { retencion: r2(Math.max(0, a.imp - b.imp)), acumulado: r2(a.imp), base: r2(a.base), aportes: r2(aportes), ded: r2(ded) };
+  }
+  function terminaciones(detalle) {
+    const t = String(detalle || '');
+    if (!/cuit/i.test(t)) return null;
+    const m = t.toLowerCase().split('cuit')[1] || '';
+    const ds = [];
+    const conRangos = m.replace(/(\d)\s*(?:a|al|-|–)\s*(\d)/g, (_, x, y) => { for (let i = +x; i <= +y; i++) ds.push(i); return ' '; });
+    (conRangos.match(/\d/g) || []).forEach(d => ds.push(+d));
+    return ds.length ? ds : null;
+  }
+  window.RCCalcs2 = { embargo, repartir, categoriaMono, interesesArca, numero, ganancias, terminaciones };
 
   // ---------- interfaz ----------
   const form = document.getElementById('calc2');
@@ -152,6 +181,54 @@
           <table class="tabla-desc"><tbody><tr><td>Remuneración bruta</td><td>${fmt(numero(form.bruto.value))}</td></tr><tr><td>Salario mínimo vital y móvil</td><td>${fmt(smvm)}</td></tr>
           <tr><td>Excedente sobre el salario mínimo</td><td>${fmt(r.excedente)}</td></tr><tr class="tot"><td>Embargable (${r.pct}% del excedente)</td><td>${fmt(r.maximo)}</td></tr></tbody></table>${rep}
           <p class="nota-chica">Se calcula sobre la remuneración bruta del mes (art. 2, Decreto 484/87). El aguinaldo se calcula aparte, con la misma escala, cuota por cuota (art. 1). El embargo nunca puede superar lo que se debe.</p>`);
+      } catch (e) { falla(e); }
+    });
+  }
+
+  if (tipo === 'ganancias') {
+    let tab = null, tope = 0;
+    DATOS.then(d => {
+      const x = d['ganancias-deducciones-sueldos']; tab = x && x.estructurado;
+      const b = d['tope-aportes-base-maxima']; tope = (b && b.estructurado && b.estructurado.base_maxima) || 0;
+      if (origen) origen.innerHTML = tab && tab.escala ? `Deducciones y escala vigentes${tab.periodo ? ' (' + esc(tab.periodo) + ')' : ''}, verificadas el ${fd(x.revisado)}. <a href="ganancias-deducciones-sueldos.html">Ver el dato</a>.`
+        : 'Las tablas vigentes de Ganancias todavía están en verificación. <a href="ganancias-deducciones-sueldos.html">Ver el dato</a>.';
+    });
+    form.mes.value = String(new Date().getMonth() + 1);
+    form.addEventListener('submit', ev => {
+      ev.preventDefault(); err.textContent = '';
+      try {
+        const r = ganancias(tab, { bruto: numero(form.bruto.value), mes: Number(form.mes.value), conyuge: form.conyuge.checked, hijos: numero(form.hijos.value), otras: numero(form.otras.value), tope });
+        mostrar(`<div class="res-top"><div><span>Base acumulada</span><b>${fmt(r.base)}</b></div><div class="neto"><span>Retención estimada del mes</span><b>${fmt(r.retencion)}</b></div></div>
+          <table class="tabla-desc"><tbody><tr><td>Aportes del mes (17%${tope ? ', con tope' : ''})</td><td>${fmt(r.aportes)}</td></tr><tr><td>Deducciones personales del mes</td><td>${fmt(r.ded)}</td></tr><tr><td>Impuesto acumulado en el año</td><td>${fmt(r.acumulado)}</td></tr></tbody></table>
+          <p class="nota-chica">Estimación con el método acumulado y el mismo sueldo todos los meses del año. No incluye el aguinaldo, horas extras, ni los cambios de tabla entre semestres: la retención exacta la calcula el empleador con las tablas mensuales de ARCA (F.1357).</p>`);
+      } catch (e) { falla(e); }
+    });
+  }
+
+  if (tipo === 'agenda') {
+    const guardar = v => { try { localStorage.setItem('rc_cuits', v); } catch (e) { /* sin almacenamiento */ } };
+    try { form.cuits.value = localStorage.getItem('rc_cuits') || ''; } catch (e) { /* nada */ }
+    let lista = [];
+    const ics = items => {
+      const f = s => s.replace(/-/g, '');
+      const ev = items.map((x, i) => ['BEGIN:VEVENT', `UID:rc-${f(x.fecha)}-${i}@ramacontable.com.ar`, `DTSTAMP:${f(hoyISO)}T000000Z`, `DTSTART;VALUE=DATE:${f(x.fecha)}`,
+        `SUMMARY:${(x.concepto + (x.detalle ? ' · ' + x.detalle : '')).replace(/[,;]/g, ' ')}`, 'END:VEVENT'].join('\r\n'));
+      return ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Ramacontable//Vencimientos//ES', ...ev, 'END:VCALENDAR'].join('\r\n');
+    };
+    json('datos/vencimientos.json').then(v => { lista = v; if (form.cuits.value) form.requestSubmit(); if (origen) origen.textContent = `Agenda armada con ${v.length} vencimientos próximos, confirmados por al menos dos fuentes.`; })
+      .catch(() => { if (origen) origen.textContent = 'No se pudo cargar la agenda de vencimientos.'; });
+    form.addEventListener('submit', ev => {
+      ev.preventDefault(); err.textContent = '';
+      try {
+        const sel = [...new Set((form.cuits.value.match(/\d/g) || []).map(Number))];
+        if (!sel.length) throw new Error('Cargá al menos una terminación de CUIT (el último número).');
+        guardar(form.cuits.value);
+        const mios = lista.filter(x => { const t = terminaciones(x.detalle); return !t || t.some(d => sel.includes(d)); });
+        if (!mios.length) throw new Error('No hay vencimientos próximos para esas terminaciones.');
+        const blob = new Blob([ics(mios)], { type: 'text/calendar' });
+        mostrar(`<h3>Vencimientos para CUIT terminados en ${sel.join(', ')}</h3><table class="tabla-desc"><tbody>${mios.map(x => `<tr><td>${esc(x.concepto)}${x.detalle ? ' <small>(' + esc(x.detalle) + ')</small>' : ''}</td><td><b>${fd(x.fecha)}</b></td></tr>`).join('')}</tbody></table>
+          <p><a class="btn" download="vencimientos-ramacontable.ics" href="${URL.createObjectURL(blob)}">Descargar al calendario (Google, Outlook, celular)</a></p>
+          <p class="nota-chica">Tus terminaciones quedan guardadas solo en este navegador.</p>`);
       } catch (e) { falla(e); }
     });
   }

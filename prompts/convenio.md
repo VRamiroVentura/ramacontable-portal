@@ -9,6 +9,7 @@ Qué tiene que tener la página (igual de completa que los mejores portales de s
 - "nr": tratamiento de las sumas no remunerativas: qué aportes y contribuciones llevan y cuáles no, según las fuentes. Si las fuentes no lo dicen, no lo afirmes: indicá que hay que verificarlo en el acuerdo.
 - "recibo": cómo figura en el recibo (nombre del concepto, en qué meses se paga, proporcionalidad).
 - "preguntas": 3 a 5 preguntas frecuentes reales con respuesta breve, solo con datos de las fuentes.
+- "aumento_pct": porcentaje de aumento de los básicos de este acuerdo respecto de la escala anterior, como número (ej.: 5.7), solo si las fuentes lo dicen; null si no.
 - "periodo_historial": el período de esta escala, para el historial (ej.: "Octubre a diciembre 2026").
 - "fuente": el acuerdo o la norma.
 - "dudas": lista de contradicciones o datos que faltan (vacía si no hay).
@@ -20,4 +21,4 @@ Reglas:
 - Conservá de la página actual lo que siga vigente y reemplazá lo desactualizado.
 - Cada sección es una lista de bloques: {"h": "subtítulo"}, {"p": "párrafo"} o {"tabla": [[...],[...]]}.
 
-Respondé SOLO con JSON: {"escala": ..., "novedades": [...], "calculo": [...], "nr": [...], "recibo": [...], "preguntas": [{"p":"...","r":"..."}], "periodo_historial": "...", "fuente": "...", "dudas": []}
+Respondé SOLO con JSON: {"escala": ..., "novedades": [...], "calculo": [...], "nr": [...], "recibo": [...], "preguntas": [{"p":"...","r":"..."}], "periodo_historial": "...", "aumento_pct": null, "fuente": "...", "dudas": []}

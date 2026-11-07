@@ -192,7 +192,9 @@ class Fabrica:
         hist = list(c.get("historial") or [])
         per = str(nuevo.get("periodo_historial") or (esc or {}).get("periodo") or grupo.get("tema"))[:80]
         if not any(h.get("periodo") == per for h in hist):
-            hist.append({"periodo": per, "fecha": util.ahora().date().isoformat(), "nota": nota_slug})
+            ap = nuevo.get("aumento_pct")
+            hist.append({"periodo": per, "fecha": util.ahora().date().isoformat(), "nota": nota_slug,
+                         "aumento_pct": float(ap) if isinstance(ap, (int, float)) and 0 < ap < 100 else None})
         ok = bool(control.get("ok")) and not nuevo.get("dudas") and not control.get("agrega_ejemplos")
         if not ok and any(CONFIABLE in t for t in textos):
             self.observaciones.append((f"Escala {c['nombre']}", "; ".join(list(control.get("problemas") or []) + list(nuevo.get("dudas") or []))[:400]))

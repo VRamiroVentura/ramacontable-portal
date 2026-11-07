@@ -350,3 +350,5 @@ table.feriados tr.prox-f td{background:var(--bronce-suave);font-weight:600}
 .link-expl{background:none;border:0;color:var(--bronce,#8A6A36);text-decoration:underline;cursor:pointer;padding:4px 0 12px;font-size:.9rem;text-align:left}
 .cab .menu .dd-m .dd-g{display:block;padding:8px 16px 2px;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:#8A6A36;font-weight:700}
 @media (min-width:900px){.cab .menu .dd-datos .dd-m{columns:2;column-gap:0;min-width:560px}.cab .menu .dd-m .dd-g{break-after:avoid}.cab .menu .dd-m a{break-inside:avoid}}
+.termino{padding:8px 0;border-bottom:1px solid #eee}.termino h3{margin:0 0 4px;font-size:1.05rem}.termino p{margin:2px 0}
+.indice-letras a{display:inline-block;padding:2px 7px;margin:2px;border:1px solid #e4ddd0;border-radius:4px;text-decoration:none}

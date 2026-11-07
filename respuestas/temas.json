@@ -126,7 +126,7 @@
     "06-26/08-10"
    ]
   },
-  "estructura": "estructurado: {\"ganancia_no_imponible\": numero, \"deduccion_especial\": numero, \"conyuge\": numero, \"hijo\": numero, \"periodo\": \"texto\"} (valores anuales)",
+  "estructura": "estructurado: {\"periodo\": \"texto (ej.: julio a diciembre 2026)\", \"anual\": true, \"ganancia_no_imponible\": numero, \"deduccion_especial_dependencia\": numero, \"conyuge\": numero, \"hijo\": numero, \"escala\": [{\"desde\": numero, \"hasta\": numero o null, \"fijo\": numero, \"pct\": numero}]} con valores ANUALES y la escala del artículo 94 completa",
   "cuando": "Dos veces por año: tablas de enero a junio y de julio a diciembre"
  },
  {
