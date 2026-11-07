@@ -750,7 +750,8 @@ def cargar_respuestas():
             RESP = {r["slug"]: r for r in json.load(urllib.request.urlopen(req, timeout=30))}
         except Exception as ex:
             print("Aviso: no se pudieron leer los datos al día:", ex)
-    for archivo in glob.glob(os.path.join(RAIZ, "respuestas", "prueba-*.json")):  # solo para pruebas locales
+    # datos iniciales verificados a mano: se muestran hasta que la fábrica cargue el suyo en Supabase
+    for archivo in glob.glob(os.path.join(RAIZ, "respuestas", "inicial", "*.json")) + glob.glob(os.path.join(RAIZ, "respuestas", "prueba-*.json")):
         r = json.load(open(archivo, encoding="utf-8"))
         RESP.setdefault(r["slug"], r)
 

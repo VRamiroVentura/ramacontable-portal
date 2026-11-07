@@ -1,0 +1,38 @@
+{
+ "slug": "ffep-fondo-enfermedades-profesionales",
+ "titulo": "FFEP: Fondo Fiduciario de Enfermedades Profesionales",
+ "revisado": "2026-11-07T15:00:00-03:00",
+ "cambiado": "2026-10-26",
+ "fuentes": [
+  {
+   "nombre": "Microjuris (Disposición SRT 10/2026)",
+   "url": "https://aldiaargentina.microjuris.com/2026/10/26/legislacion-fondo-fiduciario-de-enfermedades-profesionales-se-definio-la-suma-fija-con-vencimiento-en-noviembre-2026/"
+  },
+  {
+   "nombre": "Tributum",
+   "url": "https://tributum.news/disp-10-2026-srt-riesgos-del-trabajo-empleadores-regimen-general-y-casas-particulares-art-suma-fija-suba-octubre-2026-vigencia/"
+  }
+ ],
+ "historial": [
+  {
+   "fecha": "2026-10-26",
+   "valor": "$ 1.971 por trabajador",
+   "norma": "Disposición 10/2026 de la Gerencia de Control Prestacional (SRT)"
+  }
+ ],
+ "datos": {
+  "valor": "$ 1.971 por trabajador",
+  "monto": 1971,
+  "mes_vigente": "2026-11",
+  "norma": "Disposición 10/2026 de la Gerencia de Control Prestacional (SRT)",
+  "vigencia": "devengado octubre 2026, se paga desde noviembre 2026",
+  "respuesta": "La suma fija del FFEP es de $ 1.971 por trabajador para el devengado de octubre de 2026, que se paga desde noviembre de 2026, según la Disposición 10/2026 de la SRT. Rige para el régimen general y casas particulares.",
+  "estructurado": {
+   "importe": 1971,
+   "desde_periodo": "2026-10"
+  },
+  "explicacion": [
+   "Es un importe fijo por trabajador que el empleador paga junto con la cuota de la ART."
+  ]
+ }
+}

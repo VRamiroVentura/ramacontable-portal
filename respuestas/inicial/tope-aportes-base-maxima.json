@@ -1,0 +1,49 @@
+{
+ "slug": "tope-aportes-base-maxima",
+ "titulo": "Bases mínima y máxima de aportes",
+ "revisado": "2026-11-07T15:00:00-03:00",
+ "cambiado": "2026-10-28",
+ "fuentes": [
+  {
+   "nombre": "Contadores en Red",
+   "url": "https://contadoresenred.com/base-imponible-sipa-noviembre-2026-minima-y-maxima/"
+  },
+  {
+   "nombre": "Blog del Contador",
+   "url": "https://blogdelcontador.com.ar/news-46527-sueldos-noviembre-2026-topes-aportes-sipa"
+  }
+ ],
+ "historial": [
+  {
+   "fecha": "2026-10-28",
+   "valor": "Máxima $ 4.861.685,38",
+   "norma": "Resolución 304/2026 de ANSES"
+  }
+ ],
+ "datos": {
+  "valor": "Máxima $ 4.861.685,38",
+  "monto": 4861685.38,
+  "mes_vigente": "2026-11",
+  "norma": "Resolución 304/2026 de ANSES",
+  "vigencia": "período devengado noviembre 2026",
+  "respuesta": "Para el período devengado noviembre de 2026, la base imponible mínima es $ 149.592,45 y la máxima $ 4.861.685,38 (Resolución 304/2026 de ANSES).",
+  "tabla": [
+   [
+    "Base",
+    "Importe"
+   ],
+   [
+    "Mínima",
+    "$ 149.592,45"
+   ],
+   [
+    "Máxima",
+    "$ 4.861.685,38"
+   ]
+  ],
+  "estructurado": {
+   "base_minima": 149592.45,
+   "base_maxima": 4861685.38
+  }
+ }
+}

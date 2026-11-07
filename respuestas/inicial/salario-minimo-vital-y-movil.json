@@ -1,0 +1,119 @@
+{
+ "slug": "salario-minimo-vital-y-movil",
+ "titulo": "Salario mínimo vital y móvil",
+ "revisado": "2026-11-07T15:00:00-03:00",
+ "cambiado": "2026-09-02",
+ "fuentes": [
+  {
+   "nombre": "Blog del Contador",
+   "url": "https://siap.blogdelcontador.com.ar/novedades/salario-minimo-aumentos-mensuales-437000-abril-2027/"
+  },
+  {
+   "nombre": "iProfesional",
+   "url": "https://www.iprofesional.com/impuestos/463576-se-oficializaron-los-nuevos-montos-del-salario-minimo-vital-y-movil-hasta-abril-de-2027"
+  }
+ ],
+ "historial": [
+  {
+   "fecha": "2026-09-02",
+   "valor": "$ 398.800 por mes",
+   "norma": "Resolución 4/2026 del Consejo Nacional del Empleo, la Productividad y el Salario Mínimo, Vital y Móvil"
+  }
+ ],
+ "datos": {
+  "valor": "$ 398.800 por mes",
+  "norma": "Resolución 4/2026 del Consejo Nacional del Empleo, la Productividad y el Salario Mínimo, Vital y Móvil",
+  "respuesta": "El salario mínimo vital y móvil vigente este mes sale de la Resolución 4/2026, que fijó los montos mes a mes desde septiembre de 2026 hasta abril de 2027.",
+  "tabla": [
+   [
+    "Desde",
+    "Mensual",
+    "Por hora"
+   ],
+   [
+    "01/09/2026",
+    "$ 383.800",
+    "$ 1.919"
+   ],
+   [
+    "01/10/2026",
+    "$ 391.200",
+    "$ 1.956"
+   ],
+   [
+    "01/11/2026",
+    "$ 398.800",
+    "$ 1.994"
+   ],
+   [
+    "01/12/2026",
+    "$ 406.400",
+    "$ 2.032"
+   ],
+   [
+    "01/01/2027",
+    "$ 414.200",
+    "$ 2.071"
+   ],
+   [
+    "01/02/2027",
+    "$ 422.000",
+    "$ 2.110"
+   ],
+   [
+    "01/03/2027",
+    "$ 429.600",
+    "$ 2.148"
+   ],
+   [
+    "01/04/2027",
+    "$ 437.000",
+    "$ 2.185"
+   ]
+  ],
+  "estructurado": {
+   "tramos": [
+    {
+     "desde": "2026-09",
+     "mensual": 383800,
+     "hora": 1919
+    },
+    {
+     "desde": "2026-10",
+     "mensual": 391200,
+     "hora": 1956
+    },
+    {
+     "desde": "2026-11",
+     "mensual": 398800,
+     "hora": 1994
+    },
+    {
+     "desde": "2026-12",
+     "mensual": 406400,
+     "hora": 2032
+    },
+    {
+     "desde": "2027-01",
+     "mensual": 414200,
+     "hora": 2071
+    },
+    {
+     "desde": "2027-02",
+     "mensual": 422000,
+     "hora": 2110
+    },
+    {
+     "desde": "2027-03",
+     "mensual": 429600,
+     "hora": 2148
+    },
+    {
+     "desde": "2027-04",
+     "mensual": 437000,
+     "hora": 2185
+    }
+   ]
+  }
+ }
+}

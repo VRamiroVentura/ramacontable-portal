@@ -494,6 +494,9 @@ class Fabrica:
         if not hasattr(self, "_resp_cache"):
             temas = json.load(open(util.RAIZ / "respuestas" / "temas.json", encoding="utf-8"))
             previos = {r["slug"]: r for r in self.db.select("respuestas", {"select": "*"})} if self.db else {}
+            for f in (util.RAIZ / "respuestas" / "inicial").glob("*.json"):  # punto de partida si todavía no hay dato guardado
+                r = json.load(open(f, encoding="utf-8"))
+                previos.setdefault(r["slug"], r)
             try:
                 ipc = json.load(open(util.RAIZ / "respuestas" / "ipc.json", encoding="utf-8")).get("fechas", [])
             except Exception:  # noqa

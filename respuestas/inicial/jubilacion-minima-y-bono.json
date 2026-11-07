@@ -1,0 +1,62 @@
+{
+ "slug": "jubilacion-minima-y-bono",
+ "titulo": "Jubilación mínima y bono",
+ "revisado": "2026-11-07T15:00:00-03:00",
+ "cambiado": "2026-10-28",
+ "fuentes": [
+  {
+   "nombre": "Liga del Consorcista (Res. 304/2026)",
+   "url": "https://ligadelconsorcista.org/anses-haberes-minimos-y-maximos-bases-imponibles-pbu-puam-movilidad-193-para-noviembre-2026-resolucion-304-2026"
+  },
+  {
+   "nombre": "Blog del Contador",
+   "url": "https://siap.blogdelcontador.com.ar/novedades/jubilados-bono-70000-noviembre-2026/"
+  }
+ ],
+ "historial": [
+  {
+   "fecha": "2026-10-28",
+   "valor": "$ 444.158,46 + bono $ 70.000",
+   "norma": "Resolución 304/2026 de ANSES y Decreto 1296/2026 (bono)"
+  }
+ ],
+ "datos": {
+  "valor": "$ 444.158,46 + bono $ 70.000",
+  "monto": 444158.46,
+  "mes_vigente": "2026-11",
+  "norma": "Resolución 304/2026 de ANSES y Decreto 1296/2026 (bono)",
+  "respuesta": "En noviembre de 2026 el haber mínimo es $ 444.158,46 (aumento de 1,93%) y con el bono de $ 70.000 el jubilado con la mínima cobra $ 514.158,46.",
+  "tabla": [
+   [
+    "Concepto",
+    "Importe"
+   ],
+   [
+    "Haber mínimo",
+    "$ 444.158,46"
+   ],
+   [
+    "Bono",
+    "$ 70.000"
+   ],
+   [
+    "Total con bono",
+    "$ 514.158,46"
+   ],
+   [
+    "Haber máximo",
+    "$ 2.988.765,82"
+   ],
+   [
+    "PUAM",
+    "$ 355.326,77"
+   ]
+  ],
+  "estructurado": {
+   "haber_minimo": 444158.46,
+   "bono": 70000,
+   "haber_maximo": 2988765.82,
+   "aumento_pct": 1.93
+  }
+ }
+}
