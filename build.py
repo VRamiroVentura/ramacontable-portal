@@ -437,7 +437,7 @@ def datos_sitio(migas=None):
     """Datos estructurados que lee Google: el sitio, la organización y la ruta de la página (migas de pan)."""
     base = sitio_url()
     grafo = [{"@type": "Organization", "@id": base + "#org", "name": "Ramacontable", "url": base,
-              "logo": {"@type": "ImageObject", "url": base + "compartir.png"}, "email": MAIL, "sameAs": list(REDES.values())},
+              "logo": {"@type": "ImageObject", "url": base + "icono-512.png"}, "email": MAIL, "sameAs": list(REDES.values())},
              {"@type": "WebSite", "@id": base + "#web", "name": "Ramacontable", "url": base, "inLanguage": "es-AR",
               "publisher": {"@id": base + "#org"}}]
     if migas:
@@ -483,7 +483,7 @@ def pagina(titulo, cuerpo, actual="", descripcion="", ruta="", extra_head="", mi
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Source+Sans+3:wght@400;600;700&display=optional"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Source+Sans+3:wght@400;600;700&display=optional" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Source+Sans+3:wght@400;600;700&display=optional"></noscript>
 <link rel="stylesheet" href="estilos.css?v={VERSION}">
-<link rel="icon" href="logo.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="48x48"><link rel="icon" href="/icono-96.png" type="image/png" sizes="96x96"><link rel="icon" href="/icono-192.png" type="image/png" sizes="192x192"><link rel="icon" href="/logo.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/icono-180.png"><link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#13271F">
 </head><body>
 <header class="cab"><div class="wrap fila">
 <a class="logo" href="index.html">{LOGO_SVG}<span>ramacontable</span></a>
@@ -893,7 +893,7 @@ def pagina_respuesta(t, r, notas, aportes=None, extra=""):
            "description": d.get("respuesta") or t["pregunta"], "mainEntityOfPage": url,
            "datePublished": str((r or {}).get("cambiado") or hoy.isoformat())[:10], "dateModified": hoy.isoformat() if hoy_blq else str((r or {}).get("cambiado") or hoy.isoformat())[:10],
            "author": {"@type": "Organization", "name": "Redacción Ramacontable", "url": sitio_url()},
-           "publisher": {"@type": "Organization", "name": "Ramacontable", "logo": {"@type": "ImageObject", "url": sitio_url() + "logo.svg"}}}]
+           "publisher": {"@type": "Organization", "name": "Ramacontable", "logo": {"@type": "ImageObject", "url": sitio_url() + "icono-512.png"}}}]
     qs = ([{"p": t["pregunta"], "r": d["respuesta"]}] if d.get("respuesta") else []) + list(d.get("preguntas") or [])
     if qs:
         ld.append({"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [
@@ -1312,7 +1312,7 @@ def pagina_nota(n, notas, aportes=None):
            "dateModified": str(n.get("actualizado") or n["fecha"]), "inLanguage": "es-AR",
            "mainEntityOfPage": url, "articleSection": SECCIONES[n["seccion"]],
            "author": {"@type": "Organization", "name": "Redacción Ramacontable", "url": sitio_url()},
-           "publisher": {"@type": "Organization", "name": "Ramacontable", "logo": {"@type": "ImageObject", "url": sitio_url() + "logo.svg"}}}]
+           "publisher": {"@type": "Organization", "name": "Ramacontable", "logo": {"@type": "ImageObject", "url": sitio_url() + "icono-512.png"}}}]
     if n.get("preguntas"):
         ld.append({"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [
             {"@type": "Question", "name": q["p"], "acceptedAnswer": {"@type": "Answer", "text": q["r"]}} for q in n["preguntas"]]})
