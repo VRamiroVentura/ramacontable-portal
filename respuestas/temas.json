@@ -62,6 +62,24 @@
   "cuando": "Todos los meses, junto con la movilidad jubilatoria"
  },
  {
+  "slug": "ffep-fondo-enfermedades-profesionales",
+  "titulo": "FFEP: Fondo Fiduciario de Enfermedades Profesionales",
+  "seccion": "sueldos",
+  "pregunta": "¿Cuánto es el FFEP este mes?",
+  "pide": "Importe fijo mensual por trabajador del Fondo Fiduciario de Enfermedades Profesionales (FFEP) que se paga junto con la ART, desde qué período rige, y la disposición de la SRT que lo fija.",
+  "busqueda": "FFEP fondo fiduciario enfermedades profesionales",
+  "claves": [
+   "FFEP",
+   "Fondo Fiduciario de Enfermedades Profesionales"
+  ],
+  "oficial": [],
+  "ciclo": {
+   "tipo": "libre"
+  },
+  "estructura": "monto = importe mensual por trabajador (número). estructurado: {\"importe\": numero, \"desde_periodo\": \"aaaa-mm\"}",
+  "cuando": "Cuando la SRT dicta una disposición nueva (sin fecha fija); se paga por trabajador con la ART"
+ },
+ {
   "slug": "asignaciones-familiares-auh",
   "titulo": "Asignaciones familiares y AUH",
   "seccion": "sueldos",

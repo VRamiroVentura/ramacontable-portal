@@ -455,7 +455,7 @@ def herramienta_ld(nombre, descripcion, ruta):
 def pagina(titulo, cuerpo, actual="", descripcion="", ruta="", extra_head="", migas=None, imagen="compartir.png"):
     sub = {
         "sueldos": [("sueldos.html", "Novedades de sueldos"), ("convenios.html", "Escalas por convenio"), ("guias.html#sueldos", "Guías de sueldos"),
-                    ("sueldo-comercio.html", "Calculadora de sueldo de Comercio"), ("datos-al-dia.html#sueldos", "Datos del día de sueldos"), ("comparador-escalas.html", "Aumentos vs. inflación")],
+                    ("sueldo-comercio.html", "Calculadora de sueldo de Comercio"), ("datos-al-dia.html#sueldos", "Datos del día de sueldos"), ("vencimiento-931.html", "Vencimientos del F.931"), ("comparador-escalas.html", "Aumentos vs. inflación")],
         "impuestos": [("impuestos.html", "Novedades de impuestos")] + [(f"impuesto-{s}.html", n) for s, n, _, _ in IMPUESTOS] + [("guias.html#impuestos", "Guías de impuestos"), ("datos-al-dia.html#impuestos", "Datos del día de impuestos")],
         "guias": [(f"guias.html#{k}", v) for k, v in GRUPOS_GUIAS.items()] + [("guias.html", "Todas las guías"), ("glosario.html", "Glosario")],
         "datos-al-dia": [x for gid, nombre, items in grupos_datos() for x in [("#g", nombre)] + [(f"{sl}.html", ti) for sl, ti, _ in items][:7]],
@@ -618,7 +618,7 @@ def sitemaps(notas, convenios=()):
     base = sitio_url()
     hoy = datetime.date.today().isoformat()
     urls = [f"<url><loc>{base}</loc><lastmod>{hoy}</lastmod></url>"] + [
-        f"<url><loc>{base}{k}.html</loc><lastmod>{hoy}</lastmod></url>" for k in list(SECCIONES) + ["aguinaldo", "herramientas", "convenios", "guias", "calculadoras", "feriados", "sueldo-comercio", "sueldo-casas-particulares", "actualizacion", "dias-habiles", "plazo-fijo", "prestamos", "vacaciones", "liquidacion-final", "horas-extras", "iva", "conversor-dolar", "monotributo-categoria", "intereses-arca", "actualizacion-alquiler", "embargo-sueldo", "cuando-cambia-cada-dato", "glosario", "comparador-escalas", "agenda-vencimientos", "retencion-ganancias"] + [f"impuesto-{i[0]}" for i in IMPUESTOS] + ["datos-al-dia", "dolar-hoy"] + [t["slug"] for t in TEMAS_RESP] + [b[0] for b in BCRA_RESP] + [x[0] for x in DOLARES]] + [
+        f"<url><loc>{base}{k}.html</loc><lastmod>{hoy}</lastmod></url>" for k in list(SECCIONES) + ["aguinaldo", "herramientas", "convenios", "guias", "calculadoras", "feriados", "sueldo-comercio", "sueldo-casas-particulares", "actualizacion", "dias-habiles", "plazo-fijo", "prestamos", "vacaciones", "liquidacion-final", "horas-extras", "iva", "conversor-dolar", "monotributo-categoria", "intereses-arca", "actualizacion-alquiler", "embargo-sueldo", "cuando-cambia-cada-dato", "glosario", "comparador-escalas", "agenda-vencimientos", "retencion-ganancias"] + [o[0] for o in OBLIGACIONES] + [f"impuesto-{i[0]}" for i in IMPUESTOS] + ["datos-al-dia", "dolar-hoy"] + [t["slug"] for t in TEMAS_RESP] + [b[0] for b in BCRA_RESP] + [x[0] for x in DOLARES]] + [
         f"<url><loc>{base}escala-{c['slug']}.html</loc><lastmod>{str(c.get('actualizado') or hoy)[:10]}</lastmod></url>" for c in convenios] + [
         f"<url><loc>{base}nota-{n['slug']}.html</loc><lastmod>{str(n.get('actualizado') or n['fecha'])[:10]}</lastmod></url>" for n in notas]
     mapa = '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' + "".join(urls) + "</urlset>"
@@ -651,6 +651,7 @@ def llms_txt(notas, convenios):
     l += [f"- [{t['titulo']}]({base}{t['slug']}.html): {(((RESP.get(t['slug']) or {}).get('datos') or {}).get('respuesta') or t['pregunta'])[:200]}" for t in TEMAS_RESP]
     l += [f"- [{b[2]}]({base}{b[0]}.html): serie oficial del BCRA" for b in BCRA_RESP]
     l += [f"- [Dólar hoy]({base}dolar-hoy.html): oficial, mayorista, MEP, CCL, tarjeta, cripto y blue (informativo), cada hora"]
+    l += [f"- [Vencimientos de {o[1]} por terminación de CUIT]({base}{o[0]}.html)" for o in OBLIGACIONES]
     l += ["", "## Escalas salariales por convenio"]
     l += [f"- [{c.get('nombre', c['slug'])}]({base}escala-{c['slug']}.html)" for c in convenios]
     l += ["", "## Calculadoras"] + [f"- [{t}]({base}{a}.html)" for a, t in [
@@ -1022,6 +1023,7 @@ def grupos_datos():
          ("impuestos", "Impuestos", [(t["slug"], t["titulo"], val(t["slug"])) for t in TEMAS_RESP if t.get("seccion") == "impuestos"]),
          ("indices", "Índices y tasas", [(b[0], b[2], "") for b in BCRA_RESP]),
          ("dolar", "Dólar y cripto", [("dolar-hoy", "Dólar hoy: todas las cotizaciones", "")] + [(x[0], x[2], "") for x in DOLARES]),
+         ("vencimientos", "Vencimientos del mes por CUIT", [(o[0], o[1], "") for o in OBLIGACIONES]),
          ("calendario", "Calendario", [("cuando-cambia-cada-dato", "Cuándo cambia cada dato", "")])]
     return g
 
@@ -1142,6 +1144,80 @@ def pagina_comparador(convenios, notas):
     return pagina("Aumentos por convenio vs. inflación: comparador de paritarias | Ramacontable", cuerpo, "sueldos",
                   "Compará cuánto aumentó cada convenio colectivo en los últimos 12 meses contra la inflación: Comercio, UOCRA, UOM, Sanidad y más.",
                   "comparador-escalas.html", migas=[("Escalas por convenio", "convenios.html"), ("Comparador", "comparador-escalas.html")])
+
+
+OBLIGACIONES = [  # páginas fijas de vencimientos por terminación de CUIT (salen de la agenda confirmada)
+    ("vencimiento-931", "F.931: aportes y contribuciones de empleadores", ["931", "empleador"], "sueldos"),
+    ("vencimiento-casas-particulares", "Casas particulares (F.102)", ["casas particulares", "f.102", "102"], "sueldos"),
+    ("vencimiento-autonomos", "Autónomos", ["autónomo", "autonomo"], "sueldos"),
+    ("vencimiento-monotributo", "Monotributo", ["monotribut"], "impuestos"),
+    ("vencimiento-iva", "IVA", ["iva"], "impuestos"),
+    ("vencimiento-iibb-arba", "Ingresos Brutos ARBA", ["arba", "ingresos brutos"], "impuestos"),
+]
+
+
+def _terminaciones(detalle):
+    t = str(detalle or "").lower()
+    if "cuit" not in t:
+        return None
+    m = t.split("cuit", 1)[1]
+    ds = []
+    def rango(x):
+        ds.extend(range(int(x.group(1)), int(x.group(2)) + 1)); return " "
+    m = re.sub(r"(\d)\s*(?:a|al|-|–)\s*(\d)", rango, m)
+    ds += [int(c) for c in re.findall(r"\d", m)]
+    return sorted(set(ds)) or None
+
+
+def pagina_obligacion(slug, nombre, claves, seccion, notas):
+    hoy = datetime.date.today()
+    items = [x for x in proximos_vencimientos() if any(c in (x.get("concepto", "")).lower() for c in claves)]
+    if slug == "vencimiento-iva":
+        items = [x for x in items if "iva" in re.findall(r"[a-záéíóú]+", x.get("concepto", "").lower())]
+    meses = {}
+    for x in items:
+        meses.setdefault(x["fecha"][:7], []).append(x)
+    bloques = ""
+    for mes in sorted(meses)[:2]:
+        filas = []
+        for x in sorted(meses[mes], key=lambda z: z["fecha"]):
+            t = _terminaciones(x.get("detalle"))
+            dias = (datetime.date.fromisoformat(x["fecha"][:10]) - hoy).days
+            falta = "hoy" if dias == 0 else (f"faltan {dias} días" if dias > 0 else "")
+            filas.append(f'<tr><td>{"Terminación " + ", ".join(map(str, t)) if t else "Todos"}</td><td>{e(x.get("concepto", ""))}{(" · " + e(x["detalle"])) if x.get("detalle") and not t else ""}</td>'
+                         f'<td><b>{fecha_corta(x["fecha"])}</b></td><td>{falta}</td></tr>')
+        bloques += (f'<h2>{MESES[int(mes[5:7]) - 1].capitalize()} {mes[:4]}</h2><div class="tabla"><table><thead><tr><th>CUIT</th><th>Obligación</th><th>Vence</th><th></th></tr></thead>'
+                    f'<tbody>{"".join(filas)}</tbody></table></div>')
+    if not bloques:
+        bloques = '<div class="resp-caja"><p>Las fechas de este mes están en verificación: se publican cuando las confirman al menos dos fuentes.</p></div>'
+    mes_txt = f"{MESES[hoy.month - 1]} {hoy.year}"
+    ant = MESES[hoy.month - 2] if hoy.month > 1 else "diciembre"
+    titulo = f"Vencimientos de {nombre}: {mes_txt}, por terminación de CUIT"
+    faq = ""
+    if slug == "vencimiento-931":
+        # como se busca: "fecha de pago de aportes noviembre", "vencimiento 931 octubre"
+        titulo = f"Fecha de pago de aportes de {mes_txt}: vencimiento del F.931 por terminación de CUIT"
+        este = sorted(meses.get(hoy.strftime("%Y-%m"), []), key=lambda z: z["fecha"])
+        resp = ("; ".join(f"{('CUIT ' + ', '.join(map(str, _terminaciones(x.get('detalle')) or []))) if _terminaciones(x.get('detalle')) else 'todos'}: {fecha_corta(x['fecha'])}" for x in este)
+                or "las fechas están en verificación")
+        faq = preguntas_html({"preguntas": [
+            {"p": f"¿Cuándo se pagan los aportes en {mes_txt}?", "r": f"En {mes_txt} se pagan los aportes y contribuciones del período {ant} (F.931). Fechas por terminación de CUIT del empleador: {resp}."},
+            {"p": "¿Qué período se paga cada mes?", "r": "Cada mes se presenta y paga el F.931 de las remuneraciones del mes anterior: en noviembre se pagan los aportes de octubre, en diciembre los de noviembre, y así."}]})
+    cuerpo = f"""<div class="grilla"><div class="nota-contenido"><p class="miga"><a href="datos-al-dia.html">Datos del día</a></p>
+<h1>{e(titulo)}</h1>
+<p class="firma">Redacción Ramacontable · Actualizado {fecha_larga(hoy.isoformat())}</p>
+<p class="ayuda">Fechas confirmadas por al menos dos fuentes (o por Ignacio Online), ordenadas por terminación de CUIT. Si un vencimiento cae en día inhábil, la fecha ya figura corrida.</p>
+{f'<p>En {mes_txt} vence el pago de los aportes y contribuciones del período <b>{ant}</b>.</p>' if slug == "vencimiento-931" else ""}
+{bloques}{faq}
+<p><a class="btn sec" href="agenda-vencimientos.html">Armar mi agenda por CUIT y bajarla al calendario →</a></p>
+<p class="aviso">Información de carácter general. Verificá siempre en el calendario oficial de ARCA o del organismo.</p>
+</div>{lateral(notas)}</div>"""
+    tit_pag = (f"Fecha de pago de aportes {mes_txt}: vencimiento F.931 por CUIT" if slug == "vencimiento-931"
+               else f"Vencimiento {nombre} {mes_txt} por terminación de CUIT")
+    desc = (f"Fecha de pago de aportes y contribuciones de {mes_txt} (período {ant}): vencimientos del F.931 según la terminación de CUIT del empleador."
+            if slug == "vencimiento-931" else f"Fechas de vencimiento de {nombre} de {mes_txt} según la terminación de CUIT, confirmadas con varias fuentes.")
+    return pagina(f"{tit_pag} | Ramacontable", cuerpo, "datos-al-dia", desc,
+                  slug + ".html", migas=[("Datos del día", "datos-al-dia.html"), (f"Vencimientos {nombre}", slug + ".html")])
 
 
 def pagina_datos(notas):
@@ -1352,6 +1428,8 @@ def main():
         h = pagina_bcra(*b, notas)
         if h:
             escribir(b[0] + ".html", h)
+    for o in OBLIGACIONES:
+        escribir(o[0] + ".html", pagina_obligacion(*o, notas))
     escribir("cuando-cambia-cada-dato.html", pagina_calendario_datos(notas))
     g = pagina_glosario(notas)
     if g:
