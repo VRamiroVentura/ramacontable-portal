@@ -1,0 +1,151 @@
+{
+ "slug": "ingresos-brutos-arba-regimen-simplificado",
+ "titulo": "Ingresos Brutos ARBA: régimen simplificado",
+ "revisado": "2026-11-08T15:00:00-03:00",
+ "cambiado": "2026-08-01",
+ "fuentes": [
+  {
+   "nombre": "Calcular Sueldo",
+   "url": "https://calcularsueldo.com.ar/impuestos/15541/ingresos-brutos-simplificado-cuales-son-las-nuevas-escalas-de-arba-desde-agosto-2026.html"
+  },
+  {
+   "nombre": "iProfesional",
+   "url": "https://www.iprofesional.com/impuestos/461356-monotributo-unificado-buenos-aires-cuanto-pagas-con-los-nuevos-importes-de-arba"
+  }
+ ],
+ "historial": [
+  {
+   "fecha": "2026-08-01",
+   "valor": "Categoría A: $ 11.505 (servicios)",
+   "norma": null
+  }
+ ],
+ "datos": {
+  "valor": "Categoría A: $ 11.505 (servicios)",
+  "monto": 11505,
+  "vigencia": "agosto 2026",
+  "proximo": "Próxima actualización: febrero 2027, con el Monotributo",
+  "respuesta": "Desde agosto de 2026 el componente de Ingresos Brutos de ARBA en el Monotributo unificado va de $ 11.505 (categoría A, servicios) a $ 420.750 (categoría K, servicios) por mes, y se paga junto con la cuota del Monotributo.",
+  "tabla": [
+   [
+    "Categoría",
+    "Locaciones y servicios",
+    "Venta de cosas muebles"
+   ],
+   [
+    "A",
+    "$ 11.505",
+    "$ 10.010"
+   ],
+   [
+    "B",
+    "$ 18.720",
+    "$ 16.275"
+   ],
+   [
+    "C",
+    "$ 29.260",
+    "$ 25.450"
+   ],
+   [
+    "D",
+    "$ 40.685",
+    "$ 35.380"
+   ],
+   [
+    "E",
+    "$ 53.850",
+    "$ 46.820"
+   ],
+   [
+    "F",
+    "$ 76.250",
+    "$ 66.300"
+   ],
+   [
+    "G",
+    "$ 103.490",
+    "$ 90.000"
+   ],
+   [
+    "H",
+    "$ 179.010",
+    "$ 155.660"
+   ],
+   [
+    "I",
+    "$ 229.420",
+    "$ 199.505"
+   ],
+   [
+    "J",
+    "$ 302.140",
+    "$ 262.730"
+   ],
+   [
+    "K",
+    "$ 420.750",
+    "$ 365.870"
+   ]
+  ],
+  "estructurado": {
+   "categorias": [
+    {
+     "categoria": "A",
+     "importe_servicios": 11505,
+     "importe_bienes": 10010
+    },
+    {
+     "categoria": "B",
+     "importe_servicios": 18720,
+     "importe_bienes": 16275
+    },
+    {
+     "categoria": "C",
+     "importe_servicios": 29260,
+     "importe_bienes": 25450
+    },
+    {
+     "categoria": "D",
+     "importe_servicios": 40685,
+     "importe_bienes": 35380
+    },
+    {
+     "categoria": "E",
+     "importe_servicios": 53850,
+     "importe_bienes": 46820
+    },
+    {
+     "categoria": "F",
+     "importe_servicios": 76250,
+     "importe_bienes": 66300
+    },
+    {
+     "categoria": "G",
+     "importe_servicios": 103490,
+     "importe_bienes": 90000
+    },
+    {
+     "categoria": "H",
+     "importe_servicios": 179010,
+     "importe_bienes": 155660
+    },
+    {
+     "categoria": "I",
+     "importe_servicios": 229420,
+     "importe_bienes": 199505
+    },
+    {
+     "categoria": "J",
+     "importe_servicios": 302140,
+     "importe_bienes": 262730
+    },
+    {
+     "categoria": "K",
+     "importe_servicios": 420750,
+     "importe_bienes": 365870
+    }
+   ]
+  }
+ }
+}

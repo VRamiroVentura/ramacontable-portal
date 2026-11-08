@@ -1,0 +1,53 @@
+{
+ "slug": "bienes-personales-minimo-no-imponible",
+ "titulo": "Bienes Personales: mínimo no imponible y alícuotas",
+ "revisado": "2026-11-08T15:00:00-03:00",
+ "cambiado": "2026-02-06",
+ "fuentes": [
+  {
+   "nombre": "iProfesional",
+   "url": "https://www.iprofesional.com/impuestos/447661-bienes-personales-arca-nuevos-montos-minimos-y-escalas"
+  },
+  {
+   "nombre": "El Cronista",
+   "url": "https://www.cronista.com/economia-politica/bienes-personales-2026-bajan-las-alicuotas-pero-arca-amplia-quienes-deben-declarar/"
+  }
+ ],
+ "historial": [
+  {
+   "fecha": "2026-02-06",
+   "valor": "Mínimo no imponible $ 384.728.044,57",
+   "norma": null
+  }
+ ],
+ "datos": {
+  "valor": "Mínimo no imponible $ 384.728.044,57",
+  "monto": 384728044.57,
+  "vigencia": "período fiscal 2025 (declaración jurada 2026)",
+  "proximo": "Montos del período fiscal 2026: se conocen alrededor de enero 2027",
+  "respuesta": "Para el período fiscal 2025 (declaración jurada que se presenta en 2026), el mínimo no imponible de Bienes Personales es $ 384.728.044,57 y la casa habitación está exenta hasta $ 1.346.548.155,99. Las alícuotas de la escala general van del 0,50% al 1%.",
+  "tabla": [
+   [
+    "Concepto",
+    "Importe"
+   ],
+   [
+    "Mínimo no imponible",
+    "$ 384.728.044,57"
+   ],
+   [
+    "Exención casa habitación",
+    "$ 1.346.548.155,99"
+   ],
+   [
+    "Umbral para declaración jurada informativa",
+    "$ 196.963.134,52"
+   ]
+  ],
+  "estructurado": {
+   "minimo_no_imponible": 384728044.57,
+   "casa_habitacion": 1346548155.99,
+   "periodo": "2025"
+  }
+ }
+}

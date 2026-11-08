@@ -1,0 +1,128 @@
+{
+ "slug": "ganancias-deducciones-sueldos",
+ "titulo": "Ganancias: deducciones y escala para sueldos",
+ "revisado": "2026-11-08T15:00:00-03:00",
+ "cambiado": "2026-07-20",
+ "fuentes": [
+  {
+   "nombre": "Fuente oficial (afip.gob.ar)",
+   "url": "https://www.afip.gob.ar/gananciasYBienes/ganancias/personas-humanas-sucesiones-indivisas/deducciones/documentos/Deducciones-personales-art-30-jul-dic-2026.pdf"
+  },
+  {
+   "nombre": "Ignacio Online",
+   "url": "https://www.ignacioonline.com.ar/ganancias-2026-tablas-arca-del-articulo-94-y-deducciones-personales-mensual-semestral-y-anual/"
+  }
+ ],
+ "historial": [
+  {
+   "fecha": "2026-07-20",
+   "valor": "Ganancia no imponible $ 5.585.736,93 (acumulado a diciembre)",
+   "norma": "RG 4003, art. 7° inc. b (tablas de ARCA julio a diciembre 2026)"
+  }
+ ],
+ "datos": {
+  "valor": "Ganancia no imponible $ 5.585.736,93 (acumulado a diciembre)",
+  "monto": 5585736.93,
+  "vigencia": "julio a diciembre 2026",
+  "proximo": "Nuevas tablas para enero a junio 2027",
+  "norma": "RG 4003, art. 7° inc. b (tablas de ARCA julio a diciembre 2026)",
+  "respuesta": "Para julio a diciembre de 2026, los importes acumulados a diciembre son: ganancia no imponible $ 5.585.736,93, deducción especial para empleados en relación de dependencia $ 26.811.537,29, cónyuge $ 5.260.643,86 e hijo $ 2.652.961,90 (tablas de ARCA, RG 4003).",
+  "tabla": [
+   [
+    "Deducción (acumulado a diciembre 2026)",
+    "Importe"
+   ],
+   [
+    "Ganancia no imponible",
+    "$ 5.585.736,93"
+   ],
+   [
+    "Deducción especial (relación de dependencia)",
+    "$ 26.811.537,29"
+   ],
+   [
+    "Deducción especial (autónomos)",
+    "$ 19.550.079,27"
+   ],
+   [
+    "Cónyuge",
+    "$ 5.260.643,86"
+   ],
+   [
+    "Hijo",
+    "$ 2.652.961,90"
+   ],
+   [
+    "Hijo incapacitado",
+    "$ 5.305.923,78"
+   ]
+  ],
+  "explicacion": [
+   "Los importes son acumulados a diciembre: en cada mes se toma la parte proporcional. Escala del artículo 94 (acumulada a diciembre): del 5% hasta $ 2.168.491,89 al 35% desde $ 65.867.941,10."
+  ],
+  "estructurado": {
+   "periodo": "julio a diciembre 2026",
+   "anual": true,
+   "ganancia_no_imponible": 5585736.93,
+   "deduccion_especial_dependencia": 26811537.29,
+   "conyuge": 5260643.86,
+   "hijo": 2652961.9,
+   "escala": [
+    {
+     "desde": 0,
+     "hasta": 2168491.89,
+     "fijo": 0,
+     "pct": 5
+    },
+    {
+     "desde": 2168491.89,
+     "hasta": 4336983.77,
+     "fijo": 108424.59,
+     "pct": 9
+    },
+    {
+     "desde": 4336983.77,
+     "hasta": 6505475.65,
+     "fijo": 303588.86,
+     "pct": 12
+    },
+    {
+     "desde": 6505475.65,
+     "hasta": 9758213.49,
+     "fijo": 563807.89,
+     "pct": 15
+    },
+    {
+     "desde": 9758213.49,
+     "hasta": 19516426.99,
+     "fijo": 1051718.57,
+     "pct": 19
+    },
+    {
+     "desde": 19516426.99,
+     "hasta": 29274640.48,
+     "fijo": 2905779.13,
+     "pct": 23
+    },
+    {
+     "desde": 29274640.48,
+     "hasta": 43911960.73,
+     "fijo": 5150168.23,
+     "pct": 27
+    },
+    {
+     "desde": 43911960.73,
+     "hasta": 65867941.1,
+     "fijo": 9102244.7,
+     "pct": 31
+    },
+    {
+     "desde": 65867941.1,
+     "hasta": null,
+     "fijo": 15908598.62,
+     "pct": 35
+    }
+   ]
+  }
+ }
+}

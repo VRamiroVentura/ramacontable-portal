@@ -50,7 +50,7 @@ class Fabrica:
         self.guias = []
         self.guias_info = ""
         self.vencimientos_info, self.vencimientos_cambio = [], False
-        self.observaciones, self.alertas = [], []
+        self.observaciones, self.alertas, self.datos_obs = [], [], []
         self.convenios = self.cargar_convenios()
 
     # ---------- memoria ----------
@@ -123,6 +123,7 @@ class Fabrica:
         lista = list(self.cfg.get("fuentes", []))
         ya = {f.get("nombre") for f in lista}
         lista += [f for f in FUENTES_EXTRA if f["nombre"] not in ya]  # se suman solas, sin tocar config.json
+        lista = [f for f in lista if "boletinoficial.gob.ar" not in f.get("url", "") or self.cfg.get("leer_boletin")]  # no responde a GitHub; Tributum trae el sumario
         for f in lista:
             try:
                 nuevos = fuentes.leer(f)
@@ -236,7 +237,8 @@ class Fabrica:
                     url, tipo = notas[0]["url"], "portal"
                     contenido = "\n\n".join(f"--- FUENTE: {n['fuente']} (portal)\nTítulo: {n['titulo']}\n{n['texto']}" for n in notas[:3])
             if not url:
-                util.avisar(f"Escala de {c['nombre']}", "no encontré documento oficial ni notas de escala en los portales")
+                if util.ahora().hour == 9:  # una vez por día alcanza (antes salía en cada vuelta)
+                    util.avisar(f"Escala de {c['nombre']}", "no encontré documento oficial ni notas de escala en los portales")
                 continue
             ya = {(c.get("escala") or {}).get("doc"), ((c.get("propuesta") or {}).get("escala") or {}).get("doc")}
             if url in ya:
@@ -562,7 +564,7 @@ class Fabrica:
         confirman = [c for c in (r.get("confirman") or []) if c in nombres]
         fuerte = any(c.startswith("Fuente oficial") or c == CONFIABLE for c in confirman) or len(set(confirman)) >= 2
         if not r.get("ok") or r.get("dudas") or not fuerte or not r.get("valor"):
-            self.observaciones.append((t["titulo"], f"Dato del día sin confirmar ({motivo}); queda el anterior: "
+            self.datos_obs.append((t["titulo"], f"Sin confirmar ({motivo}); queda el anterior: "
                                        + "; ".join(map(str, r.get("dudas") or ["no lo confirmaron 2 fuentes"]))[:300]))
             return False
         ahora = util.ahora().isoformat()
@@ -647,7 +649,7 @@ class Fabrica:
                 usadas.append({"nombre": it["fuente"], "url": it["url"], "titulo": it["titulo"]})
             hechos += 1
             if not textos:
-                self.observaciones.append((t["titulo"], f"Dato del día ({motivo}): no encontré fuentes para rechequear"))
+                self.datos_obs.append((t["titulo"], f"No encontré fuentes para rechequear ({motivo})"))
                 continue
             try:
                 self._chequear(t, prev, textos, usadas, motivo)
@@ -803,6 +805,7 @@ class Fabrica:
             if t:
                 md.append(f"**Escala {c['nombre']} {c['periodo']}**\n\n| " + " | ".join(t[0]) + " |\n|" + "---|" * len(t[0]) + "\n" + "\n".join("| " + " | ".join(f) + " |" for f in t[1:]) + "\n")
         md.append(f"## 🚨 Ignacio editó o borró ({len(self.alertas)})\n" + "".join(f"- {a['que']}: [{a['titulo']}]({a['url']}) → nuestra nota `{a['nota']}`\n" for a in self.alertas))
+        md.append(f"## 📊 Datos del día sin confirmar ({len(self.datos_obs)})\n" + ("".join(f"- {t}: {o}\n" for t, o in self.datos_obs) or "Ninguno.\n"))
         md.append(f"## 📝 Publicadas con observaciones por venir de Ignacio ({len(self.observaciones)})\n" + "".join(f"- {t}: {o}\n" for t, o in self.observaciones))
         md.append(f"**Pedidos a Gemini en esta vuelta:** {gemini.PEDIDOS[0]} (datos del día: {getattr(self, 'pedidos_datos', 0)})\n")
         md.append("## 📅 Vencimientos y datos del día\n" + ("\n".join(f"- {x}" for x in self.vencimientos_info) or "Sin cambios (ya actualizados hoy).") + "\n")

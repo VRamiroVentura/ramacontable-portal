@@ -1,0 +1,178 @@
+{
+ "slug": "monotributo-categorias-vigentes",
+ "titulo": "Monotributo: categorías y cuotas vigentes",
+ "revisado": "2026-11-08T15:00:00-03:00",
+ "cambiado": "2026-08-01",
+ "fuentes": [
+  {
+   "nombre": "Fuente oficial (arca.gob.ar)",
+   "url": "https://www.arca.gob.ar/monotributo/categorias.asp"
+  },
+  {
+   "nombre": "Infobae",
+   "url": "https://www.infobae.com/economia/2026/07/23/monotributo-de-cuanto-son-las-cuotas-mensuales-a-pagar-en-julio-2026-segun-la-categoria/"
+  }
+ ],
+ "historial": [
+  {
+   "fecha": "2026-08-01",
+   "valor": "Categoría A: $ 49.527,18 por mes",
+   "norma": "Tabla oficial de ARCA, valores desde el 1/08/2026"
+  }
+ ],
+ "datos": {
+  "valor": "Categoría A: $ 49.527,18 por mes",
+  "monto": 49527.18,
+  "vigencia": "01/08/2026",
+  "proximo": "Nueva actualización semestral desde febrero 2027",
+  "norma": "Tabla oficial de ARCA, valores desde el 1/08/2026",
+  "respuesta": "Desde el 1 de agosto de 2026 la cuota mensual del Monotributo va de $ 49.527,18 (categoría A) a $ 1.614.446,04 (categoría K en servicios), y el tope de ingresos brutos anuales va de $ 12.009.410,45 a $ 126.610.838,75.",
+  "tabla": [
+   [
+    "Categoría",
+    "Ingresos brutos anuales",
+    "Cuota servicios",
+    "Cuota venta de bienes"
+   ],
+   [
+    "A",
+    "$ 12.009.410,45",
+    "$ 49.527,18",
+    "$ 49.527,18"
+   ],
+   [
+    "B",
+    "$ 17.595.182,74",
+    "$ 56.379,08",
+    "$ 56.379,08"
+   ],
+   [
+    "C",
+    "$ 24.670.494,31",
+    "$ 66.020,12",
+    "$ 64.530,58"
+   ],
+   [
+    "D",
+    "$ 30.628.651,43",
+    "$ 84.612,93",
+    "$ 82.564,81"
+   ],
+   [
+    "E",
+    "$ 36.028.231,33",
+    "$ 119.811,45",
+    "$ 108.267,51"
+   ],
+   [
+    "F",
+    "$ 45.151.659,41",
+    "$ 150.784,21",
+    "$ 129.930,65"
+   ],
+   [
+    "G",
+    "$ 53.995.798,87",
+    "$ 230.312,94",
+    "$ 158.815,05"
+   ],
+   [
+    "H",
+    "$ 81.924.660,37",
+    "$ 522.706,68",
+    "$ 317.895,01"
+   ],
+   [
+    "I",
+    "$ 91.699.761,90",
+    "$ 963.747,86",
+    "$ 474.992,78"
+   ],
+   [
+    "J",
+    "$ 105.012.519,20",
+    "$ 1.167.299,76",
+    "$ 580.793,69"
+   ],
+   [
+    "K",
+    "$ 126.610.838,75",
+    "$ 1.614.446,04",
+    "$ 702.103,24"
+   ]
+  ],
+  "explicacion": [
+   "La cuota total incluye el impuesto integrado, el aporte jubilatorio y la obra social."
+  ],
+  "estructurado": {
+   "categorias": [
+    {
+     "categoria": "A",
+     "ingresos_max": 12009410.45,
+     "cuota_servicios": 49527.18,
+     "cuota_bienes": 49527.18
+    },
+    {
+     "categoria": "B",
+     "ingresos_max": 17595182.74,
+     "cuota_servicios": 56379.08,
+     "cuota_bienes": 56379.08
+    },
+    {
+     "categoria": "C",
+     "ingresos_max": 24670494.31,
+     "cuota_servicios": 66020.12,
+     "cuota_bienes": 64530.58
+    },
+    {
+     "categoria": "D",
+     "ingresos_max": 30628651.43,
+     "cuota_servicios": 84612.93,
+     "cuota_bienes": 82564.81
+    },
+    {
+     "categoria": "E",
+     "ingresos_max": 36028231.33,
+     "cuota_servicios": 119811.45,
+     "cuota_bienes": 108267.51
+    },
+    {
+     "categoria": "F",
+     "ingresos_max": 45151659.41,
+     "cuota_servicios": 150784.21,
+     "cuota_bienes": 129930.65
+    },
+    {
+     "categoria": "G",
+     "ingresos_max": 53995798.87,
+     "cuota_servicios": 230312.94,
+     "cuota_bienes": 158815.05
+    },
+    {
+     "categoria": "H",
+     "ingresos_max": 81924660.37,
+     "cuota_servicios": 522706.68,
+     "cuota_bienes": 317895.01
+    },
+    {
+     "categoria": "I",
+     "ingresos_max": 91699761.9,
+     "cuota_servicios": 963747.86,
+     "cuota_bienes": 474992.78
+    },
+    {
+     "categoria": "J",
+     "ingresos_max": 105012519.2,
+     "cuota_servicios": 1167299.76,
+     "cuota_bienes": 580793.69
+    },
+    {
+     "categoria": "K",
+     "ingresos_max": 126610838.75,
+     "cuota_servicios": 1614446.04,
+     "cuota_bienes": 702103.24
+    }
+   ]
+  }
+ }
+}
