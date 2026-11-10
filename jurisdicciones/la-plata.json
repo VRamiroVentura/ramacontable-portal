@@ -1,0 +1,52 @@
+{
+ "slug": "la-plata",
+ "nombre": "La Plata",
+ "tipo": "municipio",
+ "orden": 4,
+ "portada": true,
+ "ruta": "tasas-municipales-la-plata",
+ "organismo": "Municipalidad de La Plata",
+ "titulo": "Seguridad e Higiene La Plata 2026: Monotasa, Ordenanza Impositiva y novedades",
+ "titulo_corto": "La Plata (Municipalidad)",
+ "descripcion": "Tasa de Seguridad e Higiene de La Plata 2026: importes de la Monotasa por categoría (Ordenanza Impositiva 12682), qué cambió respecto de 2025 y novedades del municipio.",
+ "intro": "La Tasa por Inspección de Seguridad e Higiene de La Plata y su régimen simplificado para pequeños comercios (Monotasa), con los importes 2026 de la Ordenanza Impositiva 12682.",
+ "claves": [
+  "la plata",
+  "platense",
+  "municipalidad de la plata"
+ ],
+ "venc_claves": [
+  "la plata"
+ ],
+ "fuentes": [],
+ "oficiales": [
+  {
+   "nombre": "Ordenanza Impositiva 12682 (SIBOM)",
+   "url": "https://sibom.slyt.gba.gob.ar/bulletins/14010/contents/2319885"
+  },
+  {
+   "nombre": "Municipalidad de La Plata",
+   "url": "https://www.laplata.gob.ar/"
+  }
+ ],
+ "bloques": [
+  {
+   "h": "Tasa por Inspección de Seguridad e Higiene 2026"
+  },
+  {
+   "p": "La Ordenanza Impositiva 12682 rige desde el 1° de enero de 2026 y reemplaza a la Ordenanza 12622 (2025)."
+  },
+  {
+   "p": "Según su artículo 9, las alícuotas máximas y los valores mínimos mensuales de cada actividad se fijan en el Anexo de la ordenanza, y la Municipalidad no puede aplicar alícuotas ni mínimos mayores a esos."
+  },
+  {
+   "p": "El artículo 10 fija para las cadenas de distribución con predominio de venta de alimentos y bebidas una alícuota de hasta el 25 por mil, según la Ley provincial 12.573."
+  },
+  {
+   "p": "La ordenanza también prevé una revisión de los valores si la inflación acumulada supera el 20% (en 2025 el umbral era 30%)."
+  },
+  {
+   "p": "Estamos cargando la tabla de alícuotas y mínimos por actividad del Anexo: la publicamos apenas esté verificada con el texto oficial."
+  }
+ ]
+}

@@ -1,8 +1,10 @@
 {
- "_ayuda": "Fuentes que la fábrica lee una vez por día para armar los vencimientos y feriados del mes actual y del siguiente. {mes} = noviembre, {anio} = 2026.",
+ "_ayuda": "Fuentes que la fábrica lee una vez por día para armar los vencimientos y feriados del mes actual y del siguiente. {mes} = noviembre, {anio} = 2026. {mm} = número de mes (11). 'oficiales': dominios de organismos cuya fecha alcanza sola.",
  "paginas": [
   "https://yo-facturo.com/vencimientos/{mes}-{anio}/",
-  "https://www.lanacion.com.ar/feriados/{anio}/"
+  "https://www.lanacion.com.ar/feriados/{anio}/",
+  "https://tributosimple.com/vencimientos-mensuales-ingresos-brutos-{mes}/",
+  "https://www.ca.gob.ar/servicios/calendario/eventospormes/{anio}/{mm}/-"
  ],
  "wordpress": [
   [
@@ -26,5 +28,8 @@
   "vencimientos {mes} {anio}",
   "feriados {mes} {anio}"
  ],
- "minimo_fuentes": 2
+ "minimo_fuentes": 2,
+ "oficiales": [
+  "ca.gob.ar"
+ ]
 }

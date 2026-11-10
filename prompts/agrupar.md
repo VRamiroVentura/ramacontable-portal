@@ -22,3 +22,5 @@ Cada id de novedad tiene que aparecer en un solo grupo.
 
 
 Prioridad provincia de Buenos Aires: las novedades de ARBA, de la provincia de Buenos Aires y de sus municipios (Ingresos Brutos, Monotributo unificado, planes de pago, regímenes de retención y percepción, sellos, inmobiliario) son de la profesión y tienen prioridad: no las descartes por ser provinciales.
+
+Otras provincias y municipios: las novedades de rentas provinciales (Rentas Córdoba, API Santa Fe, ATM Mendoza, ATER, AGIP y demás) y de tasas municipales también son de la profesión (sección "impuestos"). En "tema" poné siempre el nombre de la provincia o del municipio (ej.: "Rentas Córdoba prorroga vencimientos de Ingresos Brutos de noviembre 2026"). Las del Gobierno de Santa Fe que no sean tributarias (salud, obras, seguridad, política) van con "profesion": false.

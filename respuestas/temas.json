@@ -232,7 +232,8 @@
    ]
   },
   "estructura": "estructurado: {\"categorias\": [{\"categoria\": \"texto\", \"ingresos_max\": numero, \"importe\": numero}]}",
-  "cuando": "Dos veces por año, junto con el Monotributo unificado (febrero y agosto)"
+  "cuando": "Dos veces por año, junto con el Monotributo unificado (febrero y agosto)",
+  "jurisdiccion": "buenos-aires"
  },
  {
   "slug": "bienes-personales-minimo-no-imponible",
@@ -254,5 +255,83 @@
   },
   "estructura": "estructurado: {\"minimo_no_imponible\": numero, \"casa_habitacion\": numero, \"periodo\": \"aaaa\"}",
   "cuando": "Una vez por año, para cada período fiscal"
+ },
+ {
+  "slug": "monotributo-unificado-cordoba",
+  "titulo": "Monotributo Unificado Córdoba: Ingresos Brutos por categoría",
+  "seccion": "provincias",
+  "jurisdiccion": "cordoba",
+  "pregunta": "¿Cuánto se paga de Ingresos Brutos en el Monotributo Unificado de Córdoba?",
+  "pide": "Importe fijo mensual de Ingresos Brutos de la provincia de Córdoba (componente provincial del Monotributo Unificado) para cada categoría A a K, desde cuándo rige y número de Resolución Normativa de la Dirección General de Rentas.",
+  "busqueda": "monotributo unificado cordoba valores",
+  "claves": [
+   "monotributo unificado córdoba",
+   "monotributo unificado de córdoba",
+   "rentas córdoba"
+  ],
+  "oficial": [
+   "https://www.rentascordoba.gob.ar/"
+  ],
+  "ciclo": {
+   "tipo": "semestral",
+   "ventanas": [
+    "01-10/02-10",
+    "07-10/08-10"
+   ]
+  },
+  "estructura": "estructurado: {\"categorias\": [{\"categoria\": \"texto\", \"importe\": numero}]}",
+  "cuando": "Dos veces por año, junto con el Monotributo nacional (febrero y agosto)"
+ },
+ {
+  "slug": "ingresos-brutos-santa-fe-regimen-simplificado",
+  "titulo": "Ingresos Brutos Santa Fe: Régimen Simplificado por categoría",
+  "seccion": "provincias",
+  "jurisdiccion": "santa-fe",
+  "pregunta": "¿Cuánto se paga de Ingresos Brutos simplificado en Santa Fe?",
+  "pide": "Escala del Régimen Simplificado de Ingresos Brutos de Santa Fe (API): categorías, ingresos brutos anuales desde y hasta, impuesto mensual de cada una, período desde el que rige y número de resolución de la API.",
+  "busqueda": "regimen simplificado ingresos brutos santa fe escala",
+  "claves": [
+   "régimen simplificado de santa fe",
+   "api santa fe",
+   "ingresos brutos santa fe"
+  ],
+  "oficial": [
+   "https://www.santafe.gov.ar/index.php/web/content/view/full/211373"
+  ],
+  "ciclo": {
+   "tipo": "semestral",
+   "ventanas": [
+    "01-10/02-15",
+    "07-10/08-15"
+   ]
+  },
+  "estructura": "estructurado: {\"categorias\": [{\"categoria\": \"texto\", \"ingresos_max\": numero, \"importe\": numero}]}",
+  "cuando": "Dos veces por año, según la inflación del semestre (enero y julio)"
+ },
+ {
+  "slug": "monotasa-la-plata",
+  "titulo": "Monotasa La Plata 2026: Seguridad e Higiene para pequeños comercios",
+  "seccion": "provincias",
+  "jurisdiccion": "la-plata",
+  "pregunta": "¿Cuánto se paga de Monotasa (Seguridad e Higiene) en La Plata?",
+  "pide": "Importes de la Monotasa (Régimen Simplificado para Pequeños Comercios de la Tasa por Inspección de Seguridad e Higiene) de la Municipalidad de La Plata para cada categoría del Monotributo, si es mensual o bimestral, año y número de Ordenanza Impositiva.",
+  "busqueda": "monotasa la plata ordenanza impositiva",
+  "claves": [
+   "monotasa",
+   "seguridad e higiene la plata",
+   "municipalidad de la plata"
+  ],
+  "oficial": [
+   "https://sibom.slyt.gba.gob.ar/bulletins/14010/contents/2319885"
+  ],
+  "ciclo": {
+   "tipo": "semestral",
+   "ventanas": [
+    "12-10/01-31"
+   ],
+   "semanas": 4
+  },
+  "estructura": "estructurado: {\"categorias\": [{\"categoria\": \"texto\", \"importe\": numero}]}",
+  "cuando": "Una vez por año, con la Ordenanza Impositiva (diciembre o enero)"
  }
 ]

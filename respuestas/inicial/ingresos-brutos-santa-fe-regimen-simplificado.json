@@ -1,0 +1,145 @@
+{
+ "slug": "ingresos-brutos-santa-fe-regimen-simplificado",
+ "titulo": "Ingresos Brutos Santa Fe: Régimen Simplificado por categoría",
+ "revisado": "2026-11-10T17:00:00-03:00",
+ "cambiado": "2026-07-01",
+ "fuentes": [
+  {
+   "nombre": "Resolución API 117/2026 (CPCE Santa Fe Cámara II)",
+   "url": "https://www.cpcesfe2.org.ar/wp-content/uploads/2026/07/RG-117-2026-nueva-escala-del-Regimen-Simplificado-de-Ingresos-Brutos-2026.pdf"
+  },
+  {
+   "nombre": "+blogdelcontador",
+   "url": "https://siap.blogdelcontador.com.ar/?p=86753"
+  }
+ ],
+ "historial": [
+  {
+   "fecha": "2026-07-01",
+   "valor": "Categoría I: $ 12.269 por mes",
+   "norma": "Resolución API 117/2026"
+  }
+ ],
+ "datos": {
+  "valor": "Categoría I: $ 12.269 por mes",
+  "monto": 12269,
+  "vigencia": "período 07/2026",
+  "proximo": "Próxima actualización semestral: desde el período 01/2027",
+  "norma": "Resolución API N° 117/2026 (Administración Provincial de Impuestos de Santa Fe, 23/07/2026)",
+  "respuesta": "Desde el período julio 2026, el Régimen Simplificado de Ingresos Brutos de Santa Fe tiene 8 categorías: el impuesto mensual va de $ 12.269 (categoría I, hasta $ 12.009.410,45 de ingresos anuales) a $ 237.197 (categoría VIII, hasta $ 126.610.838,75).",
+  "tabla": [
+   [
+    "Categoría",
+    "Ingresos brutos anuales desde",
+    "Hasta",
+    "Impuesto mensual"
+   ],
+   [
+    "I",
+    "$ 0,00",
+    "$ 12.009.410,45",
+    "$ 12.269"
+   ],
+   [
+    "II",
+    "$ 12.009.410,46",
+    "$ 24.670.494,31",
+    "$ 25.122"
+   ],
+   [
+    "III",
+    "$ 24.670.494,32",
+    "$ 36.028.231,33",
+    "$ 42.882"
+   ],
+   [
+    "IV",
+    "$ 36.028.231,34",
+    "$ 45.151.659,41",
+    "$ 61.344"
+   ],
+   [
+    "V",
+    "$ 45.151.659,42",
+    "$ 81.924.660,37",
+    "$ 82.376"
+   ],
+   [
+    "VI",
+    "$ 81.924.660,38",
+    "$ 91.699.761,90",
+    "$ 134.373"
+   ],
+   [
+    "VII",
+    "$ 91.699.761,91",
+    "$ 105.012.519,20",
+    "$ 186.953"
+   ],
+   [
+    "VIII",
+    "$ 105.012.519,21",
+    "$ 126.610.838,75",
+    "$ 237.197"
+   ]
+  ],
+  "explicacion": [
+   "La API actualizó las escalas un 16,85%, según el IPC acumulado del 1/1/2026 al 30/6/2026 (considerandos de la Resolución 117/2026).",
+   "Los nuevos valores rigen a partir del período 07/2026. La misma resolución extendió la segunda recategorización del período fiscal 2026 hasta el 13 de agosto de 2026."
+  ],
+  "preguntas": [
+   {
+    "p": "¿Cuánto se paga de Ingresos Brutos simplificado en Santa Fe?",
+    "r": "Desde el período julio 2026, entre $ 12.269 (categoría I) y $ 237.197 (categoría VIII) por mes, según los ingresos brutos anuales."
+   },
+   {
+    "p": "¿Qué norma fija la escala?",
+    "r": "La Resolución N° 117/2026 de la Administración Provincial de Impuestos (API) de Santa Fe."
+   }
+  ],
+  "estructurado": {
+   "categorias": [
+    {
+     "categoria": "I",
+     "ingresos_max": 12009410.45,
+     "importe": 12269
+    },
+    {
+     "categoria": "II",
+     "ingresos_max": 24670494.31,
+     "importe": 25122
+    },
+    {
+     "categoria": "III",
+     "ingresos_max": 36028231.33,
+     "importe": 42882
+    },
+    {
+     "categoria": "IV",
+     "ingresos_max": 45151659.41,
+     "importe": 61344
+    },
+    {
+     "categoria": "V",
+     "ingresos_max": 81924660.37,
+     "importe": 82376
+    },
+    {
+     "categoria": "VI",
+     "ingresos_max": 91699761.9,
+     "importe": 134373
+    },
+    {
+     "categoria": "VII",
+     "ingresos_max": 105012519.2,
+     "importe": 186953
+    },
+    {
+     "categoria": "VIII",
+     "ingresos_max": 126610838.75,
+     "importe": 237197
+    }
+   ]
+  }
+ }
+}

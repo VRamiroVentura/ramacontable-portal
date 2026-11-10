@@ -1,0 +1,156 @@
+{
+ "slug": "monotributo-unificado-cordoba",
+ "titulo": "Monotributo Unificado Córdoba: Ingresos Brutos por categoría",
+ "revisado": "2026-11-10T17:00:00-03:00",
+ "cambiado": "2026-08-01",
+ "fuentes": [
+  {
+   "nombre": "Contadores en Red",
+   "url": "https://contadoresenred.com/cordoba-monotributo-unificado-valores-a-partir-de-agosto-2026/"
+  },
+  {
+   "nombre": "Tributo Simple",
+   "url": "https://tributosimple.com/valores-monotributo-unificado-cordoba/"
+  }
+ ],
+ "historial": [
+  {
+   "fecha": "2026-08-01",
+   "valor": "Categoría A: $ 12.560 por mes",
+   "norma": "Resolución Normativa 36/2026 (DGR Córdoba)"
+  }
+ ],
+ "datos": {
+  "valor": "Categoría A: $ 12.560 por mes",
+  "monto": 12560,
+  "vigencia": "agosto 2026 a enero 2027",
+  "proximo": "Nuevos valores desde febrero 2027, con el Monotributo nacional",
+  "norma": "Resolución Normativa 36/2026 de la Dirección General de Rentas de Córdoba (24/07/2026)",
+  "respuesta": "De agosto 2026 a enero 2027, el importe mensual de Ingresos Brutos de Córdoba dentro del Monotributo Unificado va de $ 12.560 (categoría A) a $ 230.270 (categoría K). Se suma a la cuota del Monotributo nacional.",
+  "tabla": [
+   [
+    "Categoría",
+    "Ingresos brutos anuales hasta (Monotributo)",
+    "Ingresos Brutos Córdoba por mes"
+   ],
+   [
+    "A",
+    "$ 12.009.410,45",
+    "$ 12.560,00"
+   ],
+   [
+    "B",
+    "$ 17.595.182,74",
+    "$ 21.900,00"
+   ],
+   [
+    "C",
+    "$ 24.670.494,31",
+    "$ 29.290,00"
+   ],
+   [
+    "D",
+    "$ 30.628.651,43",
+    "$ 43.820,00"
+   ],
+   [
+    "E",
+    "$ 36.028.231,33",
+    "$ 59.340,00"
+   ],
+   [
+    "F",
+    "$ 45.151.659,41",
+    "$ 75.350,00"
+   ],
+   [
+    "G",
+    "$ 53.995.798,87",
+    "$ 91.150,00"
+   ],
+   [
+    "H",
+    "$ 81.924.660,37",
+    "$ 143.170,00"
+   ],
+   [
+    "I",
+    "$ 91.699.761,90",
+    "$ 171.960,00"
+   ],
+   [
+    "J",
+    "$ 105.012.519,20",
+    "$ 202.500,00"
+   ],
+   [
+    "K",
+    "$ 126.610.838,75",
+    "$ 230.270,00"
+   ]
+  ],
+  "explicacion": [
+   "El Monotributo Unificado junta en un solo pago la cuota del Monotributo nacional y el importe fijo de Ingresos Brutos de Córdoba. La categoría es la misma del Monotributo nacional.",
+   "Los importes de la tabla son solo el componente provincial (Ingresos Brutos): hay que sumarlos a la cuota del Monotributo de ARCA para saber cuánto se paga en total.",
+   "La Resolución Normativa 36/2026 sustituye el Anexo V de la Resolución Normativa 1/2023 y actualiza los importes con la misma actualización semestral del Monotributo (art. 52 de la Ley 24.977)."
+  ],
+  "preguntas": [
+   {
+    "p": "¿Cuánto se paga de Ingresos Brutos en el Monotributo Unificado de Córdoba?",
+    "r": "Desde agosto 2026, entre $ 12.560 (categoría A) y $ 230.270 (categoría K) por mes, además de la cuota del Monotributo nacional."
+   },
+   {
+    "p": "¿Hasta cuándo rigen estos valores?",
+    "r": "Hasta enero 2027. Se actualizan dos veces por año, junto con el Monotributo nacional (febrero y agosto)."
+   }
+  ],
+  "estructurado": {
+   "categorias": [
+    {
+     "categoria": "A",
+     "importe": 12560
+    },
+    {
+     "categoria": "B",
+     "importe": 21900
+    },
+    {
+     "categoria": "C",
+     "importe": 29290
+    },
+    {
+     "categoria": "D",
+     "importe": 43820
+    },
+    {
+     "categoria": "E",
+     "importe": 59340
+    },
+    {
+     "categoria": "F",
+     "importe": 75350
+    },
+    {
+     "categoria": "G",
+     "importe": 91150
+    },
+    {
+     "categoria": "H",
+     "importe": 143170
+    },
+    {
+     "categoria": "I",
+     "importe": 171960
+    },
+    {
+     "categoria": "J",
+     "importe": 202500
+    },
+    {
+     "categoria": "K",
+     "importe": 230270
+    }
+   ]
+  }
+ }
+}

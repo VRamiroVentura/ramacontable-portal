@@ -125,6 +125,11 @@ class Fabrica:
         lista = list(self.cfg.get("fuentes", []))
         ya = {f.get("nombre") for f in lista}
         lista += [f for f in FUENTES_EXTRA if f["nombre"] not in ya]  # se suman solas, sin tocar config.json
+        for ruta in sorted((util.RAIZ / "jurisdicciones").glob("*.json")):  # fuentes de provincias y municipios
+            try:
+                lista += [f for f in json.loads(ruta.read_text(encoding="utf-8")).get("fuentes") or [] if f.get("nombre") not in ya]
+            except Exception as e:  # noqa
+                util.avisar(f"No pude leer {ruta.name}", str(e))
         lista = [f for f in lista if "boletinoficial.gob.ar" not in f.get("url", "") or self.cfg.get("leer_boletin")]
         if self.rapido:
             lista = [f for f in lista if f.get("tipo") == "oficial" or f.get("nombre") == "Tributum"]  # no responde a GitHub; Tributum trae el sumario
@@ -291,7 +296,7 @@ class Fabrica:
             nombre_mes = self.MESES[mes - 1]
             textos, vistos = [], set()
             for plantilla in cfg.get("paginas", []):
-                url = plantilla.format(mes=nombre_mes, anio=anio)
+                url = plantilla.format(mes=nombre_mes, anio=anio, mm=f"{mes:02d}")
                 texto, _ = fuentes.detalle(url, largo=15000)
                 if len(texto) > 300:
                     nombre = url.split("/")[2].replace("www.", "")
@@ -302,7 +307,8 @@ class Fabrica:
                     if nombre_mes in _slug(it["titulo"]) or nombre_mes in _slug(it["texto"][:600]):
                         textos.append(f"--- FUENTE: {it['fuente']}\nTítulo: {it['titulo']}\n{it['texto'][:6000]}")
                         vistos.add(it["fuente"])
-            if len(vistos) < minimo and CONFIABLE not in vistos and "lanacion.com.ar" not in vistos:
+            oficiales = tuple(cfg.get("oficiales") or ())  # organismos (ej.: Comisión Arbitral): su fecha alcanza sola
+            if len(vistos) < minimo and CONFIABLE not in vistos and "lanacion.com.ar" not in vistos and not vistos & set(oficiales):
                 util.avisar(f"Vencimientos de {nombre_mes}", f"solo encontré {len(vistos)} fuente(s); queda la agenda anterior")
                 continue
             try:
@@ -322,7 +328,7 @@ class Fabrica:
                     if (n >= minimo or de_ignacio) and not x.get("estimado") and str(x["fecha"]).startswith(clave):
                         salida.append({c: str(x.get(c) or "")[:160] for c in campos} | {"fuentes": n})
                 return sorted(salida, key=lambda x: x["fecha"])
-            venc = confirmados(r.get("vencimientos"), ("fecha", "concepto", "detalle"))
+            venc = confirmados(r.get("vencimientos"), ("fecha", "concepto", "detalle"), (CONFIABLE,) + oficiales)
             # feriados: La Nación alcanza sola (pedido de Ramiro); los vencimientos siguen pidiendo 2 fuentes o Ignacio
             fer = confirmados(r.get("feriados"), ("fecha", "nombre", "tipo", "norma"), (CONFIABLE, "lanacion.com.ar"))
             util.log(f"Vencimientos {clave}: {len(venc)} confirmados, {len(fer)} feriados ({len(vistos)} fuentes)")

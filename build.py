@@ -395,7 +395,9 @@ def pagina_impuesto(imp, notas, guias, catalogo):
     lista = ('<div class="tarjetas">' + "".join(tarjeta(n) for n in relacionadas_i[:20]) + "</div>") if relacionadas_i else '<p class="vacio">Todavía no hay novedades de este tema.</p>'
     cuerpo = (f'<div class="grilla"><section><p class="miga"><a href="impuestos.html">Impuestos</a></p><h1 class="titsec">{e(nombre)}</h1>'
               f'<section class="rama-guias"><h2>Guías de {e(nombre)}</h2><ul class="lista-guias">{items}</ul></section>'
-              f'<section class="rama-guias"><h2>Novedades de {e(nombre)}</h2>{lista}</section></section>{lateral(notas)}</div>')
+              + ('<div class="conv-chips"><b>Por provincia:</b> ' + " ".join(f'<a href="{j["ruta"]}.html">{e(j["titulo_corto"])}</a>' for j in JURIS)
+                 + ' <a class="mas-chip" href="provincias-y-municipios.html">Todas →</a></div>' if slug == "ingresos-brutos" and JURIS else "")
+              +               f'<section class="rama-guias"><h2>Novedades de {e(nombre)}</h2>{lista}</section></section>{lateral(notas)}</div>')
     return pagina(f"{nombre}: novedades, vencimientos y guías prácticas | Ramacontable", cuerpo, "impuestos",
                   f"Todo sobre {nombre} para contadores: últimas novedades, normas y guías prácticas paso a paso.", f"impuesto-{slug}.html",
                   migas=[("Impuestos", "impuestos.html"), (nombre, f"impuesto-{slug}.html")])
@@ -465,7 +467,7 @@ def pagina(titulo, cuerpo, actual="", descripcion="", ruta="", extra_head="", mi
     sub = {
         "sueldos": [("sueldos.html", "Novedades de sueldos"), ("convenios.html", "Escalas por convenio"), ("guias.html#sueldos", "Guías de sueldos"),
                     ("sueldo-comercio.html", "Calculadora de sueldo de Comercio"), ("datos-al-dia.html#sueldos", "Datos del día de sueldos"), ("vencimiento-931.html", "Vencimientos del F.931"), ("comparador-escalas.html", "Aumentos vs. inflación")],
-        "impuestos": [("impuestos.html", "Novedades de impuestos")] + [(f"impuesto-{s}.html", n) for s, n, _, _ in IMPUESTOS] + [("guias.html#impuestos", "Guías de impuestos"), ("datos-al-dia.html#impuestos", "Datos del día de impuestos")],
+        "impuestos": [("impuestos.html", "Novedades de impuestos")] + [(f"impuesto-{s}.html", n) for s, n, _, _ in IMPUESTOS] + [("provincias-y-municipios.html", "Provincias y municipios"), ("guias.html#impuestos", "Guías de impuestos"), ("datos-al-dia.html#impuestos", "Datos del día de impuestos")],
         "guias": [(f"guias.html#{k}", v) for k, v in GRUPOS_GUIAS.items()] + [("guias.html", "Todas las guías"), ("glosario.html", "Glosario")],
         "datos-al-dia": [x for gid, nombre, items in grupos_datos() for x in [("#g", nombre)] + [(f"{sl}.html", ti) for sl, ti, _ in items][:7]],
     }
@@ -571,7 +573,8 @@ def tarjeta(n, grande=False):
 
 
 def lateral(notas):
-    prox = proximos_vencimientos(5)
+    nicho = [c for j in JURIS if not j.get("portada", True) for c in j.get("venc_claves") or [] if c != "convenio multilateral"]
+    prox = [x for x in proximos_vencimientos() if not any(re.search(r"\b" + re.escape(_N(c)) + r"\b", _N(x.get("concepto", ""))) for c in nicho)][:5]
     caja_venc = ('<section class="caja"><h3>Vencimientos que se vienen</h3><ul class="venc">' + "".join(
         f'<li><span>{e(x["concepto"])}{(" · " + e(x["detalle"])) if x.get("detalle") else ""}</span><b>{fecha_corta(x["fecha"])}</b></li>' for x in prox)
         + '</ul><a class="mas" href="herramientas.html">Ver todos</a></section>') if prox else \
@@ -633,7 +636,7 @@ def sitemaps(notas, convenios=()):
     fijas = ["aguinaldo", "convenios", "guias", "calculadoras", "feriados", "sueldo-comercio", "sueldo-casas-particulares", "actualizacion", "dias-habiles",
              "plazo-fijo", "prestamos", "vacaciones", "liquidacion-final", "horas-extras", "iva", "conversor-dolar", "monotributo-categoria", "intereses-arca",
              "actualizacion-alquiler", "embargo-sueldo", "cuando-cambia-cada-dato", "glosario", "comparador-escalas", "agenda-vencimientos",
-             "retencion-ganancias"] + PARITARIAS_URLS + FERIADOS_URLS + [f"impuesto-{i[0]}" for i in IMPUESTOS]
+             "retencion-ganancias"] + JURIS_URLS + PARITARIAS_URLS + FERIADOS_URLS + [f"impuesto-{i[0]}" for i in IMPUESTOS]
     urls = [f"<url><loc>{base}</loc><lastmod>{hoy}</lastmod></url>"] + [
         f"<url><loc>{base}{k}.html</loc><lastmod>{hoy}</lastmod></url>" for k in diarias if k not in PAGINAS_FINAS] + [
         f"<url><loc>{base}{k}.html</loc></url>" for k in fijas if k not in PAGINAS_FINAS] + [
@@ -670,6 +673,8 @@ def llms_txt(notas, convenios):
     l += [f"- [{b[2]}]({base}{b[0]}.html): serie oficial del BCRA" for b in BCRA_RESP]
     l += [f"- [Dólar hoy]({base}dolar-hoy.html): oficial, mayorista, MEP, CCL, tarjeta, cripto y blue (informativo), cada hora"]
     l += [f"- [Vencimientos de {o[1]} por terminación de CUIT]({base}{o[0]}.html)" for o in OBLIGACIONES]
+    l += ["", "## Provincias y municipios", f"- [Impuestos provinciales y municipales]({base}provincias-y-municipios.html): Ingresos Brutos y tasas por jurisdicción"]
+    l += [f"- [{j['titulo']}]({base}{j['ruta']}.html)" for j in JURIS]
     l += ["", "## Escalas salariales por convenio"]
     l += [f"- [{c.get('nombre', c['slug'])}]({base}escala-{c['slug']}.html)" for c in convenios]
     l += ["", "## Calculadoras"] + [f"- [{t}]({base}{a}.html)" for a, t in [
@@ -873,7 +878,7 @@ def pagina_respuesta(t, r, notas, aportes=None, extra=""):
     hoy = datetime.date.today()
     hoy_blq = bloque_dato_hoy(t, d) if d.get("valor") else ""
     mes = f"{MESES[hoy.month - 1]} {hoy.year}"
-    titulo_h = f"{t['titulo']} ({mes})" if " hoy" in t["titulo"] else f"{t['titulo']} hoy ({mes})"
+    titulo_h = f"{t['titulo']} ({mes})" if (" hoy" in t["titulo"] or t.get("seccion") == "provincias") else f"{t['titulo']} hoy ({mes})"
     claves = [c.lower() for c in t.get("claves", [])]
     rel = [n for n in notas if any(c in (n["titulo"] + " " + n.get("encorto", "")).lower() for c in claves)][:5]
     if d.get("valor"):
@@ -901,11 +906,19 @@ def pagina_respuesta(t, r, notas, aportes=None, extra=""):
     rel = rel[:3]
     rel_html = ('<section class="relacionadas novedades-dato"><h2>Últimas novedades sobre el tema</h2><ul>' + "".join(
         f'<li><a href="nota-{x["slug"]}.html">{e(x["titulo"])}</a></li>' for x in rel) + "</ul></section>") if rel else ""
-    otros = "".join(f'<li><a href="{x["slug"]}.html">{e(x["titulo"])}</a></li>' for x in TEMAS_RESP if x["slug"] != t["slug"])
+    jur = next((j for j in JURIS if j["slug"] == t.get("jurisdiccion")), None)
+    otros = "".join(f'<li><a href="{x["slug"]}.html">{e(x["titulo"])}</a></li>' for x in TEMAS_RESP
+                    if x["slug"] != t["slug"] and (x.get("seccion") != "provincias" or x.get("jurisdiccion") == t.get("jurisdiccion")))
+    if jur:
+        otros = f'<li><a href="{jur["ruta"]}.html">Todo sobre {e(jur["nombre"])}: datos, vencimientos y novedades</a></li><li><a href="provincias-y-municipios.html">Otras provincias y municipios</a></li>' + otros
+    miga = (f'<a href="provincias-y-municipios.html">Provincias y municipios</a> › <a href="{jur["ruta"]}.html">{e(jur["nombre"])}</a>'
+            if t.get("seccion") == "provincias" and jur else '<a href="datos-al-dia.html">Datos del día</a>')
+    migas_r = ([("Provincias y municipios", "provincias-y-municipios.html"), (jur["titulo_corto"], jur["ruta"] + ".html")]
+               if t.get("seccion") == "provincias" and jur else [("Datos del día", "datos-al-dia.html")]) + [(t["titulo"], t["slug"] + ".html")]
     falsa_nota = {"slug": t["slug"], "titulo": t["titulo"].lower()}
     contenido = f"""<div class="grilla"><article class="nota respuesta" data-nota="dato-{t['slug']}">
 <div class="nota-contenido">
-<p class="miga"><a href="datos-al-dia.html">Datos del día</a></p>
+<p class="miga">{miga}</p>
 <h1>{e(titulo_h)}</h1>
 <p class="firma">Redacción Ramacontable · Actualizado {fecha_larga(hoy.isoformat() if hoy_blq else str((r or {}).get('cambiado') or hoy.isoformat())[:10])}</p>
 {caja}{revisado}{hoy_blq}{rel_html}{cuerpo}{extra}{faq}{fuentes_html}
@@ -927,8 +940,8 @@ def pagina_respuesta(t, r, notas, aportes=None, extra=""):
             {"@type": "Question", "name": q["p"], "acceptedAnswer": {"@type": "Answer", "text": q["r"]}} for q in qs]})
     head = "".join(f'<script type="application/ld+json">{json.dumps(x, ensure_ascii=False).replace("</", "<\\/")}</script>' for x in ld)
     desc = (d.get("respuesta") or t["pregunta"])[:300]
-    return pagina(f"{titulo_h}: {d.get('valor') or 'dato vigente'} | Ramacontable", contenido, "datos-al-dia",
-                  desc, t["slug"] + ".html", head, [("Datos del día", "datos-al-dia.html"), (t["titulo"], t["slug"] + ".html")])
+    return pagina(f"{titulo_h}: {d.get('valor') or 'dato vigente'} | Ramacontable", contenido, "impuestos" if t.get("seccion") == "provincias" else "datos-al-dia",
+                  desc, t["slug"] + ".html", head, migas_r)
 
 
 def pagina_bcra(slug, clave, titulo, pregunta, corto, seccion, notas):
@@ -1201,6 +1214,9 @@ def _terminaciones(detalle):
 def pagina_obligacion(slug, nombre, claves, seccion, notas):
     hoy = datetime.date.today()
     items = [x for x in proximos_vencimientos() if any(c in (x.get("concepto", "")).lower() for c in claves)]
+    provincial = lambda c: bool(re.search(r"\b(iibb|ingresos brutos|convenio multilateral|sifere)\b", _N(c)))
+    items = [x for x in items if ("arba" in _N(x.get("concepto", ""))) if slug == "vencimiento-iibb-arba"] if slug == "vencimiento-iibb-arba" \
+        else [x for x in items if not provincial(x.get("concepto", ""))]
     if slug == "vencimiento-iva":
         items = [x for x in items if "iva" in re.findall(r"[a-záéíóú]+", x.get("concepto", "").lower())]
     meses = {}
@@ -1659,6 +1675,117 @@ DESC_SECCION = {
 }
 
 
+# ---------- Provincias y municipios ----------
+JURIS = []      # jurisdicciones con página propia (jurisdicciones/<slug>.json)
+OTRAS_J = []    # provincias que por ahora solo muestran novedades (jurisdicciones/otras.json)
+JURIS_URLS = []
+
+
+def cargar_jurisdicciones():
+    JURIS[:], OTRAS_J[:] = [], []
+    for ruta in sorted(glob.glob(os.path.join(RAIZ, "jurisdicciones", "*.json"))):
+        try:
+            d = json.load(open(ruta, encoding="utf-8"))
+        except Exception as ex:
+            print("Aviso: no pude leer", ruta, ex)
+            continue
+        if os.path.basename(ruta) == "otras.json":
+            OTRAS_J[:] = d.get("lista") or []
+        elif d.get("slug") and d.get("ruta"):
+            JURIS.append(d)
+    JURIS.sort(key=lambda j: j.get("orden", 99))
+
+
+def _de_jurisdiccion(n, claves, solo_titulo=False):
+    txt = _N(n.get("titulo", "") + ("" if solo_titulo else " " + n.get("antetitulo", "") + " " + (n.get("tema") or "") + " " + n.get("encorto", "")))
+    return any(re.search(r"\b" + re.escape(_N(c)) + r"\b", txt) for c in claves)
+
+
+def nota_de_nicho(n):
+    """Notas de una provincia o municipio que no se muestran en la portada (siguen en su sección y en su página)."""
+    return any(not j.get("portada", True) and _de_jurisdiccion(n, j.get("claves") or [], True) for j in JURIS) or \
+        any(_de_jurisdiccion(n, o.get("claves") or [], True) for o in OTRAS_J)
+
+
+def _venc_de(claves):
+    return [x for x in proximos_vencimientos() if any(re.search(r"\b" + re.escape(_N(c)) + r"\b", _N(x.get("concepto", "") + " " + x.get("detalle", ""))) for c in claves)]
+
+
+def pagina_jurisdiccion(j, notas):
+    hoy = datetime.date.today()
+    temas = [t for t in TEMAS_RESP if t.get("jurisdiccion") == j["slug"]]
+    cajas = ""
+    for t in temas:
+        d = ajustar_tramo((RESP.get(t["slug"]) or {}).get("datos") or {})
+        if d.get("valor"):
+            cajas += (f'<div class="resp-caja"><span class="resp-p">{e(t["pregunta"])}</span><b class="resp-v">{e(d["valor"])}</b>'
+                      f'<p>{e(d.get("respuesta", ""))}</p>' + (f'<p class="resp-meta">Norma: {e(d["norma"])}</p>' if d.get("norma") else "")
+                      + f'<p><a class="btn sec" href="{t["slug"]}.html">Ver la tabla completa por categoría →</a></p></div>')
+    fijos = "".join(bloque(b) for b in j.get("bloques") or [])
+    venc = _venc_de(j.get("venc_claves") or [])
+    venc_html = ""
+    if venc:
+        venc_html = ('<h2>Próximos vencimientos</h2><div class="tabla"><table><thead><tr><th>Vence</th><th>Obligación</th><th>CUIT</th></tr></thead><tbody>'
+                     + "".join(f'<tr><td><b>{fecha_corta(x["fecha"])}</b></td><td>{e(x["concepto"])}</td><td>{e(x.get("detalle") or "Todas")}</td></tr>' for x in venc[:15])
+                     + '</tbody></table></div><p class="ayuda">Fechas confirmadas por al menos dos fuentes o por el organismo. Si cae en día inhábil, ya figura corrida.</p>')
+    rel = [n for n in notas if _de_jurisdiccion(n, j.get("claves") or [])]
+    nov = ('<h2>Novedades de ' + e(j["nombre"]) + '</h2><div class="tarjetas">' + "".join(tarjeta(n) for n in rel[:12]) + "</div>") if rel else \
+        f'<h2>Novedades de {e(j["nombre"])}</h2><p class="vacio">Cuando {e(j["organismo"])} publique una novedad para la profesión, aparece acá.</p>'
+    of = " · ".join(f'<a href="{e(o["url"])}" rel="nofollow noopener" target="_blank">{e(o["nombre"])}</a>' for o in j.get("oficiales") or [])
+    otras = "".join(f'<li><a href="{x["ruta"]}.html">{e(x["titulo_corto"])}</a></li>' for x in JURIS if x["slug"] != j["slug"])
+    qs = []
+    for t in temas:
+        d = (RESP.get(t["slug"]) or {}).get("datos") or {}
+        if d.get("respuesta"):
+            qs.append({"p": t["pregunta"], "r": d["respuesta"]})
+        qs += [q for q in d.get("preguntas") or [] if q.get("p") != t["pregunta"]][:1]
+    cuerpo = f"""<div class="grilla"><article class="nota"><div class="nota-contenido">
+<p class="miga"><a href="provincias-y-municipios.html">Provincias y municipios</a></p>
+<p class="ante">{e(j["organismo"])}</p>
+<h1>{e(j["titulo"])}</h1>
+<p class="firma">Redacción Ramacontable · Actualizado {fecha_larga(hoy.isoformat())}</p>
+<p>{e(j.get("intro", ""))}</p>
+{cajas}{fijos}{venc_html}{preguntas_html({"preguntas": qs})}
+{f'<p class="fuente"><b>Sitios oficiales:</b> {of}</p>' if of else ""}
+<p class="aviso">Información de carácter general. Verificá siempre en el sitio oficial del organismo. Cada profesional es responsable de su aplicación.</p>
+</div>
+{nov}
+<section class="relacionadas"><h2>Otras provincias y municipios</h2><ul>{otras}<li><a href="provincias-y-municipios.html">Ver todas</a></li></ul></section>
+</article>{lateral(notas)}</div>"""
+    ld = ('<script type="application/ld+json">' + json.dumps({"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [
+        {"@type": "Question", "name": q["p"], "acceptedAnswer": {"@type": "Answer", "text": q["r"]}} for q in qs]}, ensure_ascii=False).replace("</", "<\\/") + "</script>") if qs else ""
+    if not cajas and not fijos and not rel and not venc:
+        PAGINAS_FINAS.add(j["ruta"])
+        ld += NOI
+    return pagina(f'{j["titulo"]} | Ramacontable', cuerpo, "impuestos", j["descripcion"], j["ruta"] + ".html", ld,
+                  [("Provincias y municipios", "provincias-y-municipios.html"), (j["titulo_corto"], j["ruta"] + ".html")])
+
+
+def pagina_provincias(notas):
+    tarj = ""
+    for j in JURIS:
+        datos = [t for t in TEMAS_RESP if t.get("jurisdiccion") == j["slug"] and ((RESP.get(t["slug"]) or {}).get("datos") or {}).get("valor")]
+        li = "".join(f'<li><a href="{t["slug"]}.html"><b>{e(t["titulo"])}</b><span>{e(ajustar_tramo(RESP[t["slug"]]["datos"])["valor"])}</span></a></li>' for t in datos)
+        tarj += (f'<section class="rama-guias"><h2><a href="{j["ruta"]}.html">{e(j["titulo_corto"])}</a></h2>'
+                 f'<p class="ayuda">{e(j["descripcion"])}</p>' + (f'<ul class="lista-guias">{li}</ul>' if li else "")
+                 + f'<p><a class="mas" href="{j["ruta"]}.html">Ver todo de {e(j["nombre"])} →</a></p></section>')
+    otras = ""
+    for o in OTRAS_J:
+        rel = [n for n in notas if _de_jurisdiccion(n, o.get("claves") or [])][:3]
+        if rel:
+            otras += f'<h3>{e(o["nombre"])} <small>({e(o["organismo"])})</small></h3><ul>' + "".join(f'<li><a href="nota-{n["slug"]}.html">{e(n["titulo"])}</a></li>' for n in rel) + "</ul>"
+    otras_html = ('<section class="rama-guias"><h2>Novedades de otras provincias</h2>' + otras + "</section>") if otras else \
+        ('<section class="rama-guias"><h2>Otras provincias</h2><p class="ayuda">También seguimos las novedades de '
+         + ", ".join(e(o["nombre"]) for o in OTRAS_J) + ". Cuando publiquen algo para la profesión, aparece acá.</p></section>")
+    cuerpo = f"""<div class="grilla"><section><p class="miga"><a href="impuestos.html">Impuestos</a></p>
+<h1 class="titsec">Impuestos provinciales y municipales</h1>
+<p>Ingresos Brutos, regímenes simplificados, tasas municipales y vencimientos de cada provincia y municipio, con la norma y la fuente oficial de cada dato.</p>
+{tarj}{otras_html}</section>{lateral(notas)}</div>"""
+    return pagina("Impuestos provinciales y municipales: Ingresos Brutos y tasas por provincia | Ramacontable", cuerpo, "impuestos",
+                  "Ingresos Brutos y regímenes simplificados de Buenos Aires, Córdoba y Santa Fe, tasas municipales como la Monotasa de La Plata, vencimientos y novedades por provincia.",
+                  "provincias-y-municipios.html", migas=[("Impuestos", "impuestos.html"), ("Provincias y municipios", "provincias-y-municipios.html")])
+
+
 def portada(notas, titulo_pag="Ramacontable | Comunidad contable", actual="", encabezado="", extra=""):
     if not notas:
         lista = '<p class="vacio">Todavía no hay notas en esta sección.</p>'
@@ -1677,6 +1804,7 @@ def main():
     global VENC
     VENC = cargar_vencimientos()
     cargar_respuestas()
+    cargar_jurisdicciones()
     notas = cargar_notas()
     with open(os.path.join(SALIDA, "config.js"), "w", encoding="utf-8") as f:
         f.write("window.RC_CONFIG=" + json.dumps({
@@ -1694,7 +1822,7 @@ def main():
         catalogo = json.load(open(os.path.join(RAIZ, "guias", "catalogo.json"), encoding="utf-8"))
     except Exception:
         catalogo = []
-    escribir("index.html", portada(notas))
+    escribir("index.html", portada([n for n in notas if not nota_de_nicho(n)]))
     escribir("guias.html", pagina_guias(guias, notas, catalogo))
     for imp in IMPUESTOS:
         escribir(f"impuesto-{imp[0]}.html", pagina_impuesto(imp, notas, guias, catalogo))
@@ -1774,6 +1902,10 @@ def main():
         escribir(url + ".html", h)
         QUE_CAMBIA_URLS.append(url)
     escribir("cuando-cambia-cada-dato.html", pagina_calendario_datos(notas))
+    for j in JURIS:
+        escribir(j["ruta"] + ".html", pagina_jurisdiccion(j, notas))
+    escribir("provincias-y-municipios.html", pagina_provincias(notas))
+    JURIS_URLS[:] = ["provincias-y-municipios"] + [j["ruta"] for j in JURIS]
     g = pagina_glosario(notas)
     if g:
         escribir("glosario.html", g)
