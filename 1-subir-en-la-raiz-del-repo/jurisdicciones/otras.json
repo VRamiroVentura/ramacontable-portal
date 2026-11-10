@@ -1,0 +1,172 @@
+{
+ "_ayuda": "Provincias que por ahora solo muestran novedades (sin datos fijos).",
+ "lista": [
+  {
+   "slug": "tucuman",
+   "nombre": "Tucumán",
+   "organismo": "DGR Tucumán",
+   "claves": [
+    "tucumán",
+    "tucuman"
+   ]
+  },
+  {
+   "slug": "salta",
+   "nombre": "Salta",
+   "organismo": "DGR Salta",
+   "claves": [
+    "salta"
+   ]
+  },
+  {
+   "slug": "mar-del-plata",
+   "nombre": "Mar del Plata (General Pueyrredon)",
+   "organismo": "Municipalidad de General Pueyrredon",
+   "claves": [
+    "mar del plata",
+    "general pueyrredon"
+   ]
+  },
+  {
+   "slug": "caba",
+   "nombre": "Ciudad de Buenos Aires",
+   "organismo": "AGIP",
+   "claves": [
+    "agip",
+    "ciudad de buenos aires",
+    "caba",
+    "porteño"
+   ]
+  },
+  {
+   "slug": "neuquen",
+   "nombre": "Neuquén",
+   "organismo": "Rentas Neuquén",
+   "claves": [
+    "neuquén",
+    "neuquen"
+   ]
+  },
+  {
+   "slug": "chubut",
+   "nombre": "Chubut",
+   "organismo": "DGR Chubut",
+   "claves": [
+    "chubut"
+   ]
+  },
+  {
+   "slug": "misiones",
+   "nombre": "Misiones",
+   "organismo": "ATM Misiones",
+   "claves": [
+    "misiones"
+   ]
+  },
+  {
+   "slug": "corrientes",
+   "nombre": "Corrientes",
+   "organismo": "DGR Corrientes",
+   "claves": [
+    "corrientes"
+   ]
+  },
+  {
+   "slug": "jujuy",
+   "nombre": "Jujuy",
+   "organismo": "Rentas Jujuy",
+   "claves": [
+    "jujuy"
+   ]
+  },
+  {
+   "slug": "san-juan",
+   "nombre": "San Juan",
+   "organismo": "DGR San Juan",
+   "claves": [
+    "san juan"
+   ]
+  },
+  {
+   "slug": "rio-negro",
+   "nombre": "Río Negro",
+   "organismo": "ART Río Negro",
+   "claves": [
+    "río negro",
+    "rio negro"
+   ]
+  },
+  {
+   "slug": "la-pampa",
+   "nombre": "La Pampa",
+   "organismo": "DGR La Pampa",
+   "claves": [
+    "la pampa"
+   ]
+  },
+  {
+   "slug": "chaco",
+   "nombre": "Chaco",
+   "organismo": "ATP Chaco",
+   "claves": [
+    "chaco"
+   ]
+  },
+  {
+   "slug": "santiago-del-estero",
+   "nombre": "Santiago del Estero",
+   "organismo": "DGR Santiago del Estero",
+   "claves": [
+    "santiago del estero"
+   ]
+  },
+  {
+   "slug": "san-luis",
+   "nombre": "San Luis",
+   "organismo": "DPIP San Luis",
+   "claves": [
+    "san luis"
+   ]
+  },
+  {
+   "slug": "formosa",
+   "nombre": "Formosa",
+   "organismo": "DGR Formosa",
+   "claves": [
+    "formosa"
+   ]
+  },
+  {
+   "slug": "catamarca",
+   "nombre": "Catamarca",
+   "organismo": "AGR Catamarca",
+   "claves": [
+    "catamarca"
+   ]
+  },
+  {
+   "slug": "la-rioja",
+   "nombre": "La Rioja",
+   "organismo": "DGIP La Rioja",
+   "claves": [
+    "la rioja"
+   ]
+  },
+  {
+   "slug": "santa-cruz",
+   "nombre": "Santa Cruz",
+   "organismo": "ASIP Santa Cruz",
+   "claves": [
+    "santa cruz"
+   ]
+  },
+  {
+   "slug": "tierra-del-fuego",
+   "nombre": "Tierra del Fuego",
+   "organismo": "AREF",
+   "claves": [
+    "tierra del fuego"
+   ]
+  }
+ ]
+}

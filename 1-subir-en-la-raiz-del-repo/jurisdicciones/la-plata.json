@@ -1,0 +1,303 @@
+{
+ "slug": "la-plata",
+ "nombre": "La Plata",
+ "tipo": "municipio",
+ "orden": 4,
+ "portada": true,
+ "ruta": "tasas-municipales-la-plata",
+ "organismo": "Municipalidad de La Plata",
+ "titulo": "Tasas municipales La Plata 2026: Seguridad e Higiene, Monotasa, TSUM, patente y licencia",
+ "titulo_corto": "La Plata (Municipalidad)",
+ "descripcion": "Tasas municipales de La Plata 2026 según la Ordenanza Impositiva 12682: Seguridad e Higiene y Monotasa, TSUM (ABL), patente de motos, licencia de conducir, publicidad y certificados.",
+ "intro": "Los valores 2026 de la Ordenanza Impositiva 12682 de La Plata que más se consultan: Seguridad e Higiene y su régimen simplificado (Monotasa), la tasa por servicios urbanos (TSUM), la patente municipal de motos, la licencia de conducir y los certificados.",
+ "claves": [
+  "la plata",
+  "platense",
+  "municipalidad de la plata"
+ ],
+ "venc_claves": [
+  "la plata"
+ ],
+ "fuentes": [],
+ "oficiales": [
+  {
+   "nombre": "Ordenanza Impositiva 12682 (SIBOM)",
+   "url": "https://sibom.slyt.gba.gob.ar/bulletins/14010/contents/2319885"
+  },
+  {
+   "nombre": "Municipalidad de La Plata",
+   "url": "https://www.laplata.gob.ar/"
+  }
+ ],
+ "bloques": [
+  {
+   "h": "Tasa por Inspección de Seguridad e Higiene 2026"
+  },
+  {
+   "p": "La Ordenanza Impositiva 12682 rige desde el 1° de enero de 2026 y reemplaza a la Ordenanza 12622 (2025). Su Anexo fija, para cada actividad (código NAES), la alícuota máxima y el valor mínimo mensual de la tasa; la Municipalidad no puede aplicar alícuotas ni mínimos mayores (art. 9)."
+  },
+  {
+   "p": "La mayoría de las actividades tributa 10‰ con un mínimo de $ 30.000 por mes. Las actividades agropecuarias van al 4‰, salud y servicios sociales al 6‰, enseñanza al 5‰, la venta mayorista en comisión al 13‰, supermercados y hoteles al 15‰, y bancos y entidades financieras al 75‰."
+  },
+  {
+   "p": "El artículo 10 fija para las cadenas de distribución con predominio de venta de alimentos y bebidas una alícuota de hasta el 25‰, según la Ley provincial 12.573. La ordenanza prevé revisar los valores si la inflación acumulada supera el 20%."
+  },
+  {
+   "h": "Tasa por Servicios Urbanos Municipales (TSUM) 2026"
+  },
+  {
+   "p": "Se calcula sobre la valuación fiscal municipal, que para 2026 se actualizó un 30% respecto de la vigente al 31/12/2025 (art. 3), y se paga en hasta 12 cuotas. Escala anual para inmuebles edificados, propiedad horizontal con construcciones terminadas y parcelas rurales (art. 1):"
+  },
+  {
+   "tabla": [
+    [
+     "Categoría",
+     "Valuación mayor a",
+     "Menor o igual a",
+     "Monto fijo",
+     "Alícuota sobre el excedente"
+    ],
+    [
+     "A",
+     "$ 0",
+     "$ 2.434.000",
+     "$ 9.960",
+     "-"
+    ],
+    [
+     "B",
+     "$ 2.434.000",
+     "$ 5.000.000",
+     "$ 9.960",
+     "0,44%"
+    ],
+    [
+     "C",
+     "$ 5.000.000",
+     "$ 10.000.000",
+     "$ 21.260",
+     "0,46%"
+    ],
+    [
+     "D",
+     "$ 10.000.000",
+     "-",
+     "$ 44.260",
+     "0,48%"
+    ]
+   ]
+  },
+  {
+   "p": "Los terrenos baldíos pagan un adicional del 125% (la categoría A paga como la B más el 125%), y los clubes de campo, barrios cerrados y PH especial un adicional del 20%. Si el servicio se presta más de 18 días por mes, puede haber un incremento de hasta el 20% (art. 2)."
+  },
+  {
+   "h": "Patente de rodados municipal 2026 (motos)"
+  },
+  {
+   "p": "Se paga por año sobre la valuación fiscal del rodado (puede tomarse desde el 60% de la valuación), para modelos 2006 en adelante. El mínimo anual es $ 13.200 y el aumento no puede superar el 40% de lo pagado el año anterior (arts. 25, 27 y 28)."
+  },
+  {
+   "tabla": [
+    [
+     "Valuación mayor a",
+     "Menor o igual a",
+     "Monto fijo",
+     "Alícuota sobre el excedente"
+    ],
+    [
+     "$ 0",
+     "$ 1.500.000",
+     "$ 0",
+     "2,31%"
+    ],
+    [
+     "$ 1.500.000",
+     "$ 1.800.000",
+     "$ 34.575",
+     "3,45%"
+    ],
+    [
+     "$ 1.800.000",
+     "$ 2.000.000",
+     "$ 44.913",
+     "3,98%"
+    ],
+    [
+     "$ 2.000.000",
+     "$ 2.300.000",
+     "$ 52.877",
+     "4,30%"
+    ],
+    [
+     "$ 2.300.000",
+     "$ 2.600.000",
+     "$ 65.771",
+     "4,49%"
+    ],
+    [
+     "$ 2.600.000",
+     "$ 2.800.000",
+     "$ 79.265",
+     "4,58%"
+    ],
+    [
+     "$ 2.800.000",
+     "$ 3.000.000",
+     "$ 88.403",
+     "4,72%"
+    ],
+    [
+     "$ 3.000.000",
+     "$ 3.200.000",
+     "$ 97.849",
+     "4,81%"
+    ],
+    [
+     "$ 3.200.000",
+     "$ 3.600.000",
+     "$ 107.459",
+     "4,93%"
+    ],
+    [
+     "$ 3.600.000",
+     "-",
+     "$ 127.171",
+     "5,00%"
+    ]
+   ]
+  },
+  {
+   "h": "Licencia de conducir en La Plata 2026: cuánto cuesta"
+  },
+  {
+   "p": "Derechos de Oficina máximos de la Ordenanza Impositiva 12682 (art. 16, inciso 9). Son solo los valores municipales: puede haber otros costos que se cobran aparte."
+  },
+  {
+   "tabla": [
+    [
+     "Trámite",
+     "Valor"
+    ],
+    [
+     "Particular (A, B, G) de 18 a 65 años, por 5 años",
+     "$ 20.000"
+    ],
+    [
+     "Particular de 66 a 70 años, por 3 años",
+     "$ 12.000"
+    ],
+    [
+     "Particular de 71 años en adelante y menores de edad, por 1 año",
+     "$ 4.000"
+    ],
+    [
+     "Profesional (C, D, E) de 21 a 45 años, por 2 años",
+     "$ 12.000"
+    ],
+    [
+     "Profesional de 46 años en adelante, por 1 año",
+     "$ 6.000"
+    ],
+    [
+     "Mayores de 65 que cobran la jubilación mínima",
+     "$ 4.000"
+    ],
+    [
+     "Duplicados, reemplazos, reconocimientos y otras certificaciones",
+     "$ 5.000"
+    ]
+   ]
+  },
+  {
+   "h": "Publicidad y propaganda 2026"
+  },
+  {
+   "tabla": [
+    [
+     "Concepto",
+     "Valor máximo"
+    ],
+    [
+     "Anuncios en vehículos o establecimientos propios, por m² o fracción",
+     "$ 9.000 por mes"
+    ],
+    [
+     "Anuncios de marca propia en espacios de terceros, por m² o fracción",
+     "$ 12.000 por mes"
+    ],
+    [
+     "Anuncios de marcas de terceros",
+     "Hasta 5% de los ingresos por el alquiler del espacio, mínimo $ 15.000 por m² por mes"
+    ],
+    [
+     "Otra publicidad, por m² o fracción",
+     "$ 30.000 por mes"
+    ]
+   ]
+  },
+  {
+   "h": "Otros valores para el estudio contable"
+  },
+  {
+   "tabla": [
+    [
+     "Concepto",
+     "Valor máximo"
+    ],
+    [
+     "Certificado de deuda por gravámenes municipales",
+     "$ 24.000"
+    ],
+    [
+     "Certificado catastral sobre inmuebles",
+     "$ 21.000"
+    ],
+    [
+     "Certificado de dominio de inmuebles",
+     "$ 21.000"
+    ],
+    [
+     "Tasa general de actuaciones y certificaciones",
+     "$ 2.000"
+    ],
+    [
+     "Visita a comercio en habilitación (desde la 3.ª revisión)",
+     "$ 30.000"
+    ],
+    [
+     "Libreta sanitaria y curso de manipulación de alimentos",
+     "$ 9.000"
+    ],
+    [
+     "Ocupación de espacio público (fuera de la Monotasa), por m²",
+     "$ 5.600 por mes"
+    ]
+   ]
+  }
+ ],
+ "tablas": [
+  {
+   "archivo": "tablas/la-plata-seguridad-e-higiene-2026.json",
+   "ruta": "alicuotas-seguridad-e-higiene-la-plata",
+   "titulo": "Alícuotas de Seguridad e Higiene La Plata 2026: tabla por actividad y mínimos",
+   "titulo_corto": "Alícuotas de Seguridad e Higiene 2026",
+   "descripcion": "Buscá tu actividad y mirá la alícuota de la Tasa de Seguridad e Higiene de La Plata 2026 y el mínimo mensual, según el Anexo de la Ordenanza Impositiva 12682.",
+   "destacados": [
+    "477490",
+    "471130",
+    "471120",
+    "561011",
+    "561019",
+    "410011",
+    "692000",
+    "691001",
+    "681098",
+    "960201",
+    "551022",
+    "620104",
+    "869090",
+    "641931"
+   ]
+  }
+ ]
+}

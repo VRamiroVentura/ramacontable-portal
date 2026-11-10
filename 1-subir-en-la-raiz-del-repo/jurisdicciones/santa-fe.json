@@ -1,0 +1,52 @@
+{
+ "slug": "santa-fe",
+ "nombre": "Santa Fe",
+ "tipo": "provincia",
+ "orden": 3,
+ "portada": false,
+ "ruta": "impuestos-santa-fe",
+ "organismo": "API (Administración Provincial de Impuestos de Santa Fe)",
+ "titulo": "Ingresos Brutos Santa Fe 2026: Régimen Simplificado, vencimientos y novedades de API",
+ "titulo_corto": "Santa Fe (API)",
+ "descripcion": "Ingresos Brutos de Santa Fe: escala del Régimen Simplificado desde julio 2026 (Resolución API 117/2026), vencimientos y novedades de la API.",
+ "intro": "Los datos de Ingresos Brutos de Santa Fe que más se buscan: la escala del Régimen Simplificado con el impuesto mensual de cada categoría, los vencimientos y las novedades de la API.",
+ "claves": [
+  "santa fe",
+  "santafesino",
+  "api santa fe",
+  "rosario"
+ ],
+ "venc_claves": [
+  "santa fe",
+  "convenio multilateral"
+ ],
+ "fuentes": [
+  {
+   "nombre": "Gobierno de Santa Fe",
+   "tipo": "oficial",
+   "url": "https://www.santafe.gov.ar/noticias/",
+   "filtro": [
+    "api",
+    "ingresos brutos",
+    "impuesto",
+    "inmobiliario",
+    "patente",
+    "sellos",
+    "vencimiento",
+    "regimen simplificado",
+    "tributari",
+    "recaudacion",
+    "moratoria",
+    "plan de pago",
+    "contribuyente"
+   ]
+  }
+ ],
+ "oficiales": [
+  {
+   "nombre": "API Santa Fe",
+   "url": "https://www.santafe.gov.ar/index.php/web/content/view/full/211373"
+  }
+ ],
+ "bloques": []
+}

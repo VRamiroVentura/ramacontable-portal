@@ -1,0 +1,144 @@
+{
+ "slug": "monotasa-la-plata",
+ "titulo": "Monotasa La Plata 2026: Seguridad e Higiene para pequeños comercios",
+ "revisado": "2026-11-10T17:00:00-03:00",
+ "cambiado": "2026-01-01",
+ "fuentes": [
+  {
+   "nombre": "Ordenanza Impositiva 12682 (SIBOM)",
+   "url": "https://sibom.slyt.gba.gob.ar/bulletins/14010/contents/2319885"
+  }
+ ],
+ "historial": [
+  {
+   "fecha": "2025-01-01",
+   "valor": "Categorías A y B: $ 12.800 por bimestre",
+   "norma": "Ordenanza Impositiva 12622"
+  },
+  {
+   "fecha": "2026-01-01",
+   "valor": "Categoría A: hasta $ 12.000 por mes",
+   "norma": "Ordenanza Impositiva 12682"
+  }
+ ],
+ "datos": {
+  "valor": "Categoría A: hasta $ 12.000 por mes",
+  "monto": 12000,
+  "vigencia": "1 de enero de 2026",
+  "proximo": "Nueva Ordenanza Impositiva para 2027 (suele aprobarse en noviembre o diciembre)",
+  "norma": "Ordenanza Impositiva N° 12682 de La Plata, artículo 41 (Título XXI)",
+  "respuesta": "En 2026, los contribuyentes de La Plata en el Régimen Simplificado para Pequeños Comercios (Monotasa) pagan por mes hasta $ 12.000 (categoría A del Monotributo) y hasta $ 410.000 (categoría K), según la Ordenanza Impositiva 12682.",
+  "tabla": [
+   [
+    "Categoría del Monotributo",
+    "Monotasa por mes (hasta)"
+   ],
+   [
+    "A",
+    "$ 12.000"
+   ],
+   [
+    "B",
+    "$ 19.000"
+   ],
+   [
+    "C",
+    "$ 29.000"
+   ],
+   [
+    "D",
+    "$ 40.000"
+   ],
+   [
+    "E",
+    "$ 53.000"
+   ],
+   [
+    "F",
+    "$ 75.000"
+   ],
+   [
+    "G",
+    "$ 101.000"
+   ],
+   [
+    "H",
+    "$ 175.000"
+   ],
+   [
+    "I",
+    "$ 224.000"
+   ],
+   [
+    "J",
+    "$ 295.000"
+   ],
+   [
+    "K",
+    "$ 410.000"
+   ]
+  ],
+  "explicacion": [
+   "La Monotasa es el régimen simplificado de la Tasa por Inspección de Seguridad e Higiene para pequeños comercios de La Plata: se paga un importe fijo según la categoría del Monotributo.",
+   "Cambio 2026: hasta 2025 se pagaba por bimestre y con montos agrupados (por ejemplo, $ 12.800 por bimestre para las categorías A y B). Desde 2026 se paga por mes y cada categoría tiene su propio importe."
+  ],
+  "preguntas": [
+   {
+    "p": "¿La Monotasa se paga por mes o por bimestre?",
+    "r": "Desde 2026, por mes. Con la Ordenanza 12622 (2025) era bimestral."
+   },
+   {
+    "p": "¿Cuánto se paga de Monotasa en La Plata en 2026?",
+    "r": "Por mes, hasta $ 12.000 en la categoría A y hasta $ 410.000 en la categoría K del Monotributo (Ordenanza Impositiva 12682, art. 41)."
+   }
+  ],
+  "estructurado": {
+   "categorias": [
+    {
+     "categoria": "A",
+     "importe": 12000
+    },
+    {
+     "categoria": "B",
+     "importe": 19000
+    },
+    {
+     "categoria": "C",
+     "importe": 29000
+    },
+    {
+     "categoria": "D",
+     "importe": 40000
+    },
+    {
+     "categoria": "E",
+     "importe": 53000
+    },
+    {
+     "categoria": "F",
+     "importe": 75000
+    },
+    {
+     "categoria": "G",
+     "importe": 101000
+    },
+    {
+     "categoria": "H",
+     "importe": 175000
+    },
+    {
+     "categoria": "I",
+     "importe": 224000
+    },
+    {
+     "categoria": "J",
+     "importe": 295000
+    },
+    {
+     "categoria": "K",
+     "importe": 410000
+    }
+   ]
+  }
+ }
+}
