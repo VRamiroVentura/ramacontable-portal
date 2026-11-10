@@ -329,6 +329,8 @@ def pagina_convenio(c, notas, aportes=None):
     if c.get("preguntas"):
         head += '<script type="application/ld+json">' + json.dumps({"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [
             {"@type": "Question", "name": q["p"], "acceptedAnswer": {"@type": "Answer", "text": q["r"]}} for q in c["preguntas"]]}, ensure_ascii=False).replace("</", "<\\/") + "</script>"
+    contenido = contenido.replace("</article>", '<section class="relacionadas"><h2>Paritarias por mes</h2><ul>' + "".join(
+        f'<li><a href="paritarias-{c["slug"]}-{MESES[int(m[5:]) - 1]}-{m[:4]}.html">Paritarias {e(c["nombre"])} {MESES[int(m[5:]) - 1]} {m[:4]}</a></li>' for m in _meses_paginas()) + "</ul></section></article>", 1)
     return pagina(seo_t + " | Ramacontable", contenido, "sueldos", desc, f"escala-{c['slug']}.html", head,
                   [("Sueldos", "sueldos.html"), ("Convenios", "convenios.html"), (c["nombre"], f"escala-{c['slug']}.html")])
 
@@ -618,7 +620,7 @@ def sitemaps(notas, convenios=()):
     base = sitio_url()
     hoy = datetime.date.today().isoformat()
     urls = [f"<url><loc>{base}</loc><lastmod>{hoy}</lastmod></url>"] + [
-        f"<url><loc>{base}{k}.html</loc><lastmod>{hoy}</lastmod></url>" for k in list(SECCIONES) + ["aguinaldo", "herramientas", "convenios", "guias", "calculadoras", "feriados", "sueldo-comercio", "sueldo-casas-particulares", "actualizacion", "dias-habiles", "plazo-fijo", "prestamos", "vacaciones", "liquidacion-final", "horas-extras", "iva", "conversor-dolar", "monotributo-categoria", "intereses-arca", "actualizacion-alquiler", "embargo-sueldo", "cuando-cambia-cada-dato", "glosario", "comparador-escalas", "agenda-vencimientos", "retencion-ganancias"] + [o[0] for o in OBLIGACIONES] + urls_mes() + [f"impuesto-{i[0]}" for i in IMPUESTOS] + ["datos-al-dia", "dolar-hoy"] + [t["slug"] for t in TEMAS_RESP] + [b[0] for b in BCRA_RESP] + [x[0] for x in DOLARES]] + [
+        f"<url><loc>{base}{k}.html</loc><lastmod>{hoy}</lastmod></url>" for k in list(SECCIONES) + ["aguinaldo", "herramientas", "convenios", "guias", "calculadoras", "feriados", "sueldo-comercio", "sueldo-casas-particulares", "actualizacion", "dias-habiles", "plazo-fijo", "prestamos", "vacaciones", "liquidacion-final", "horas-extras", "iva", "conversor-dolar", "monotributo-categoria", "intereses-arca", "actualizacion-alquiler", "embargo-sueldo", "cuando-cambia-cada-dato", "glosario", "comparador-escalas", "agenda-vencimientos", "retencion-ganancias"] + [o[0] for o in OBLIGACIONES] + urls_mes() + PARITARIAS_URLS + [f"impuesto-{i[0]}" for i in IMPUESTOS] + ["datos-al-dia", "dolar-hoy"] + [t["slug"] for t in TEMAS_RESP] + [b[0] for b in BCRA_RESP] + [x[0] for x in DOLARES]] + [
         f"<url><loc>{base}escala-{c['slug']}.html</loc><lastmod>{str(c.get('actualizado') or hoy)[:10]}</lastmod></url>" for c in convenios] + [
         f"<url><loc>{base}nota-{n['slug']}.html</loc><lastmod>{str(n.get('actualizado') or n['fecha'])[:10]}</lastmod></url>" for n in notas]
     mapa = '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' + "".join(urls) + "</urlset>"
@@ -1255,10 +1257,14 @@ def bloque_aguinaldo(n, notas):
                 + ("" if mv[5:7] == f"{vto.month:02d}" else f" La base de {MESES[vto.month - 1]} se publica en los próximos días y se actualiza acá sola.") + "</li>")
     nov = [x for x in notas if x["slug"] != n["slug"] and "aguinaldo" in (x["titulo"] + " " + x.get("encorto", "")).lower()][:5]
     lis = "".join(f'<li><a href="nota-{x["slug"]}.html">{e(x["titulo"])}</a> <small>{fecha_corta(str(x["fecha"])[:10])}</small></li>' for x in nov)
-    return (f'<section class="dato-hoy"><h2>Aguinaldo hoy, {hoy.day}/{hoy.month}/{hoy.year}</h2><ul><li>{cuenta}</li>{tope}</ul>'
+    nombre_mes = "junio" if vto.month == 6 else "diciembre"
+    dia_sem = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"][vto.weekday()]
+    return (f'<section class="dato-hoy"><h2>Aguinaldo de {nombre_mes} {vto.year}: se paga hasta el {dia_sem} {vto.day} de {nombre_mes}</h2>'
+            f'<p class="nota-chica">Actualizado el {hoy.day}/{hoy.month}/{hoy.year}</p><ul><li>{cuenta}</li>{tope}</ul>'
             + (f"<h3>Novedades del aguinaldo</h3><ul>{lis}</ul>" if lis else "") + "</section>")
 
 
+PARITARIAS_URLS = []
 MES_DESDE = "2026-11"  # primer mes con páginas propias (quedan publicadas para siempre)
 PAGINAS_MES = [  # (prefijo de la URL, dato del día, título, pregunta)
     ("aumento-jubilados", "jubilacion-minima-y-bono", "Aumento de jubilados {mes}: cuánto cobra la mínima", "¿Cuánto cobra un jubilado con la mínima en {mes}?"),
@@ -1338,6 +1344,47 @@ def pagina_mes(pref, slug_dato, tit, preg, mes, notas):
 
 def urls_mes():
     return [f"{p[0]}-{MESES[int(m[5:]) - 1]}-{m[:4]}" for p in PAGINAS_MES for m in _meses_paginas()]
+
+
+def pagina_paritaria(c, mes, notas):
+    mes_txt = f"{MESES[int(mes[5:]) - 1]} {mes[:4]}"
+    esc = c.get("escala") or {}
+    periodo = esc.get("periodo") or ""
+    nombre_mes = MESES[int(mes[5:]) - 1]
+    cubre = bool(periodo) and nombre_mes in periodo.lower() and mes[:4] in periodo
+    hist = sorted(c.get("historial") or [], key=lambda h: str(h.get("fecha", "")), reverse=True)
+    if cubre:
+        estado = f"La escala vigente para {mes_txt} es la de <b>{e(periodo)}</b>."
+    elif periodo:
+        estado = (f"Para {mes_txt} todavía no se publicó un acuerdo nuevo. La última escala cargada es la de <b>{e(periodo)}</b>; "
+                  "la actualizamos en cuanto se homologue o la publiquen el gremio o las cámaras.")
+    else:
+        estado = f"Para {mes_txt} todavía no tenemos la escala confirmada con fuentes: se publica apenas la confirmen el gremio o dos portales."
+    tabla = ""
+    t = esc.get("tabla") or []
+    if cubre and len(t) > 1:
+        tabla = bloque({"tabla": t[:13]}) + ('<p class="nota-chica">Escala completa en la página del convenio.</p>' if len(t) > 13 else "")
+    def fila_h(h):
+        pct = (_num(h["aumento_pct"]) + "%") if isinstance(h.get("aumento_pct"), (int, float)) else "-"
+        link = f'<a href="nota-{h["nota"]}.html">ver nota</a>' if h.get("nota") else ""
+        return f"<tr><td>{e(h.get('periodo') or '')}</td><td>{pct}</td><td>{link}</td></tr>"
+    filas_h = "".join(fila_h(h) for h in hist[:6])
+    h_html = (f'<h2>Últimos acuerdos</h2><div class="tabla"><table><thead><tr><th>Período</th><th>Aumento</th><th></th></tr></thead><tbody>{filas_h}</tbody></table></div>' if filas_h else "")
+    rel = [n for n in notas if c["nombre"].split(" (")[0].lower() in n["titulo"].lower()][:4]
+    rel_html = ("<h2>Novedades del convenio</h2><ul>" + "".join(f'<li><a href="nota-{n["slug"]}.html">{e(n["titulo"])}</a></li>' for n in rel) + "</ul>") if rel else ""
+    titulo = f"Paritarias {c['nombre']} {mes_txt}: escala salarial y aumento"
+    cuerpo = f"""<div class="grilla"><div class="nota-contenido"><p class="miga"><a href="convenios.html">Escalas por convenio</a> / <a href="escala-{c['slug']}.html">{e(c['nombre'])}</a></p>
+<h1>{e(titulo)}</h1>
+<p class="firma">Redacción Ramacontable · {e(c.get('cct') or '')} · Actualizado {fecha_larga(datetime.date.today().isoformat())}</p>
+<div class="resp-caja"><p>{estado}</p></div>
+{tabla}
+<p><a class="btn" href="escala-{c['slug']}.html">Ver la escala completa de {e(c['nombre'])} →</a></p>
+{h_html}{rel_html}
+<p class="aviso">Información de carácter general. Verificá siempre en el acuerdo homologado.</p>
+</div>{lateral(notas)}</div>"""
+    return pagina(f"{titulo} | Ramacontable", cuerpo, "sueldos",
+                  f"Paritarias {c['nombre']} ({c.get('cct') or ''}) {mes_txt}: escala salarial vigente, aumentos y sumas no remunerativas.",
+                  f"paritarias-{c['slug']}-{nombre_mes}-{mes[:4]}.html", migas=[("Escalas por convenio", "convenios.html"), (titulo, f"paritarias-{c['slug']}-{nombre_mes}-{mes[:4]}.html")])
 
 
 def pagina_datos(notas):
@@ -1593,6 +1640,9 @@ def main():
             h = pagina_mes(*pm, m, notas)
             if h:
                 escribir(f"{pm[0]}-{MESES[int(m[5:]) - 1]}-{m[:4]}.html", h)
+    for c in convenios:
+        for m in _meses_paginas():
+            escribir(f"paritarias-{c['slug']}-{MESES[int(m[5:]) - 1]}-{m[:4]}.html", pagina_paritaria(c, m, notas))
     escribir("cuando-cambia-cada-dato.html", pagina_calendario_datos(notas))
     g = pagina_glosario(notas)
     if g:
@@ -1646,6 +1696,7 @@ def main():
         escribir(archivo, pagina(titulo, cuerpo, "", desc, archivo))
     for c in convenios:
         escribir(f"escala-{c['slug']}.html", pagina_convenio(c, notas, aportes.get("convenio-" + c["slug"])))
+    PARITARIAS_URLS[:] = [f"paritarias-{c['slug']}-{MESES[int(m[5:]) - 1]}-{m[:4]}" for c in convenios for m in _meses_paginas()]
     mapa, noticias, robots = sitemaps(todas, convenios)
     escribir("sitemap.xml", mapa)
     escribir("sitemap-noticias.xml", noticias)

@@ -19,3 +19,6 @@ Tu tarea:
 Respondé SOLO con JSON con esta forma:
 {"grupos": [{"tema": "...", "items": [ids], "profesion": true, "seccion": "sueldos", "repetido": false, "actualiza": null, "convenio": null, "escala": false, "clase": "novedad", "motivo": "una línea"}]}
 Cada id de novedad tiene que aparecer en un solo grupo.
+
+
+Prioridad provincia de Buenos Aires: las novedades de ARBA, de la provincia de Buenos Aires y de sus municipios (Ingresos Brutos, Monotributo unificado, planes de pago, regímenes de retención y percepción, sellos, inmobiliario) son de la profesión y tienen prioridad: no las descartes por ser provinciales.
