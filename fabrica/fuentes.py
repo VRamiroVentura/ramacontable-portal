@@ -32,7 +32,11 @@ def _limpio(html_texto):
 
 
 def _bajar(url):
-    r = util.pedir("GET", url, intentos=2, espera=3, headers=UA, timeout=40)
+    try:
+        r = util.pedir("GET", url, intentos=2, espera=3, headers=UA, timeout=40)
+    except Exception as ex:  # noqa  (un sitio caído o que no responde no tiene que frenar la nota)
+        util.log("No pude leer", url, str(ex)[:120])
+        return None
     if r is None or r.status_code != 200:
         util.log("No pude leer", url, getattr(r, "status_code", "?"))
         return None
@@ -226,7 +230,7 @@ def _art(norm, marca, desde=0):
 _OFICIALES = re.compile(r'href=["\'](https?://(?:[\w-]+\.)*(?:gob\.ar|gov\.ar|bcra\.gob\.ar|boletinoficial\.gob\.ar|'
                         r'argentina\.gob\.ar|arca\.gob\.ar|afip\.gob\.ar|infoleg\.gob\.ar|saij\.gob\.ar|gba\.gob\.ar|'
                         r'arba\.gov\.ar|agip\.gob\.ar)[^"\'#\s]*)', re.I)
-_NO_NORMA = ("/login", "/contacto", "/buscar", "facebook", "twitter", "/home", "/inicio")
+_NO_NORMA = ("boletinoficial.gob.ar", "/login", "/contacto", "/buscar", "facebook", "twitter", "/home", "/inicio")
 
 
 def fuente_oficial_citada(url):

@@ -12,7 +12,7 @@ from datetime import timedelta
 
 from . import fuentes, gemini, mail, util
 
-FUENTES_EXTRA = [{"nombre": "ARBA", "tipo": "oficial", "url": "https://web.arba.gov.ar/noticias"}, {"nombre": "Tributum", "tipo": "portal", "url": "https://tributum.news/feed/"}, {"nombre": "Estudio Vilaplana", "tipo": "portal", "url": "https://www.estudiovilaplana.com.ar/feed/"}, {"nombre": "iProfesional Impuestos", "tipo": "apoyo", "url": "https://www.iprofesional.com/rss/impuestos.xml", "filtro": ["arca", "afip", "anses", "monotribut", "ganancias", "iva", "bienes personales", "ingresos brutos", "arba", "agip", "impuesto", "boletin oficial", "resolucion general", "decreto", "convenio", "paritaria", "escala", "salari", "sueldo", "aguinaldo", "indemniz", "aportes", "contribuciones", "seguridad social", "art ", "feriado", "vencimiento", "bcra", "comunicacion a", "reforma laboral"]}, {"nombre": "Calcular Sueldo", "tipo": "apoyo", "url": "https://calcularsueldo.com.ar/feed/", "filtro": ["arca", "afip", "anses", "monotribut", "ganancias", "iva", "bienes personales", "ingresos brutos", "arba", "agip", "impuesto", "boletin oficial", "resolucion general", "decreto", "convenio", "paritaria", "escala", "salari", "sueldo", "aguinaldo", "indemniz", "aportes", "contribuciones", "seguridad social", "art ", "feriado", "vencimiento", "bcra", "comunicacion a", "reforma laboral"]}, {"nombre": "Econoblog", "tipo": "apoyo", "url": "https://www.econoblog.com.ar/feed/", "filtro": ["arca", "afip", "anses", "monotribut", "ganancias", "iva", "bienes personales", "ingresos brutos", "arba", "agip", "impuesto", "boletin oficial", "resolucion general", "decreto", "convenio", "paritaria", "escala", "salari", "sueldo", "aguinaldo", "indemniz", "aportes", "contribuciones", "seguridad social", "art ", "feriado", "vencimiento", "bcra", "comunicacion a", "reforma laboral"]}]
+FUENTES_EXTRA = [{"nombre": "ARBA", "tipo": "oficial", "url": "https://web.arba.gov.ar/noticias"}, {"nombre": "Gobierno nacional (argentina.gob.ar)", "tipo": "oficial", "url": "https://www.argentina.gob.ar/noticias", "filtro": ["arca", "afip", "anses", "monotribut", "ganancias", "impuest", "iva", "salario", "jubil", "asignaci", "auh", "bcra", "banco central", "feriado", "decreto", "resolucion general", "aportes", "contribuciones", "trabajo", "empleo", "paritari", "convenio", "srt", "riesgos del trabajo", "aduana", "retencion", "percepcion"]}, {"nombre": "Tributum", "tipo": "portal", "url": "https://tributum.news/feed/"}, {"nombre": "Estudio Vilaplana", "tipo": "portal", "url": "https://www.estudiovilaplana.com.ar/feed/"}, {"nombre": "iProfesional Impuestos", "tipo": "apoyo", "url": "https://www.iprofesional.com/rss/impuestos.xml", "filtro": ["arca", "afip", "anses", "monotribut", "ganancias", "iva", "bienes personales", "ingresos brutos", "arba", "agip", "impuesto", "boletin oficial", "resolucion general", "decreto", "convenio", "paritaria", "escala", "salari", "sueldo", "aguinaldo", "indemniz", "aportes", "contribuciones", "seguridad social", "art ", "feriado", "vencimiento", "bcra", "comunicacion a", "reforma laboral"]}, {"nombre": "Calcular Sueldo", "tipo": "apoyo", "url": "https://calcularsueldo.com.ar/feed/", "filtro": ["arca", "afip", "anses", "monotribut", "ganancias", "iva", "bienes personales", "ingresos brutos", "arba", "agip", "impuesto", "boletin oficial", "resolucion general", "decreto", "convenio", "paritaria", "escala", "salari", "sueldo", "aguinaldo", "indemniz", "aportes", "contribuciones", "seguridad social", "art ", "feriado", "vencimiento", "bcra", "comunicacion a", "reforma laboral"]}, {"nombre": "Econoblog", "tipo": "apoyo", "url": "https://www.econoblog.com.ar/feed/", "filtro": ["arca", "afip", "anses", "monotribut", "ganancias", "iva", "bienes personales", "ingresos brutos", "arba", "agip", "impuesto", "boletin oficial", "resolucion general", "decreto", "convenio", "paritaria", "escala", "salari", "sueldo", "aguinaldo", "indemniz", "aportes", "contribuciones", "seguridad social", "art ", "feriado", "vencimiento", "bcra", "comunicacion a", "reforma laboral"]}]
 
 CONFIABLE = "Ignacio Online"  # lo que publica Ignacio se toma como correcto (pedido de Ramiro); se vigila si después lo edita o borra
 
@@ -44,6 +44,8 @@ class Fabrica:
     def __init__(self, db=None):
         self.cfg = util.config()
         self.activo = self.cfg.get("modo") == "activo"
+        # vuelta rápida (cada 30 min): solo fuentes oficiales y el sumario del Boletín de Tributum; nada de guías ni escalas
+        self.rapido = os.environ.get("RC_RAPIDO") == "1"
         self.db = db
         self.publicadas, self.revision, self.descartes, self.esperando = [], [], [], []
         self.convenios_act, self.convenios_rev = [], []
@@ -123,7 +125,9 @@ class Fabrica:
         lista = list(self.cfg.get("fuentes", []))
         ya = {f.get("nombre") for f in lista}
         lista += [f for f in FUENTES_EXTRA if f["nombre"] not in ya]  # se suman solas, sin tocar config.json
-        lista = [f for f in lista if "boletinoficial.gob.ar" not in f.get("url", "") or self.cfg.get("leer_boletin")]  # no responde a GitHub; Tributum trae el sumario
+        lista = [f for f in lista if "boletinoficial.gob.ar" not in f.get("url", "") or self.cfg.get("leer_boletin")]
+        if self.rapido:
+            lista = [f for f in lista if f.get("tipo") == "oficial" or f.get("nombre") == "Tributum"]  # no responde a GitHub; Tributum trae el sumario
         for f in lista:
             try:
                 nuevos = fuentes.leer(f)
@@ -392,6 +396,8 @@ class Fabrica:
         # novedades vistas en vueltas anteriores que siguen esperando una segunda fuente
         esperando = [{"titulo": f["titulo"], "url": f["url"], "fecha": f.get("fecha"), "texto": f.get("texto") or "",
                       "fuente": f["fuente"], "tipo": f["tipo"]} for f in previos.values() if not f.get("usado")]
+        if self.rapido:
+            esperando = [f for f in esperando if f.get("tipo") == "oficial"]
         items = nuevos + esperando
         util.log(f"{len(nuevos)} novedades nuevas y {len(esperando)} esperando segunda fuente")
         if self.activo and self.db and nuevos:
@@ -488,6 +494,8 @@ class Fabrica:
         self.tareas_finales()
 
     def tareas_finales(self):
+        if self.rapido:  # la vuelta rápida solo publica novedades; el resto lo hace la vuelta completa
+            return self.cierre()
         """Guías, escalas, vencimientos y vigilancia, en ese orden. Si se acaba el tiempo, lo que falta queda
         para la próxima vuelta y la vuelta cierra igual (publica la web, manda el mail y deja el resumen)."""
         try:
