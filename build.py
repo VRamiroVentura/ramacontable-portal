@@ -629,7 +629,7 @@ def sitemaps(notas, convenios=()):
     # lastmod solo donde la página cambia de verdad todos los días (datos, dólar, índices, portadas);
     # las calculadoras y páginas fijas van sin fecha, para que Google no aprenda a ignorar nuestras fechas
     diarias = list(SECCIONES) + ["datos-al-dia", "dolar-hoy", "herramientas"] + [t["slug"] for t in TEMAS_RESP] + [b[0] for b in BCRA_RESP] + \
-        [x[0] for x in DOLARES] + [o[0] for o in OBLIGACIONES] + urls_mes()
+        [x[0] for x in DOLARES] + [o[0] for o in OBLIGACIONES] + urls_mes() + QUE_CAMBIA_URLS
     fijas = ["aguinaldo", "convenios", "guias", "calculadoras", "feriados", "sueldo-comercio", "sueldo-casas-particulares", "actualizacion", "dias-habiles",
              "plazo-fijo", "prestamos", "vacaciones", "liquidacion-final", "horas-extras", "iva", "conversor-dolar", "monotributo-categoria", "intereses-arca",
              "actualizacion-alquiler", "embargo-sueldo", "cuando-cambia-cada-dato", "glosario", "comparador-escalas", "agenda-vencimientos",
@@ -1052,7 +1052,8 @@ def grupos_datos():
          ("indices", "Índices y tasas", [(b[0], b[2], "") for b in BCRA_RESP]),
          ("dolar", "Dólar y cripto", [("dolar-hoy", "Dólar hoy: todas las cotizaciones", "")] + [(x[0], x[2], "") for x in DOLARES]),
          ("vencimientos", "Vencimientos del mes por CUIT", [(o[0], o[1], "") for o in OBLIGACIONES]),
-         ("calendario", "Calendario", [("cuando-cambia-cada-dato", "Cuándo cambia cada dato", "")])]
+         ("calendario", "Calendario", [(f"que-cambia-en-{MESES[int(m[5:]) - 1]}-{m[:4]}", f"Qué cambia en {MESES[int(m[5:]) - 1]} {m[:4]}", "") for m in meses_que_cambia()[-2:]]
+          + [("cuando-cambia-cada-dato", "Cuándo cambia cada dato", "")])]
     return g
 
 
@@ -1284,6 +1285,7 @@ PARITARIAS_URLS = []
 PAGINAS_FINAS = set()  # páginas sin dato todavía: noindex y fuera del sitemap hasta que tengan contenido
 NOI = '<meta name="robots" content="noindex,follow">'
 FERIADOS_URLS = []
+QUE_CAMBIA_URLS = []
 MES_DESDE = "2026-11"  # primer mes con páginas propias (quedan publicadas para siempre)
 PAGINAS_MES = [  # (prefijo de la URL, dato del día, título, pregunta)
     ("aumento-jubilados", "jubilacion-minima-y-bono", "Aumento de jubilados {mes}: cuánto cobra la mínima", "¿Cuánto cobra un jubilado con la mínima en {mes}?"),
@@ -1445,6 +1447,66 @@ def pagina_feriados_anio(ruta, notas):
     return anio, pagina(f"Feriados {anio} en Argentina: calendario completo, inamovibles y trasladables | Ramacontable", cuerpo, "",
                         f"Calendario de feriados {anio} en Argentina: inamovibles, trasladables, Carnaval, Semana Santa y días no laborables.",
                         f"feriados-{anio}.html", ld, [("Feriados", "feriados.html"), (f"Feriados {anio}", f"feriados-{anio}.html")])
+
+
+def meses_que_cambia():
+    """Mes actual y, desde el día 20, también el que viene (las páginas anteriores quedan publicadas)."""
+    hoy = datetime.date.today()
+    ms = [m for m in _meses_paginas() if m <= hoy.strftime("%Y-%m")]
+    sig = f"{hoy.year + (hoy.month // 12)}-{hoy.month % 12 + 1:02d}"
+    if hoy.day >= 20:
+        ms.append(sig)
+    return ms
+
+
+def pagina_que_cambia(mes, notas):
+    y, m = int(mes[:4]), int(mes[5:])
+    mes_txt = f"{MESES[m - 1]} {y}"
+    items = []
+    for pref, slug_dato, tit, _ in PAGINAS_MES:
+        t = next((x for x in TEMAS_RESP if x["slug"] == slug_dato), None)
+        if not t:
+            continue
+        valor, texto, estado = valor_de_mes(t, mes)
+        if valor:
+            items.append(f'<li><b>{e(t["titulo"])}:</b> {e(valor)}{" (cálculo anticipado)" if estado == "anticipado" and "anticipado" not in valor else ""}. '
+                         f'<a href="{pref}-{MESES[m - 1]}-{y}.html">Ver detalle</a></li>')
+    if m in (6, 12):
+        vto = datetime.date(y, 6, 30) if m == 6 else datetime.date(y, 12, 18)
+        items.insert(0, f'<li><b>Aguinaldo:</b> vence el {DIAS_SEM[vto.weekday()]} {vto.day} de {MESES[m - 1]}. '
+                        '<a href="aguinaldo.html">Calculadora de aguinaldo</a></li>')
+    fer = []
+    for ruta in glob.glob(os.path.join(RAIZ, "feriados", "*.json")):
+        fer += [x for x in json.load(open(ruta, encoding="utf-8")).get("feriados", []) if x["fecha"].startswith(mes)]
+    fer += [x for fila in VENC for x in fila.get("feriados") or [] if str(x.get("fecha", "")).startswith(mes) and not any(f["fecha"] == x["fecha"] for f in fer)]
+    if mes == "2026-12" and not fer:
+        fer = [{"fecha": "2026-12-08", "nombre": "Inmaculada Concepción de María"}, {"fecha": "2026-12-25", "nombre": "Navidad"}]
+    fer_html = "".join(f"<li>{DIAS_SEM[datetime.date.fromisoformat(x['fecha']).weekday()].capitalize()} {int(x['fecha'][8:])}: {e(x['nombre'])}</li>" for x in sorted(fer, key=lambda z: z["fecha"]))
+    venc = [x for x in proximos_vencimientos() if str(x["fecha"]).startswith(mes)]
+    destac = [x for x in venc if any(k in x.get("concepto", "").lower() for k in ("931", "monotrib", "iva", "autónom", "casas particulares", "ganancias", "bienes personales"))][:12]
+    venc_html = "".join(f"<li>{fecha_corta(x['fecha'])}: {e(x['concepto'])}{(' · ' + e(x['detalle'])) if x.get('detalle') else ''}</li>" for x in destac)
+    nombre = MESES[m - 1]
+    rel = [n for n in notas if nombre in n["titulo"].lower() and str(y) in n["titulo"]][:8]
+    rel_html = "".join(f'<li><a href="nota-{n["slug"]}.html">{e(n["titulo"])}</a></li>' for n in rel)
+    titulo = f"Qué cambia en {mes_txt}: aguinaldo, jubilaciones, salario mínimo, feriados y vencimientos" if m in (6, 12) else \
+        f"Qué cambia en {mes_txt}: jubilaciones, AUH, salario mínimo, feriados y vencimientos"
+    cuerpo = f"""<div class="grilla"><div class="nota-contenido"><p class="miga"><a href="datos-al-dia.html">Datos del día</a></p>
+<h1>{e(titulo)}</h1>
+<p class="firma">Redacción Ramacontable · Actualizado {fecha_larga(datetime.date.today().isoformat())}</p>
+<p class="ayuda">Todo lo que cambia en {mes_txt} para liquidar sueldos e impuestos, en una sola página. Se actualiza sola a medida que se confirman los datos.</p>
+{('<h2>Montos que cambian</h2><ul>' + ''.join(items) + '</ul>') if items else ''}
+{('<h2>Feriados de ' + nombre + '</h2><ul>' + fer_html + '</ul>') if fer_html else ''}
+{('<h2>Vencimientos destacados</h2><ul>' + venc_html + '</ul><p><a href="agenda-vencimientos.html">Armá tu agenda por CUIT →</a></p>') if venc_html else ''}
+{('<h2>Novedades de ' + nombre + '</h2><ul>' + rel_html + '</ul>') if rel_html else ''}
+<p class="aviso">Información de carácter general. Verificá siempre en las fuentes oficiales.</p>
+</div>{lateral(notas)}</div>"""
+    url = f"que-cambia-en-{nombre}-{y}"
+    flaca = len(items) + (1 if fer_html else 0) + (1 if venc_html else 0) < 3
+    if flaca:
+        PAGINAS_FINAS.add(url)
+    return url, pagina(f"{titulo} | Ramacontable", cuerpo, "datos-al-dia",
+                       f"Qué cambia en {mes_txt}: montos de jubilaciones, AUH, salario mínimo y tope de aportes, feriados y vencimientos del mes, en una sola página.",
+                       url + ".html", NOI if flaca else "", [("Datos del día", "datos-al-dia.html"), (titulo, url + ".html")])
 
 
 def pagina_datos(notas):
@@ -1707,6 +1769,10 @@ def main():
         anio, h = pagina_feriados_anio(ruta, notas)
         escribir(f"feriados-{anio}.html", h)
         FERIADOS_URLS.append(f"feriados-{anio}")
+    for m in meses_que_cambia():
+        url, h = pagina_que_cambia(m, notas)
+        escribir(url + ".html", h)
+        QUE_CAMBIA_URLS.append(url)
     escribir("cuando-cambia-cada-dato.html", pagina_calendario_datos(notas))
     g = pagina_glosario(notas)
     if g:

@@ -263,5 +263,40 @@
   "buscar": "intimacion arca descargo",
   "oficial": [],
   "grupo": "tramites"
+ },
+ {
+  "slug": "liquidar-sueldo-comercio",
+  "titulo": "Cómo liquidar un sueldo de Comercio (CCT 130/75) paso a paso",
+  "seccion": "sueldos",
+  "buscar": "liquidar sueldo comercio 130/75 paso a paso",
+  "oficial": []
+ },
+ {
+  "slug": "liquidar-sueldo-uocra",
+  "titulo": "Cómo liquidar un sueldo de UOCRA (construcción) paso a paso",
+  "seccion": "sueldos",
+  "buscar": "liquidacion sueldo uocra quincena",
+  "oficial": []
+ },
+ {
+  "slug": "liquidar-sueldo-uom",
+  "titulo": "Cómo liquidar un sueldo de UOM (metalúrgicos) paso a paso",
+  "seccion": "sueldos",
+  "buscar": "liquidacion sueldo uom metalurgicos",
+  "oficial": []
+ },
+ {
+  "slug": "liquidar-sueldo-sanidad",
+  "titulo": "Cómo liquidar un sueldo de Sanidad (CCT 122/75) paso a paso",
+  "seccion": "sueldos",
+  "buscar": "liquidacion sueldo sanidad 122/75",
+  "oficial": []
+ },
+ {
+  "slug": "liquidar-sueldo-gastronomicos",
+  "titulo": "Cómo liquidar un sueldo de gastronómicos (UTHGRA, CCT 389/04) paso a paso",
+  "seccion": "sueldos",
+  "buscar": "liquidacion sueldo gastronomicos uthgra",
+  "oficial": []
  }
 ]

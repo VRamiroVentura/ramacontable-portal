@@ -39,3 +39,7 @@ Reglas para tablas y datos que cambian:
 Títulos para buscadores:
 - Incluí en el título y en el slug el número de la norma tal como se busca (ej.: "RG 5920", "Res. 304/2026", "Decreto 1103/2026") y el mes y año cuando aplica.
 - Usá las palabras con que lo busca un contador: "tope de aportes" (no solo "base imponible"), "paritarias" y "escala salarial" junto al nombre del gremio (ej.: "UTHGRA").
+
+Reglas de redacción para guías de liquidación:
+- Redactá con tus palabras y con tu propio orden: no copies párrafos ni ejemplos textuales de las fuentes. Tomá los criterios y datos, no la redacción.
+- Si es una guía de cómo liquidar un convenio: explicá los conceptos del recibo en orden (básico, antigüedad, presentismo y adicionales del convenio, sumas no remunerativas, descuentos de ley y del convenio, aportes sindicales), con las reglas del convenio que figuren en las fuentes. No inventes porcentajes ni importes: si un adicional no figura en las fuentes, no lo incluyas. Para los montos, remití a la escala vigente del portal.
