@@ -1315,7 +1315,10 @@ def pagina_nota(n, notas, aportes=None):
     verif = ("Elaborada con fuentes oficiales." if n.get("verificada")
              else "Pendiente de verificación con fuente oficial.")
     t_dato = dato_de_nota(n)
-    cuerpo = enlazar("".join(
+    extra_calc = ('<div class="dato-vigente"><b>Calculalo:</b> <a href="aguinaldo.html">calculadora de aguinaldo</a> · '
+                  '<a href="tope-aportes-base-maxima.html">tope de aportes vigente</a> · <a href="retencion-ganancias.html">retención de Ganancias</a></div>'
+                  if "aguinaldo" in (n.get("titulo", "") + " " + n.get("slug", "")).lower() else "")
+    cuerpo = extra_calc + enlazar("".join(
         (f'<p class="dato-vigente">La tabla completa y actualizada está en <a href="{t_dato["slug"]}.html">{e(t_dato["titulo"])}</a>.</p>' if t_dato
          else "") if tabla_dudosa(b) else bloque(b) for b in n["cuerpo"]), f"nota-{n['slug']}.html")
     sec = SECCIONES[n["seccion"]]

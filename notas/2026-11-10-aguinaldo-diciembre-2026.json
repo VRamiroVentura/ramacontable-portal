@@ -1,0 +1,48 @@
+{
+  "slug": "aguinaldo-diciembre-2026-fecha-de-pago-calculo-tope-ganancias",
+  "fecha": "2026-11-10",
+  "tipo": "guia",
+  "seccion": "sueldos",
+  "antetitulo": "Aguinaldo | SAC 2.ª cuota 2026",
+  "titulo": "Aguinaldo de diciembre 2026: fecha de pago, cómo se calcula, tope de aportes y Ganancias",
+  "seo_titulo": "Aguinaldo diciembre 2026: fecha de pago (18/12), cálculo, tope y Ganancias | Ramacontable",
+  "descripcion_seo": "Aguinaldo de diciembre 2026: se paga hasta el viernes 18/12. Cómo se calcula el SAC, qué conceptos entran, descuentos y tope de aportes, Ganancias, jubilados y calculadora.",
+  "clave": "Vence el viernes 18 de diciembre de 2026",
+  "dato": "18/12",
+  "encorto": "El aguinaldo de diciembre 2026 se paga hasta el viernes 18 de diciembre y equivale al 50% de la mayor remuneración mensual devengada entre julio y diciembre, proporcional a los días trabajados. Acá va el repaso completo para liquidarlo bien: qué conceptos entran, descuentos con tope, Ganancias y la calculadora.",
+  "cuerpo": [
+    {"h": "¿Cuándo se paga el aguinaldo de diciembre 2026?"},
+    {"p": "La segunda cuota del sueldo anual complementario (SAC) vence el viernes 18 de diciembre de 2026, según el artículo 122 de la Ley de Contrato de Trabajo, modificado por la Ley 27.073. La reforma laboral no cambió esa fecha."},
+    {"h": "¿Cómo se calcula?"},
+    {"p": "Es el 50% de la mayor remuneración mensual devengada en el semestre julio a diciembre. Si el trabajador no estuvo todo el semestre, se paga en proporción a los días trabajados: mejor remuneración ÷ 2 ÷ 184 días × días trabajados."},
+    {"p": "Si el sueldo de diciembre se estimó para pagar el aguinaldo antes de fin de mes y después resulta mayor (por ejemplo, por un aumento o por horas extras), hay que recalcular y pagar la diferencia."},
+    {"h": "¿Qué conceptos entran en la base?"},
+    {"p": "Solo los conceptos remunerativos: básico, antigüedad, presentismo, horas extras, comisiones y demás variables del mes. Las sumas no remunerativas de los acuerdos salariales, en general, no integran la base del aguinaldo, salvo que el propio acuerdo diga lo contrario: hay que revisar cada convenio."},
+    {"h": "Descuentos y tope de aportes"},
+    {"p": "Sobre el aguinaldo se descuentan jubilación (11%), PAMI (3%) y obra social (3%). Para el aguinaldo, el tope de aportes es el 50% de la base imponible máxima del mes, proporcional si el semestre no está completo. La base máxima de diciembre la fija ANSES con la movilidad: la publicamos apenas salga."},
+    {"h": "Aguinaldo y Ganancias"},
+    {"p": "El aguinaldo integra la base del impuesto a las Ganancias de los empleados. Los empleadores van prorrateando cada mes una doceava parte del aguinaldo estimado, para evitar un descuento grande en diciembre, y en la liquidación de diciembre se hace el ajuste. Solo se retiene si el sueldo supera las deducciones vigentes."},
+    {"h": "Pequeñas empresas: pago en cuotas"},
+    {"p": "Las pequeñas empresas de hasta 40 trabajadores pueden fraccionar el pago del aguinaldo en hasta tres cuotas en el año si lo prevé el convenio colectivo (art. 91 de la Ley 24.467)."},
+    {"h": "Recibo y documentación"},
+    {"p": "Con la reforma laboral, el recibo puede emitirse en forma digital, con firma electrónica o digital como constancia de entrega, y conservarse en formato digital. El aguinaldo tiene que figurar como concepto propio en el recibo."},
+    {"h": "Aguinaldo e indemnización"},
+    {"p": "Con la Ley 27.802, el aguinaldo ya no integra la base de la indemnización por antigüedad del artículo 245. Si hay un despido, el aguinaldo proporcional se paga aparte en la liquidación final."},
+    {"h": "Jubilados y pensionados"},
+    {"p": "ANSES paga el medio aguinaldo de diciembre junto con el haber de diciembre, según el calendario de pagos por terminación de documento. Equivale al 50% del mayor haber del semestre. El calendario de diciembre 2026 se publica en las próximas semanas."}
+  ],
+  "preguntas": [
+    {"p": "¿Hasta cuándo hay tiempo para pagar el aguinaldo de diciembre 2026?", "r": "Hasta el viernes 18 de diciembre de 2026 (art. 122 de la LCT, modificado por la Ley 27.073)."},
+    {"p": "¿Cómo se calcula el aguinaldo de diciembre?", "r": "Es el 50% de la mayor remuneración mensual devengada entre julio y diciembre, proporcional a los días trabajados en el semestre."},
+    {"p": "¿Las sumas no remunerativas entran en el aguinaldo?", "r": "En general no, salvo que el acuerdo salarial disponga que integran la base del aguinaldo."},
+    {"p": "¿Se paga Ganancias sobre el aguinaldo?", "r": "Sí, el aguinaldo integra la base del impuesto para los empleados que superan las deducciones; el empleador lo prorratea mes a mes y ajusta en diciembre."}
+  ],
+  "fuente": "Ley de Contrato de Trabajo arts. 121 a 123 (Ley 27.073); Ley 24.467 art. 91; Ley 27.802; iProfesional; iProUP; La Gaceta.",
+  "fuentes": [
+    {"nombre": "iProfesional", "url": "https://www.iprofesional.com/actualidad/468457-aguinaldo-de-diciembre-cual-es-la-fecha-limite-para-cobrarlo"},
+    {"nombre": "iProfesional", "url": "https://www.iprofesional.com/management/457174-aguinaldo-2026-cuando-se-paga-como-se-calcula-y-que-revisar-tras-la-reforma-laboral"},
+    {"nombre": "iProUP", "url": "https://www.iproup.com/finanzas/68935-aguinaldo-y-reforma-laboral-se-acerca-la-fecha-y-ahora-asi-se-documenta"},
+    {"nombre": "La Gaceta", "url": "https://www.lagaceta.com.ar/nota/1144464/sociedad/cambios-ganancias-2026-aguinaldo-2026-quienes-pagan-impuesto-cuanto-les-descuentan"}
+  ],
+  "verificada": true
+}
