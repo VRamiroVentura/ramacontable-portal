@@ -30,3 +30,8 @@ Formato de respuesta: SOLO JSON:
  "dudas": []
 }
 Estructura sugerida: Qué es y a quién alcanza → Requisitos → Cómo se calcula (paso a paso) → Cómo figura en el recibo o en la declaración → Plazos → Errores frecuentes → Normativa. Usá subtítulos como los buscaría un profesional. Incluí de 4 a 6 preguntas frecuentes. Usá tablas cuando ordenen mejor (plazos por antigüedad, alícuotas, vencimientos).
+
+Reglas para tablas y datos que cambian:
+- Tablas: solo con TODOS los valores tomados de las fuentes. Nunca pongas "consultar", "estimado", "aproximado" ni celdas vacías; si la tabla no está completa en las fuentes, no la incluyas.
+- Si el tema es un dato que cambia periódicamente (Monotributo, Ganancias, salario mínimo, jubilación, AUH, bases de aportes, autónomos, FFEP, Bienes Personales, Ingresos Brutos simplificado), no copies la tabla completa: contá qué cambió, el valor principal y desde cuándo rige. El portal agrega solo el enlace a la tabla vigente.
+- Nunca presentes como vigentes valores estimados o proyectados.

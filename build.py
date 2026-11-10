@@ -1280,10 +1280,44 @@ def enlazar(html_txt, propio=""):
     return re.sub(r"<p>(.*?)</p>", en_parrafo, html_txt, flags=re.S)
 
 
+def dato_de_nota(n):
+    """Tema de datos del día que trata la nota (por sus palabras clave en título y resumen)."""
+    txt = (n.get("titulo", "") + " " + n.get("encorto", "")).lower()
+    for t in TEMAS_RESP:
+        if any(c.lower() in txt for c in t.get("claves", [])):
+            return t
+    return None
+
+
+_DUDOSA = re.compile(r"consultar|estimad|aproximad|a confirmar|s/d|sin dato", re.I)
+
+
+def tabla_dudosa(b):
+    return "tabla" in b and any(_DUDOSA.search(str(c)) for fila in b["tabla"] for c in fila)
+
+
+def caja_dato_vigente(n):
+    t = dato_de_nota(n)
+    if not t:
+        return ""
+    r = RESP.get(t["slug"]) or {}
+    d = ajustar_tramo(r.get("datos") or {})
+    vieja = ""
+    camb = str(r.get("cambiado") or "")[:10]
+    if camb and str(n.get("actualizado") or n["fecha"])[:10] < camb:
+        f = str(n["fecha"])[:10]
+        vieja = f"<b>Esta nota es de {MESES[int(f[5:7]) - 1]} {f[:4]}.</b> Desde entonces los valores cambiaron. "
+    return (f'<div class="dato-vigente">{vieja}Valor vigente hoy de <b>{e(t["titulo"])}</b>: '
+            f'{e(d.get("valor") or "en verificación")}. <a href="{t["slug"]}.html">Ver la tabla vigente →</a></div>')
+
+
 def pagina_nota(n, notas, aportes=None):
     verif = ("Elaborada con fuentes oficiales." if n.get("verificada")
              else "Pendiente de verificación con fuente oficial.")
-    cuerpo = enlazar("".join(bloque(b) for b in n["cuerpo"]), f"nota-{n['slug']}.html")
+    t_dato = dato_de_nota(n)
+    cuerpo = enlazar("".join(
+        (f'<p class="dato-vigente">La tabla completa y actualizada está en <a href="{t_dato["slug"]}.html">{e(t_dato["titulo"])}</a>.</p>' if t_dato
+         else "") if tabla_dudosa(b) else bloque(b) for b in n["cuerpo"]), f"nota-{n['slug']}.html")
     sec = SECCIONES[n["seccion"]]
     previa = ""
     if n.get("actualiza"):
@@ -1296,6 +1330,7 @@ def pagina_nota(n, notas, aportes=None):
 <h1>{e(n['titulo'])}</h1>
 <p class="firma">Redacción Ramacontable · {('Guía actualizada al ' + fecha_larga(str(n.get('actualizado') or n['fecha'])[:10])) if es_guia(n) else fecha_larga(n['fecha'])}</p>
 {previa}
+{caja_dato_vigente(n)}
 <div class="encorto"><b>En corto</b><p>{e(n['encorto'])}</p></div>
 {cuerpo}
 {preguntas_html(n)}

@@ -32,3 +32,8 @@ Formato de respuesta: SOLO JSON con esta forma:
  "dudas": ["lista vacía si no hay contradicciones ni datos que falten"]
 }
 Estructura sugerida del cuerpo: Qué cambia → A quién alcanza → Cómo se aplica / cómo figura → Fechas y vigencia. Escribí los subtítulos como los buscaría un profesional (ej.: \"¿Desde cuándo rige?\", \"¿Cuánto es el aumento en noviembre?\"). Incluí de 3 a 4 preguntas frecuentes, solo con datos de las fuentes. El slug tiene que llevar las palabras clave (organismo o convenio, tema, mes y año). Usá tabla solo si ordena mejor los datos (escalas, cronogramas, montos por categoría).
+
+Reglas para tablas y datos que cambian:
+- Tablas: solo con TODOS los valores tomados de las fuentes. Nunca pongas "consultar", "estimado", "aproximado" ni celdas vacías; si la tabla no está completa en las fuentes, no la incluyas.
+- Si el tema es un dato que cambia periódicamente (Monotributo, Ganancias, salario mínimo, jubilación, AUH, bases de aportes, autónomos, FFEP, Bienes Personales, Ingresos Brutos simplificado), no copies la tabla completa: contá qué cambió, el valor principal y desde cuándo rige. El portal agrega solo el enlace a la tabla vigente.
+- Nunca presentes como vigentes valores estimados o proyectados.
