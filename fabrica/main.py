@@ -366,6 +366,21 @@ class Fabrica:
         recientes = self.notas_recientes()
         previos = self.radar_previo()
         nuevos = [it for it in self.leer_fuentes() if it["url"] not in previos]
+        # las páginas sin fecha (ARBA, portadas HTML) muestran notas viejas: se descartan las que ya pasaron por el radar alguna vez
+        sin_fecha = [it["url"] for it in nuevos if not it.get("fecha")]
+        if sin_fecha and self.db:
+            vistas = set()
+            for i in range(0, len(sin_fecha), 40):
+                lote = ",".join('"' + u.replace('"', '') + '"' for u in sin_fecha[i:i + 40])
+                try:
+                    vistas |= {f["url"] for f in self.db.select("radar", {"select": "url", "url": f"in.({lote})"})}
+                except gemini.SinTiempo:
+                    raise
+                except Exception:  # noqa
+                    pass
+            if vistas:
+                util.log(f"{len(vistas)} notas sin fecha ya vistas antes: no se vuelven a procesar")
+                nuevos = [it for it in nuevos if it["url"] not in vistas]
         conocidas = {f["fuente"] for f in previos.values()} | self.fuentes_conocidas()
         base = [it for it in nuevos if it["fuente"] not in conocidas and not it.get("fecha")]
         if base:

@@ -111,8 +111,11 @@
   "pide": "Tabla de categorías del Monotributo vigentes: ingresos brutos anuales máximos y cuota mensual total por categoría (servicios y venta de bienes), desde cuándo rige, próxima actualización y norma de ARCA.",
   "busqueda": "monotributo categorias cuotas",
   "claves": [
-   "monotributo",
-   "recategorización"
+   "categorías del Monotributo",
+   "cuotas del Monotributo",
+   "recategorización",
+   "topes del Monotributo",
+   "Monotributo 2026"
   ],
   "oficial": [
    "https://www.arca.gob.ar/monotributo/categorias.asp"
@@ -135,9 +138,12 @@
   "pide": "Deducciones personales vigentes para empleados en relación de dependencia (ganancia no imponible, deducción especial, cónyuge, hijo) y la escala del artículo 94 del período, con desde cuándo rige y norma.",
   "busqueda": "ganancias deducciones personales escala art 94",
   "claves": [
-   "Ganancias",
    "deducciones personales",
-   "cuarta categoría"
+   "ganancia no imponible",
+   "escala del artículo 94",
+   "retención de Ganancias",
+   "Ganancias cuarta categoría",
+   "piso de Ganancias"
   ],
   "oficial": [],
   "ciclo": {

@@ -626,10 +626,19 @@ def relacionadas(n, notas):
 def sitemaps(notas, convenios=()):
     base = sitio_url()
     hoy = datetime.date.today().isoformat()
+    # lastmod solo donde la página cambia de verdad todos los días (datos, dólar, índices, portadas);
+    # las calculadoras y páginas fijas van sin fecha, para que Google no aprenda a ignorar nuestras fechas
+    diarias = list(SECCIONES) + ["datos-al-dia", "dolar-hoy", "herramientas"] + [t["slug"] for t in TEMAS_RESP] + [b[0] for b in BCRA_RESP] + \
+        [x[0] for x in DOLARES] + [o[0] for o in OBLIGACIONES] + urls_mes()
+    fijas = ["aguinaldo", "convenios", "guias", "calculadoras", "feriados", "sueldo-comercio", "sueldo-casas-particulares", "actualizacion", "dias-habiles",
+             "plazo-fijo", "prestamos", "vacaciones", "liquidacion-final", "horas-extras", "iva", "conversor-dolar", "monotributo-categoria", "intereses-arca",
+             "actualizacion-alquiler", "embargo-sueldo", "cuando-cambia-cada-dato", "glosario", "comparador-escalas", "agenda-vencimientos",
+             "retencion-ganancias"] + PARITARIAS_URLS + FERIADOS_URLS + [f"impuesto-{i[0]}" for i in IMPUESTOS]
     urls = [f"<url><loc>{base}</loc><lastmod>{hoy}</lastmod></url>"] + [
-        f"<url><loc>{base}{k}.html</loc><lastmod>{hoy}</lastmod></url>" for k in list(SECCIONES) + ["aguinaldo", "herramientas", "convenios", "guias", "calculadoras", "feriados", "sueldo-comercio", "sueldo-casas-particulares", "actualizacion", "dias-habiles", "plazo-fijo", "prestamos", "vacaciones", "liquidacion-final", "horas-extras", "iva", "conversor-dolar", "monotributo-categoria", "intereses-arca", "actualizacion-alquiler", "embargo-sueldo", "cuando-cambia-cada-dato", "glosario", "comparador-escalas", "agenda-vencimientos", "retencion-ganancias"] + [o[0] for o in OBLIGACIONES] + urls_mes() + PARITARIAS_URLS + FERIADOS_URLS + [f"impuesto-{i[0]}" for i in IMPUESTOS] + ["datos-al-dia", "dolar-hoy"] + [t["slug"] for t in TEMAS_RESP] + [b[0] for b in BCRA_RESP] + [x[0] for x in DOLARES]] + [
+        f"<url><loc>{base}{k}.html</loc><lastmod>{hoy}</lastmod></url>" for k in diarias if k not in PAGINAS_FINAS] + [
+        f"<url><loc>{base}{k}.html</loc></url>" for k in fijas if k not in PAGINAS_FINAS] + [
         f"<url><loc>{base}escala-{c['slug']}.html</loc><lastmod>{str(c.get('actualizado') or hoy)[:10]}</lastmod></url>" for c in convenios] + [
-        f"<url><loc>{base}nota-{n['slug']}.html</loc><lastmod>{str(n.get('actualizado') or n['fecha'])[:10]}</lastmod></url>" for n in notas]
+        f"<url><loc>{base}nota-{n['slug']}.html</loc><lastmod>{hoy if (es_guia(n) and 'aguinaldo' in n['slug']) else str(n.get('actualizado') or n['fecha'])[:10]}</lastmod></url>" for n in notas]
     mapa = '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' + "".join(urls) + "</urlset>"
     limite = datetime.date.today() - datetime.timedelta(days=2)
     recientes = [n for n in notas if str(n["fecha"])[:10] >= limite.isoformat() and not es_guia(n)]
@@ -1272,6 +1281,8 @@ def bloque_aguinaldo(n, notas):
 
 
 PARITARIAS_URLS = []
+PAGINAS_FINAS = set()  # páginas sin dato todavía: noindex y fuera del sitemap hasta que tengan contenido
+NOI = '<meta name="robots" content="noindex,follow">'
 FERIADOS_URLS = []
 MES_DESDE = "2026-11"  # primer mes con páginas propias (quedan publicadas para siempre)
 PAGINAS_MES = [  # (prefijo de la URL, dato del día, título, pregunta)
@@ -1345,8 +1356,10 @@ def pagina_mes(pref, slug_dato, tit, preg, mes, notas):
 </div>{lateral(notas)}</div>"""
     ld = '<script type="application/ld+json">' + json.dumps({"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [
         {"@type": "Question", "name": pregunta, "acceptedAnswer": {"@type": "Answer", "text": f"{valor}. {texto}" if valor else texto}}]}, ensure_ascii=False) + "</script>"
+    if not valor:
+        PAGINAS_FINAS.add(f"{pref}-{MESES[int(mes[5:]) - 1]}-{mes[:4]}")
     return pagina(f"{titulo}{': ' + valor if valor else ''} | Ramacontable", cuerpo, "datos-al-dia",
-                  f"{pregunta} {valor or ''} {texto}"[:300], f"{pref}-{MESES[int(mes[5:]) - 1]}-{mes[:4]}.html", ld,
+                  f"{pregunta} {valor or ''} {texto}"[:300], f"{pref}-{MESES[int(mes[5:]) - 1]}-{mes[:4]}.html", ld + ("" if valor else NOI),
                   [("Datos del día", "datos-al-dia.html"), (titulo, f"{pref}-{MESES[int(mes[5:]) - 1]}-{mes[:4]}.html")])
 
 
@@ -1390,9 +1403,11 @@ def pagina_paritaria(c, mes, notas):
 {h_html}{rel_html}
 <p class="aviso">Información de carácter general. Verificá siempre en el acuerdo homologado.</p>
 </div>{lateral(notas)}</div>"""
+    if not periodo:
+        PAGINAS_FINAS.add(f"paritarias-{c['slug']}-{nombre_mes}-{mes[:4]}")
     return pagina(f"{titulo} | Ramacontable", cuerpo, "sueldos",
                   f"Paritarias {c['nombre']} ({c.get('cct') or ''}) {mes_txt}: escala salarial vigente, aumentos y sumas no remunerativas.",
-                  f"paritarias-{c['slug']}-{nombre_mes}-{mes[:4]}.html", migas=[("Escalas por convenio", "convenios.html"), (titulo, f"paritarias-{c['slug']}-{nombre_mes}-{mes[:4]}.html")])
+                  f"paritarias-{c['slug']}-{nombre_mes}-{mes[:4]}.html", NOI if not periodo else "", migas=[("Escalas por convenio", "convenios.html"), (titulo, f"paritarias-{c['slug']}-{nombre_mes}-{mes[:4]}.html")])
 
 
 DIAS_SEM = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"]
@@ -1558,7 +1573,7 @@ def pagina_nota(n, notas, aportes=None):
     url = f"{sitio_url()}nota-{n['slug']}.html"
     ld = [{"@context": "https://schema.org", "@type": "Article" if es_guia(n) else "NewsArticle", "headline": n["titulo"][:110],
            "description": n.get("descripcion_seo") or n["encorto"], "datePublished": str(n["fecha"]),
-           "dateModified": str(n.get("actualizado") or n["fecha"]), "inLanguage": "es-AR",
+           "dateModified": datetime.date.today().isoformat() if (es_guia(n) and "aguinaldo" in n["slug"]) else str(n.get("actualizado") or n["fecha"]), "inLanguage": "es-AR",
            "mainEntityOfPage": url, "articleSection": SECCIONES[n["seccion"]],
            "author": {"@type": "Organization", "name": "Redacción Ramacontable", "url": sitio_url()},
            "publisher": {"@type": "Organization", "name": "Ramacontable", "logo": {"@type": "ImageObject", "url": sitio_url() + "icono-512.png"}}}]
