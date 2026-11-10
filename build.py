@@ -675,6 +675,7 @@ def llms_txt(notas, convenios):
     l += [f"- [Vencimientos de {o[1]} por terminación de CUIT]({base}{o[0]}.html)" for o in OBLIGACIONES]
     l += ["", "## Provincias y municipios", f"- [Impuestos provinciales y municipales]({base}provincias-y-municipios.html): Ingresos Brutos y tasas por jurisdicción"]
     l += [f"- [{j['titulo']}]({base}{j['ruta']}.html)" for j in JURIS]
+    l += [f"- [{t['titulo']}]({base}{t['ruta']}.html): {t['descripcion']}" for j in JURIS for t in j.get("tablas") or []]
     l += ["", "## Escalas salariales por convenio"]
     l += [f"- [{c.get('nombre', c['slug'])}]({base}escala-{c['slug']}.html)" for c in convenios]
     l += ["", "## Calculadoras"] + [f"- [{t}]({base}{a}.html)" for a, t in [
@@ -1679,6 +1680,7 @@ DESC_SECCION = {
 JURIS = []      # jurisdicciones con página propia (jurisdicciones/<slug>.json)
 OTRAS_J = []    # provincias que por ahora solo muestran novedades (jurisdicciones/otras.json)
 JURIS_URLS = []
+TABLAS_URLS = []
 
 
 def cargar_jurisdicciones():
@@ -1722,6 +1724,7 @@ def pagina_jurisdiccion(j, notas):
                       f'<p>{e(d.get("respuesta", ""))}</p>' + (f'<p class="resp-meta">Norma: {e(d["norma"])}</p>' if d.get("norma") else "")
                       + f'<p><a class="btn sec" href="{t["slug"]}.html">Ver la tabla completa por categoría →</a></p></div>')
     fijos = "".join(bloque(b) for b in j.get("bloques") or [])
+    fijos += "".join(f'<p><a class="btn" href="{t["ruta"]}.html">{e(t["titulo_corto"])}: buscá tu actividad →</a></p>' for t in j.get("tablas") or [])
     venc = _venc_de(j.get("venc_claves") or [])
     venc_html = ""
     if venc:
@@ -1759,6 +1762,53 @@ def pagina_jurisdiccion(j, notas):
         ld += NOI
     return pagina(f'{j["titulo"]} | Ramacontable', cuerpo, "impuestos", j["descripcion"], j["ruta"] + ".html", ld,
                   [("Provincias y municipios", "provincias-y-municipios.html"), (j["titulo_corto"], j["ruta"] + ".html")])
+
+
+def pagina_tabla_juris(j, t, notas):
+    """Tabla grande de una jurisdicción (ej.: alícuotas de Seguridad e Higiene por actividad) con buscador."""
+    d = json.load(open(os.path.join(RAIZ, t["archivo"]), encoding="utf-8"))
+    filas = d["filas"]
+    por = {f[0]: f for f in filas}
+    dest = [por[c] for c in t.get("destacados") or [] if c in por]
+    fila = lambda f: f'<tr><td>{e(f[0])}</td><td>{e(f[1])}</td><td><b>{e(f[2])}</b></td><td>{e(f[3])}</td></tr>'
+    cab = "".join(f"<th>{e(c)}</th>" for c in d["columnas"])
+    cuenta = {}
+    for f in filas:
+        cuenta[f[2]] = cuenta.get(f[2], 0) + 1
+    gral, n_gral = max(cuenta.items(), key=lambda x: x[1])
+    minimos = {}
+    for f in filas:
+        minimos[f[3]] = minimos.get(f[3], 0) + 1
+    min_gral = max(minimos.items(), key=lambda x: x[1])[0]
+    qs = [{"p": f"¿Cuál es la alícuota de Seguridad e Higiene en {j['nombre']} en 2026?",
+           "r": f"Depende de la actividad. La más común es {gral} ({n_gral} de {len(filas)} actividades), con un mínimo de {min_gral} por mes. Va del 4‰ (actividades agropecuarias) al 75‰ (bancos y entidades financieras). {d['norma']}."},
+          {"p": "¿Cuál es el mínimo mensual de la tasa?", "r": f"Para casi todas las actividades, {min_gral} por mes. Hay excepciones: algunas actividades tienen mínimo $ 0 (por ejemplo, servicios públicos, culturales o de organizaciones sin fines de lucro) y las salas de bingo y tragamonedas tienen mínimos más altos."},
+          {"p": "¿Cómo encuentro mi actividad?", "r": "Buscala por el código de actividad que tenés en ARCA (NAES) o por una palabra de la descripción. Los códigos de 5 cifras son los mismos que en ARCA empiezan con 0."}]
+    ld = ('<script type="application/ld+json">' + json.dumps({"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [
+        {"@type": "Question", "name": q["p"], "acceptedAnswer": {"@type": "Answer", "text": q["r"]}} for q in qs]}, ensure_ascii=False).replace("</", "<\\/") + "</script>")
+    cuerpo = f"""<div class="grilla"><article class="nota calc"><div class="nota-contenido">
+<p class="miga"><a href="provincias-y-municipios.html">Provincias y municipios</a> › <a href="{j["ruta"]}.html">{e(j["nombre"])}</a></p>
+<p class="ante">{e(j["organismo"])} | {e(d["norma"])}</p>
+<h1>{e(t["titulo"])}</h1>
+<p class="firma">Redacción Ramacontable · {e(d["vigencia"])}</p>
+<div class="encorto"><b>En corto</b><p>En {e(j["nombre"])}, la alícuota más común de la Tasa por Inspección de Seguridad e Higiene 2026 es <b>{e(gral)}</b> con un mínimo de <b>{e(min_gral)} por mes</b>. Cada actividad tiene su alícuota máxima y su mínimo en el Anexo de la ordenanza: buscá la tuya abajo.</p></div>
+<h2>Las actividades más buscadas</h2>
+<div class="tabla"><table><thead><tr>{cab}</tr></thead><tbody>{"".join(fila(f) for f in dest)}</tbody></table></div>
+<h2>Buscá tu actividad ({len(filas)} actividades)</h2>
+<p><input id="busca-tabla" type="search" placeholder="Código NAES o palabra (ej.: 692000, peluquería, restaurante)" style="width:100%;padding:.7em;font-size:1rem" autocomplete="off"></p>
+<p class="ayuda" id="busca-cuenta">{len(filas)} actividades</p>
+<div class="tabla"><table id="tabla-grande"><thead><tr>{cab}</tr></thead><tbody>{"".join(fila(f) for f in filas)}</tbody></table></div>
+<script>(function(){{var i=document.getElementById('busca-tabla'),t=document.getElementById('tabla-grande'),c=document.getElementById('busca-cuenta');
+var n=function(s){{return (s||'').toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g,'')}};
+var rows=[].slice.call(t.tBodies[0].rows);rows.forEach(function(r){{r._t=n(r.textContent)+' 0'+r.cells[0].textContent}});
+i.addEventListener('input',function(){{var q=n(i.value).trim().split(/\\s+/),k=0;rows.forEach(function(r){{var ok=q.every(function(w){{return r._t.indexOf(w)>=0}});r.style.display=ok?'':'none';if(ok)k++}});c.textContent=k+' actividades'}});}})();</script>
+{preguntas_html({"preguntas": qs})}
+<p class="fuente"><b>Fuente:</b> <a href="{e(d["fuente"]["url"])}" rel="nofollow noopener" target="_blank">{e(d["fuente"]["nombre"])}</a>. {e(d.get("aclaracion", ""))}</p>
+<p><a href="{j["ruta"]}.html">Más sobre {e(j["nombre"])}: Monotasa, novedades y vencimientos →</a></p>
+<p class="aviso">Las alícuotas y mínimos del Anexo son máximos: la Municipalidad no puede cobrar más. Verificá siempre tu caso en la Municipalidad o con tu contador.</p>
+</div></article>{lateral(notas)}</div>"""
+    return pagina(f'{t["titulo"]} | Ramacontable', cuerpo, "impuestos", t["descripcion"], t["ruta"] + ".html", ld,
+                  [("Provincias y municipios", "provincias-y-municipios.html"), (j["titulo_corto"], j["ruta"] + ".html"), (t["titulo_corto"], t["ruta"] + ".html")])
 
 
 def pagina_provincias(notas):
@@ -1904,8 +1954,14 @@ def main():
     escribir("cuando-cambia-cada-dato.html", pagina_calendario_datos(notas))
     for j in JURIS:
         escribir(j["ruta"] + ".html", pagina_jurisdiccion(j, notas))
+        for t in j.get("tablas") or []:
+            try:
+                escribir(t["ruta"] + ".html", pagina_tabla_juris(j, t, notas))
+                TABLAS_URLS.append(t["ruta"])
+            except Exception as ex:
+                print("Aviso: no pude armar la tabla", t.get("ruta"), ex)
     escribir("provincias-y-municipios.html", pagina_provincias(notas))
-    JURIS_URLS[:] = ["provincias-y-municipios"] + [j["ruta"] for j in JURIS]
+    JURIS_URLS[:] = ["provincias-y-municipios"] + [j["ruta"] for j in JURIS] + TABLAS_URLS
     g = pagina_glosario(notas)
     if g:
         escribir("glosario.html", g)
