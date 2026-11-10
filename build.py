@@ -618,7 +618,7 @@ def sitemaps(notas, convenios=()):
     base = sitio_url()
     hoy = datetime.date.today().isoformat()
     urls = [f"<url><loc>{base}</loc><lastmod>{hoy}</lastmod></url>"] + [
-        f"<url><loc>{base}{k}.html</loc><lastmod>{hoy}</lastmod></url>" for k in list(SECCIONES) + ["aguinaldo", "herramientas", "convenios", "guias", "calculadoras", "feriados", "sueldo-comercio", "sueldo-casas-particulares", "actualizacion", "dias-habiles", "plazo-fijo", "prestamos", "vacaciones", "liquidacion-final", "horas-extras", "iva", "conversor-dolar", "monotributo-categoria", "intereses-arca", "actualizacion-alquiler", "embargo-sueldo", "cuando-cambia-cada-dato", "glosario", "comparador-escalas", "agenda-vencimientos", "retencion-ganancias"] + [o[0] for o in OBLIGACIONES] + [f"impuesto-{i[0]}" for i in IMPUESTOS] + ["datos-al-dia", "dolar-hoy"] + [t["slug"] for t in TEMAS_RESP] + [b[0] for b in BCRA_RESP] + [x[0] for x in DOLARES]] + [
+        f"<url><loc>{base}{k}.html</loc><lastmod>{hoy}</lastmod></url>" for k in list(SECCIONES) + ["aguinaldo", "herramientas", "convenios", "guias", "calculadoras", "feriados", "sueldo-comercio", "sueldo-casas-particulares", "actualizacion", "dias-habiles", "plazo-fijo", "prestamos", "vacaciones", "liquidacion-final", "horas-extras", "iva", "conversor-dolar", "monotributo-categoria", "intereses-arca", "actualizacion-alquiler", "embargo-sueldo", "cuando-cambia-cada-dato", "glosario", "comparador-escalas", "agenda-vencimientos", "retencion-ganancias"] + [o[0] for o in OBLIGACIONES] + urls_mes() + [f"impuesto-{i[0]}" for i in IMPUESTOS] + ["datos-al-dia", "dolar-hoy"] + [t["slug"] for t in TEMAS_RESP] + [b[0] for b in BCRA_RESP] + [x[0] for x in DOLARES]] + [
         f"<url><loc>{base}escala-{c['slug']}.html</loc><lastmod>{str(c.get('actualizado') or hoy)[:10]}</lastmod></url>" for c in convenios] + [
         f"<url><loc>{base}nota-{n['slug']}.html</loc><lastmod>{str(n.get('actualizado') or n['fecha'])[:10]}</lastmod></url>" for n in notas]
     mapa = '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' + "".join(urls) + "</urlset>"
@@ -842,6 +842,14 @@ def bloque_dato_hoy(t, d):
             + "".join(f"<li>{x}</li>" for x in filas) + "</ul></section>")
 
 
+def mes_links(t):
+    pm = next((p for p in PAGINAS_MES if p[1] == t["slug"]), None)
+    if not pm:
+        return ""
+    return ('<section class="relacionadas"><h2>Por mes</h2><ul>' + "".join(
+        f'<li><a href="{pm[0]}-{MESES[int(m[5:]) - 1]}-{m[:4]}.html">{e(pm[2].format(mes=MESES[int(m[5:]) - 1] + " " + m[:4]))}</a></li>' for m in _meses_paginas()) + "</ul></section>")
+
+
 def pagina_respuesta(t, r, notas, aportes=None, extra=""):
     d = ajustar_tramo((r or {}).get("datos") or {})
     hoy = datetime.date.today()
@@ -885,6 +893,7 @@ def pagina_respuesta(t, r, notas, aportes=None, extra=""):
 {caja}{revisado}{hoy_blq}{rel_html}{cuerpo}{extra}{faq}{fuentes_html}
 <p class="aviso">Información de carácter general. Se recomienda verificar siempre en las fuentes oficiales. Cada profesional es responsable de su aplicación.</p>
 </div>
+{mes_links(t)}
 <section class="relacionadas"><h2>Otros datos del día</h2><ul>{otros}</ul></section>
 {bloque_aportes(falsa_nota, aportes)}
 </article>{lateral(notas)}</div>"""
@@ -1221,6 +1230,116 @@ def pagina_obligacion(slug, nombre, claves, seccion, notas):
                   slug + ".html", migas=[("Datos del día", "datos-al-dia.html"), (f"Vencimientos {nombre}", slug + ".html")])
 
 
+def bloque_aguinaldo(n, notas):
+    """Guías del aguinaldo: cuenta regresiva, tope del SAC y novedades del tema (cambian de verdad cada día)."""
+    if not (es_guia(n) and "aguinaldo" in n.get("slug", "")):
+        return ""
+    hoy = datetime.date.today()
+    vto = datetime.date(hoy.year, 6, 30) if hoy.month <= 6 else datetime.date(hoy.year, 12, 18)
+    dias = (vto - hoy).days
+    cuota = "primera" if vto.month == 6 else "segunda"
+    if dias > 0:
+        cuenta = f"Faltan <b>{dias} días</b> para el vencimiento de la {cuota} cuota del aguinaldo ({fecha_corta(vto.isoformat())})."
+    elif dias == 0:
+        cuenta = f"<b>Hoy vence</b> la {cuota} cuota del aguinaldo."
+    else:
+        cuenta = f"La {cuota} cuota del aguinaldo venció el {fecha_corta(vto.isoformat())}: si no se pagó, el trabajador puede intimar el pago."
+    r = RESP.get("tope-aportes-base-maxima") or {}
+    d = r.get("datos") or {}
+    bm = (d.get("estructurado") or {}).get("base_maxima")
+    mv = d.get("mes_vigente") or ""
+    tope = ""
+    if bm:
+        mes_txt = f"{MESES[int(mv[5:7]) - 1]} {mv[:4]}" if mv else "vigente"
+        tope = (f"<li>Tope de aportes para el aguinaldo (50% de la base máxima de {mes_txt}): <b>$ {_num(bm / 2)}</b>."
+                + ("" if mv[5:7] == f"{vto.month:02d}" else f" La base de {MESES[vto.month - 1]} se publica en los próximos días y se actualiza acá sola.") + "</li>")
+    nov = [x for x in notas if x["slug"] != n["slug"] and "aguinaldo" in (x["titulo"] + " " + x.get("encorto", "")).lower()][:5]
+    lis = "".join(f'<li><a href="nota-{x["slug"]}.html">{e(x["titulo"])}</a> <small>{fecha_corta(str(x["fecha"])[:10])}</small></li>' for x in nov)
+    return (f'<section class="dato-hoy"><h2>Aguinaldo hoy, {hoy.day}/{hoy.month}/{hoy.year}</h2><ul><li>{cuenta}</li>{tope}</ul>'
+            + (f"<h3>Novedades del aguinaldo</h3><ul>{lis}</ul>" if lis else "") + "</section>")
+
+
+MES_DESDE = "2026-11"  # primer mes con páginas propias (quedan publicadas para siempre)
+PAGINAS_MES = [  # (prefijo de la URL, dato del día, título, pregunta)
+    ("aumento-jubilados", "jubilacion-minima-y-bono", "Aumento de jubilados {mes}: cuánto cobra la mínima", "¿Cuánto cobra un jubilado con la mínima en {mes}?"),
+    ("auh", "asignaciones-familiares-auh", "AUH {mes}: cuánto se cobra por hijo", "¿Cuánto es la AUH en {mes}?"),
+    ("tope-aportes", "tope-aportes-base-maxima", "Tope de aportes y contribuciones {mes}", "¿Cuál es el tope de aportes de {mes}?"),
+    ("salario-minimo", "salario-minimo-vital-y-movil", "Salario mínimo vital y móvil {mes}", "¿Cuánto es el salario mínimo en {mes}?"),
+    ("seguro-de-desempleo", "seguro-de-desempleo-montos", "Seguro de desempleo {mes}: montos", "¿Cuánto se cobra de desempleo en {mes}?"),
+    ("ffep", "ffep-fondo-enfermedades-profesionales", "FFEP {mes}: importe por trabajador", "¿Cuánto es el FFEP en {mes}?"),
+]
+
+
+def _meses_paginas():
+    hoy = datetime.date.today()
+    y, m = int(MES_DESDE[:4]), int(MES_DESDE[5:])
+    fin = (hoy.year + (hoy.month // 12), hoy.month % 12 + 1)  # hasta el mes que viene
+    out = []
+    while (y, m) <= fin:
+        out.append(f"{y}-{m:02d}")
+        y, m = (y + 1, 1) if m == 12 else (y, m + 1)
+    return out
+
+
+def valor_de_mes(t, mes):
+    """(valor, texto, estado) del dato para un mes dado: vigente, tramo ya fijado, cálculo anticipado o historial."""
+    r = RESP.get(t["slug"]) or {}
+    d = r.get("datos") or {}
+    tr = (d.get("estructurado") or {}).get("tramos") or []
+    x = [z for z in tr if str(z.get("desde", "")) <= mes]
+    if x:
+        z = max(x, key=lambda q: q["desde"])
+        v = f"$ {_num(z['mensual'])} por mes" + (f" ($ {_num(z['hora'])} la hora)" if z.get("hora") else "")
+        return v, f"Monto fijado por {d.get('norma') or 'la resolución vigente'}.", "fijado"
+    if d.get("mes_vigente") == mes or (not d.get("mes_vigente") and mes == datetime.date.today().strftime("%Y-%m")):
+        return d.get("valor"), d.get("respuesta") or "", "vigente"
+    mv = d.get("mes_vigente")
+    if mv and mes > mv and (t.get("ciclo") or {}).get("tipo") == "movilidad" and isinstance(d.get("monto"), (int, float)):
+        fi, ipc = _ultimo_serie("ipc")
+        y, m = int(mv[:4]), int(mv[5:])
+        ant = (y, m - 1) if m > 1 else (y - 1, 12)
+        sig = f"{y + (m // 12)}-{m % 12 + 1:02d}"
+        if ipc is not None and fi and (int(fi[:4]), int(fi[5:7])) == ant and mes == sig:
+            return (f"$ {_num(d['monto'] * (1 + ipc / 100))} (cálculo anticipado)",
+                    f"Cálculo propio con la fórmula de movilidad (Decreto 274/2024): inflación de {MESES[ant[1] - 1]} {_num(ipc)}%. Se confirma con la resolución de ANSES.", "anticipado")
+        return None, "El monto de este mes todavía no se publicó: se conoce unos días después del dato de inflación del INDEC.", "pendiente"
+    for h in r.get("historial") or []:
+        if str(h.get("fecha", ""))[:7] in (mes, ):
+            return h.get("valor"), f"Valor publicado en {MESES[int(mes[5:]) - 1]} ({h.get('norma') or ''}).", "historico"
+    return None, "Para este mes el dato se publica en cuanto lo confirmen las fuentes.", "pendiente"
+
+
+def pagina_mes(pref, slug_dato, tit, preg, mes, notas):
+    t = next((x for x in TEMAS_RESP if x["slug"] == slug_dato), None)
+    if not t:
+        return None
+    mes_txt = f"{MESES[int(mes[5:]) - 1]} {mes[:4]}"
+    valor, texto, estado = valor_de_mes(t, mes)
+    etiqueta = {"vigente": "Vigente", "fijado": "Ya fijado", "anticipado": "Cálculo anticipado", "historico": "Valor de ese mes", "pendiente": "Todavía no publicado"}[estado]
+    titulo = tit.format(mes=mes_txt)
+    pregunta = preg.format(mes=mes_txt)
+    otros = "".join(f'<li><a href="{pref}-{MESES[int(m2[5:]) - 1]}-{m2[:4]}.html">{MESES[int(m2[5:]) - 1].capitalize()} {m2[:4]}</a></li>' for m2 in _meses_paginas() if m2 != mes)
+    caja = (f'<div class="resp-caja"><span class="resp-p">{e(pregunta)}</span><b class="resp-v">{e(valor or "Todavía no publicado")}</b>'
+            f'<p><span class="nivel">{etiqueta}</span> {e(texto)}</p></div>')
+    cuerpo = f"""<div class="grilla"><div class="nota-contenido"><p class="miga"><a href="datos-al-dia.html">Datos del día</a> / <a href="{t['slug']}.html">{e(t['titulo'])}</a></p>
+<h1>{e(titulo)}</h1>
+<p class="firma">Redacción Ramacontable · Actualizado {fecha_larga(datetime.date.today().isoformat())}</p>
+{caja}
+<p><a class="btn" href="{t['slug']}.html">Ver el dato vigente hoy y su historial →</a></p>
+<section class="relacionadas"><h2>Otros meses</h2><ul>{otros}</ul></section>
+<p class="aviso">Información de carácter general. Verificá siempre en la norma oficial.</p>
+</div>{lateral(notas)}</div>"""
+    ld = '<script type="application/ld+json">' + json.dumps({"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [
+        {"@type": "Question", "name": pregunta, "acceptedAnswer": {"@type": "Answer", "text": f"{valor}. {texto}" if valor else texto}}]}, ensure_ascii=False) + "</script>"
+    return pagina(f"{titulo}{': ' + valor if valor else ''} | Ramacontable", cuerpo, "datos-al-dia",
+                  f"{pregunta} {valor or ''} {texto}"[:300], f"{pref}-{MESES[int(mes[5:]) - 1]}-{mes[:4]}.html", ld,
+                  [("Datos del día", "datos-al-dia.html"), (titulo, f"{pref}-{MESES[int(mes[5:]) - 1]}-{mes[:4]}.html")])
+
+
+def urls_mes():
+    return [f"{p[0]}-{MESES[int(m[5:]) - 1]}-{m[:4]}" for p in PAGINAS_MES for m in _meses_paginas()]
+
+
 def pagina_datos(notas):
     existe = lambda sl: os.path.exists(os.path.join(SALIDA, sl + ".html")) or any(t["slug"] == sl for t in TEMAS_RESP)
     bloques = ""
@@ -1315,7 +1434,7 @@ def pagina_nota(n, notas, aportes=None):
     verif = ("Elaborada con fuentes oficiales." if n.get("verificada")
              else "Pendiente de verificación con fuente oficial.")
     t_dato = dato_de_nota(n)
-    extra_calc = ('<div class="dato-vigente"><b>Calculalo:</b> <a href="aguinaldo.html">calculadora de aguinaldo</a> · '
+    extra_calc = bloque_aguinaldo(n, notas) + ('<div class="dato-vigente"><b>Calculalo:</b> <a href="aguinaldo.html">calculadora de aguinaldo</a> · '
                   '<a href="tope-aportes-base-maxima.html">tope de aportes vigente</a> · <a href="retencion-ganancias.html">retención de Ganancias</a></div>'
                   if "aguinaldo" in (n.get("titulo", "") + " " + n.get("slug", "")).lower() else "")
     cuerpo = extra_calc + enlazar("".join(
@@ -1469,6 +1588,11 @@ def main():
             escribir(b[0] + ".html", h)
     for o in OBLIGACIONES:
         escribir(o[0] + ".html", pagina_obligacion(*o, notas))
+    for pm in PAGINAS_MES:
+        for m in _meses_paginas():
+            h = pagina_mes(*pm, m, notas)
+            if h:
+                escribir(f"{pm[0]}-{MESES[int(m[5:]) - 1]}-{m[:4]}.html", h)
     escribir("cuando-cambia-cada-dato.html", pagina_calendario_datos(notas))
     g = pagina_glosario(notas)
     if g:
