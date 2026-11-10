@@ -37,3 +37,7 @@ Reglas para tablas y datos que cambian:
 - Tablas: solo con TODOS los valores tomados de las fuentes. Nunca pongas "consultar", "estimado", "aproximado" ni celdas vacías; si la tabla no está completa en las fuentes, no la incluyas.
 - Si el tema es un dato que cambia periódicamente (Monotributo, Ganancias, salario mínimo, jubilación, AUH, bases de aportes, autónomos, FFEP, Bienes Personales, Ingresos Brutos simplificado), no copies la tabla completa: contá qué cambió, el valor principal y desde cuándo rige. El portal agrega solo el enlace a la tabla vigente.
 - Nunca presentes como vigentes valores estimados o proyectados.
+
+Títulos para buscadores:
+- Incluí en el título y en el slug el número de la norma tal como se busca (ej.: "RG 5920", "Res. 304/2026", "Decreto 1103/2026") y el mes y año cuando aplica.
+- Usá las palabras con que lo busca un contador: "tope de aportes" (no solo "base imponible"), "paritarias" y "escala salarial" junto al nombre del gremio (ej.: "UTHGRA").

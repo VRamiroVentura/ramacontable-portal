@@ -1,6 +1,6 @@
 {
  "slug": "tope-aportes-base-maxima",
- "titulo": "Bases mínima y máxima de aportes",
+ "titulo": "Tope de aportes y contribuciones (base máxima y mínima)",
  "revisado": "2026-11-07T15:00:00-03:00",
  "cambiado": "2026-10-28",
  "fuentes": [
@@ -26,7 +26,7 @@
   "mes_vigente": "2026-11",
   "norma": "Resolución 304/2026 de ANSES",
   "vigencia": "período devengado noviembre 2026",
-  "respuesta": "Para el período devengado noviembre de 2026, la base imponible mínima es $ 149.592,45 y la máxima $ 4.861.685,38 (Resolución 304/2026 de ANSES).",
+  "respuesta": "El tope de aportes y contribuciones para el período devengado noviembre de 2026 es una base imponible máxima de $ 4.861.685,38 y una mínima de $ 149.592,45 (Resolución 304/2026 de ANSES). Sobre lo que supera el tope no se pagan aportes de jubilación, PAMI ni obra social.",
   "tabla": [
    [
     "Base",
@@ -44,6 +44,9 @@
   "estructurado": {
    "base_minima": 149592.45,
    "base_maxima": 4861685.38
-  }
+  },
+  "explicacion": [
+   "Mucha gente lo busca como \"tope MOPRE\": el MOPRE (módulo previsional) se usaba antes para fijar estos topes; hoy las bases mínima y máxima las actualiza ANSES todos los meses por movilidad."
+  ]
  }
 }

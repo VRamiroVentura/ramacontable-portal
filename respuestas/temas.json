@@ -44,14 +44,17 @@
  },
  {
   "slug": "tope-aportes-base-maxima",
-  "titulo": "Bases mínima y máxima de aportes",
+  "titulo": "Tope de aportes y contribuciones (base máxima y mínima)",
   "seccion": "sueldos",
-  "pregunta": "¿Cuál es el tope (base máxima) de aportes y contribuciones este mes?",
+  "pregunta": "¿Cuál es el tope de aportes y contribuciones este mes?",
   "pide": "Base imponible mínima y máxima para aportes y contribuciones del SIPA vigentes para el mes, desde cuándo rigen y norma de ANSES.",
   "busqueda": "base imponible maxima aportes",
   "claves": [
-   "base máxima",
    "tope de aportes",
+   "topes de aportes",
+   "base máxima",
+   "base imponible máxima",
+   "MOPRE",
    "base imponible"
   ],
   "oficial": [],
