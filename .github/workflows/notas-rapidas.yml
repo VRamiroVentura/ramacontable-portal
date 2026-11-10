@@ -1,0 +1,37 @@
+name: Novedades oficiales rápidas
+
+on:
+  schedule:
+    # cada 30 minutos de 7 a 22 (hora de Argentina = UTC-3): solo fuentes oficiales
+    - cron: "*/30 10-23 * * *"
+    - cron: "*/30 0-1 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: write
+
+concurrency:
+  group: notas
+  cancel-in-progress: false
+
+jobs:
+  rapidas:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install requests
+      - name: Buscar novedades oficiales y escribir notas
+        env:
+          RC_RAPIDO: "1"
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python -m fabrica.main
