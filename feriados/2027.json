@@ -1,0 +1,96 @@
+{
+ "anio": 2027,
+ "fuente": [
+  {
+   "nombre": "La Nación",
+   "url": "https://www.lanacion.com.ar/feriados/2027/"
+  }
+ ],
+ "feriados": [
+  {
+   "fecha": "2027-01-01",
+   "nombre": "Año Nuevo",
+   "tipo": "Inamovible"
+  },
+  {
+   "fecha": "2027-02-08",
+   "nombre": "Carnaval",
+   "tipo": "Inamovible"
+  },
+  {
+   "fecha": "2027-02-09",
+   "nombre": "Carnaval",
+   "tipo": "Inamovible"
+  },
+  {
+   "fecha": "2027-03-24",
+   "nombre": "Día Nacional de la Memoria por la Verdad y la Justicia",
+   "tipo": "Inamovible"
+  },
+  {
+   "fecha": "2027-03-25",
+   "nombre": "Jueves Santo",
+   "tipo": "No laborable"
+  },
+  {
+   "fecha": "2027-03-26",
+   "nombre": "Viernes Santo",
+   "tipo": "Inamovible"
+  },
+  {
+   "fecha": "2027-04-02",
+   "nombre": "Día del Veterano y de los Caídos en la Guerra de Malvinas",
+   "tipo": "Inamovible"
+  },
+  {
+   "fecha": "2027-05-01",
+   "nombre": "Día del Trabajador",
+   "tipo": "Inamovible"
+  },
+  {
+   "fecha": "2027-05-25",
+   "nombre": "Día de la Revolución de Mayo",
+   "tipo": "Inamovible"
+  },
+  {
+   "fecha": "2027-06-17",
+   "nombre": "Paso a la Inmortalidad del General Martín Miguel de Güemes",
+   "tipo": "Trasladable"
+  },
+  {
+   "fecha": "2027-06-20",
+   "nombre": "Paso a la Inmortalidad del General Manuel Belgrano",
+   "tipo": "Inamovible"
+  },
+  {
+   "fecha": "2027-07-09",
+   "nombre": "Día de la Independencia",
+   "tipo": "Inamovible"
+  },
+  {
+   "fecha": "2027-08-17",
+   "nombre": "Paso a la Inmortalidad del General José de San Martín",
+   "tipo": "Trasladable"
+  },
+  {
+   "fecha": "2027-10-12",
+   "nombre": "Día del Respeto a la Diversidad Cultural",
+   "tipo": "Trasladable"
+  },
+  {
+   "fecha": "2027-11-20",
+   "nombre": "Día de la Soberanía Nacional",
+   "tipo": "Trasladable"
+  },
+  {
+   "fecha": "2027-12-08",
+   "nombre": "Día de la Inmaculada Concepción de María",
+   "tipo": "Inamovible"
+  },
+  {
+   "fecha": "2027-12-25",
+   "nombre": "Navidad",
+   "tipo": "Inamovible"
+  }
+ ]
+}

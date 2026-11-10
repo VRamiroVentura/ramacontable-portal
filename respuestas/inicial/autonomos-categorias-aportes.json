@@ -1,0 +1,89 @@
+{
+ "slug": "autonomos-categorias-aportes",
+ "titulo": "Autónomos: categorías y aportes",
+ "revisado": "2026-11-10T18:00:00-03:00",
+ "cambiado": "2026-10-15",
+ "fuentes": [
+  {
+   "nombre": "Fuente oficial (arca.gob.ar)",
+   "url": "https://www.arca.gob.ar/autonomos/"
+  },
+  {
+   "nombre": "Calcular Sueldo",
+   "url": "https://calcularsueldo.com.ar/?p=16243"
+  }
+ ],
+ "historial": [
+  {
+   "fecha": "2026-10-15",
+   "valor": "Categoría I: $ 78.271,56",
+   "norma": "Tabla de ARCA desde el 15/10/2026"
+  }
+ ],
+ "datos": {
+  "valor": "Categoría I: $ 78.271,56 por mes",
+  "monto": 78271.56,
+  "mes_vigente": "2026-10",
+  "vigencia": "15/10/2026",
+  "norma": "Tabla de valores de ARCA vigente desde el 15/10/2026",
+  "respuesta": "Desde el 15 de octubre de 2026 el aporte mensual de los trabajadores autónomos va de $ 78.271,56 (categoría I) a $ 344.390,34 (categoría V), según la tabla de ARCA. Los valores de noviembre se publican con la movilidad.",
+  "tabla": [
+   [
+    "Categoría",
+    "Aporte mensual"
+   ],
+   [
+    "I",
+    "$ 78.271,56"
+   ],
+   [
+    "II",
+    "$ 109.578,51"
+   ],
+   [
+    "III",
+    "$ 156.541,75"
+   ],
+   [
+    "IV",
+    "$ 250.466,70"
+   ],
+   [
+    "V",
+    "$ 344.390,34"
+   ],
+   [
+    "Jubilados que siguen en actividad (cat. I)",
+    "$ 66.041,63"
+   ],
+   [
+    "Amas de casa (Ley 24.828)",
+    "$ 26.905,85"
+   ]
+  ],
+  "estructurado": {
+   "categorias": [
+    {
+     "categoria": "I",
+     "aporte": 78271.56
+    },
+    {
+     "categoria": "II",
+     "aporte": 109578.51
+    },
+    {
+     "categoria": "III",
+     "aporte": 156541.75
+    },
+    {
+     "categoria": "IV",
+     "aporte": 250466.7
+    },
+    {
+     "categoria": "V",
+     "aporte": 344390.34
+    }
+   ]
+  }
+ }
+}

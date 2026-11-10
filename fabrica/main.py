@@ -298,7 +298,7 @@ class Fabrica:
                     if nombre_mes in _slug(it["titulo"]) or nombre_mes in _slug(it["texto"][:600]):
                         textos.append(f"--- FUENTE: {it['fuente']}\nTítulo: {it['titulo']}\n{it['texto'][:6000]}")
                         vistos.add(it["fuente"])
-            if len(vistos) < minimo and CONFIABLE not in vistos:
+            if len(vistos) < minimo and CONFIABLE not in vistos and "lanacion.com.ar" not in vistos:
                 util.avisar(f"Vencimientos de {nombre_mes}", f"solo encontré {len(vistos)} fuente(s); queda la agenda anterior")
                 continue
             try:
@@ -308,18 +308,19 @@ class Fabrica:
             except Exception as e:  # noqa
                 util.avisar(f"No pude armar los vencimientos de {nombre_mes}", str(e))
                 continue
-            def confirmados(lista, campos):
+            def confirmados(lista, campos, confiables=(CONFIABLE,)):
                 salida = []
                 for x in lista if isinstance(lista, list) else []:
                     if not isinstance(x, dict) or not re.match(r"^\d{4}-\d{2}-\d{2}$", str(x.get("fecha", ""))):
                         continue
                     n = len({str(f) for f in (x.get("fuentes") or [])})
-                    de_ignacio = CONFIABLE in [str(f) for f in (x.get("fuentes") or [])]
+                    de_ignacio = any(c in [str(f) for f in (x.get("fuentes") or [])] for c in confiables)
                     if (n >= minimo or de_ignacio) and not x.get("estimado") and str(x["fecha"]).startswith(clave):
                         salida.append({c: str(x.get(c) or "")[:160] for c in campos} | {"fuentes": n})
                 return sorted(salida, key=lambda x: x["fecha"])
             venc = confirmados(r.get("vencimientos"), ("fecha", "concepto", "detalle"))
-            fer = confirmados(r.get("feriados"), ("fecha", "nombre", "tipo", "norma"))
+            # feriados: La Nación alcanza sola (pedido de Ramiro); los vencimientos siguen pidiendo 2 fuentes o Ignacio
+            fer = confirmados(r.get("feriados"), ("fecha", "nombre", "tipo", "norma"), (CONFIABLE, "lanacion.com.ar"))
             util.log(f"Vencimientos {clave}: {len(venc)} confirmados, {len(fer)} feriados ({len(vistos)} fuentes)")
             self.vencimientos_info.append(f"{nombre_mes} {anio}: {len(venc)} vencimientos y {len(fer)} feriados confirmados por {minimo}+ fuentes ({', '.join(sorted(vistos))})")
             if self.activo and venc:

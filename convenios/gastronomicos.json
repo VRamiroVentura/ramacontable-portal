@@ -4,12 +4,196 @@
  "cct": "CCT 389/04",
  "partes": "UTHGRA y FEHGRA",
  "descripcion": "Trabajadores de hoteles, restaurantes, bares, confiterías y servicios gastronómicos.",
- "escala": null,
+ "escala": {
+  "periodo": "julio, agosto y septiembre 2026",
+  "tabla": [
+   [
+    "Categoría",
+    "Básico julio a septiembre 2026",
+    "Suma no remunerativa mensual (julio, agosto y septiembre 2026)"
+   ],
+   [
+    "Especial – 1",
+    "$ 1.206.779",
+    "$ 83.000"
+   ],
+   [
+    "Especial – 2",
+    "$ 1.281.272",
+    "$ 88.000"
+   ],
+   [
+    "Especial – 3",
+    "$ 1.342.334",
+    "$ 92.000"
+   ],
+   [
+    "Especial – 4",
+    "$ 1.424.619",
+    "$ 97.000"
+   ],
+   [
+    "Especial – 5",
+    "$ 1.483.366",
+    "$ 101.000"
+   ],
+   [
+    "Especial – 6",
+    "$ 1.524.806",
+    "$ 104.000"
+   ],
+   [
+    "Especial – 7",
+    "$ 1.970.475",
+    "$ 134.000"
+   ],
+   [
+    "Nivel A – 1",
+    "$ 1.074.307",
+    "$ 74.000"
+   ],
+   [
+    "Nivel A – 2",
+    "$ 1.141.004",
+    "$ 78.000"
+   ],
+   [
+    "Nivel A – 3",
+    "$ 1.220.868",
+    "$ 83.000"
+   ],
+   [
+    "Nivel A – 4",
+    "$ 1.284.118",
+    "$ 88.000"
+   ],
+   [
+    "Nivel A – 5",
+    "$ 1.356.517",
+    "$ 93.000"
+   ],
+   [
+    "Nivel A – 6",
+    "$ 1.429.981",
+    "$ 98.000"
+   ],
+   [
+    "Nivel A – 7",
+    "$ 1.840.959",
+    "$ 126.000"
+   ],
+   [
+    "Nivel B – 1",
+    "$ 1.038.120",
+    "$ 71.000"
+   ],
+   [
+    "Nivel B – 2",
+    "$ 1.102.324",
+    "$ 75.000"
+   ],
+   [
+    "Nivel B – 3",
+    "$ 1.180.295",
+    "$ 81.000"
+   ],
+   [
+    "Nivel B – 4",
+    "$ 1.217.642",
+    "$ 83.000"
+   ],
+   [
+    "Nivel B – 5",
+    "$ 1.271.299",
+    "$ 87.000"
+   ],
+   [
+    "Nivel B – 6",
+    "$ 1.384.689",
+    "$ 95.000"
+   ],
+   [
+    "Nivel B – 7",
+    "$ 1.538.297",
+    "$ 105.000"
+   ],
+   [
+    "Nivel C – 1",
+    "$ 1.013.346",
+    "$ 69.000"
+   ],
+   [
+    "Nivel C – 2",
+    "$ 1.080.354",
+    "$ 74.000"
+   ],
+   [
+    "Nivel C – 3",
+    "$ 1.148.481",
+    "$ 79.000"
+   ],
+   [
+    "Nivel C – 4",
+    "$ 1.195.083",
+    "$ 82.000"
+   ],
+   [
+    "Nivel C – 5",
+    "$ 1.243.418",
+    "$ 85.000"
+   ],
+   [
+    "Nivel C – 6",
+    "$ 1.337.186",
+    "$ 91.000"
+   ],
+   [
+    "Nivel D – 1",
+    "$ 990.555",
+    "$ 68.000"
+   ],
+   [
+    "Nivel D – 2",
+    "$ 1.047.930",
+    "$ 72.000"
+   ],
+   [
+    "Nivel D – 3",
+    "$ 1.099.139",
+    "$ 75.000"
+   ],
+   [
+    "Nivel D – 4",
+    "$ 1.157.884",
+    "$ 79.000"
+   ],
+   [
+    "Nivel D – 5",
+    "$ 1.210.980",
+    "$ 83.000"
+   ],
+   [
+    "Nivel D – 6",
+    "$ 1.292.026",
+    "$ 88.000"
+   ]
+  ],
+  "fuente": "Acuerdo salarial UTHGRA–FEHGRA del 24/07/2026 (CCT 389/04), Anexo I, presentado para homologación (RE-2026-72653200-APN-CGDTEYS#MCH)",
+  "nota": "Los básicos de julio a septiembre son iguales a los de junio 2026. Se suma una gratificación extraordinaria no remunerativa en tres cuotas (julio, agosto y septiembre). Hasta septiembre 2026: todavía no se publicó el acuerdo desde octubre."
+ },
  "novedades": [],
  "calculo": [],
  "nr": [],
  "recibo": [],
  "preguntas": [],
- "historial": [],
- "buscar_portal": "gastronomicos uthgra escala salarial"
+ "historial": [
+  {
+   "periodo": "julio a septiembre 2026",
+   "fecha": "2026-07-24",
+   "nota": null,
+   "aumento_pct": null
+  }
+ ],
+ "buscar_portal": "gastronomicos uthgra escala salarial",
+ "actualizado": "2026-07-28"
 }

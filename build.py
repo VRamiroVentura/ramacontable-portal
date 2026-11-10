@@ -187,6 +187,9 @@ def escribir_feriados(destino):
         for x in fila.get("feriados") or []:
             if re.match(r"^\d{4}-\d{2}-\d{2}$", str(x.get("fecha", ""))):
                 fechas.add(x["fecha"])
+    for ruta in glob.glob(os.path.join(RAIZ, "feriados", "*.json")):
+        for x in json.load(open(ruta, encoding="utf-8")).get("feriados", []):
+            fechas.add(x["fecha"])
     anios = sorted({f[:4] for f in fechas})
     json.dump({"fechas": sorted(fechas), "anios": anios}, open(os.path.join(destino, "feriados.json"), "w", encoding="utf-8"))
 
@@ -258,6 +261,10 @@ def cargar_convenios():
         try:
             req = urllib.request.Request(url + "/rest/v1/convenios?select=*", headers={"apikey": key, "Authorization": "Bearer " + key})
             for c in json.load(urllib.request.urlopen(req, timeout=30)):
+                loc = locales.get(c["slug"]) or {}
+                if not c.get("escala") and loc.get("escala"):  # escala cargada a mano en el repo mientras la fábrica no tenga una
+                    c = dict(c, escala=loc["escala"], historial=c.get("historial") or loc.get("historial") or [],
+                             actualizado=c.get("actualizado") or loc.get("actualizado"))
                 locales[c["slug"]] = c
         except Exception as ex:
             print("Aviso: no se pudieron leer los convenios:", ex)
@@ -620,7 +627,7 @@ def sitemaps(notas, convenios=()):
     base = sitio_url()
     hoy = datetime.date.today().isoformat()
     urls = [f"<url><loc>{base}</loc><lastmod>{hoy}</lastmod></url>"] + [
-        f"<url><loc>{base}{k}.html</loc><lastmod>{hoy}</lastmod></url>" for k in list(SECCIONES) + ["aguinaldo", "herramientas", "convenios", "guias", "calculadoras", "feriados", "sueldo-comercio", "sueldo-casas-particulares", "actualizacion", "dias-habiles", "plazo-fijo", "prestamos", "vacaciones", "liquidacion-final", "horas-extras", "iva", "conversor-dolar", "monotributo-categoria", "intereses-arca", "actualizacion-alquiler", "embargo-sueldo", "cuando-cambia-cada-dato", "glosario", "comparador-escalas", "agenda-vencimientos", "retencion-ganancias"] + [o[0] for o in OBLIGACIONES] + urls_mes() + PARITARIAS_URLS + [f"impuesto-{i[0]}" for i in IMPUESTOS] + ["datos-al-dia", "dolar-hoy"] + [t["slug"] for t in TEMAS_RESP] + [b[0] for b in BCRA_RESP] + [x[0] for x in DOLARES]] + [
+        f"<url><loc>{base}{k}.html</loc><lastmod>{hoy}</lastmod></url>" for k in list(SECCIONES) + ["aguinaldo", "herramientas", "convenios", "guias", "calculadoras", "feriados", "sueldo-comercio", "sueldo-casas-particulares", "actualizacion", "dias-habiles", "plazo-fijo", "prestamos", "vacaciones", "liquidacion-final", "horas-extras", "iva", "conversor-dolar", "monotributo-categoria", "intereses-arca", "actualizacion-alquiler", "embargo-sueldo", "cuando-cambia-cada-dato", "glosario", "comparador-escalas", "agenda-vencimientos", "retencion-ganancias"] + [o[0] for o in OBLIGACIONES] + urls_mes() + PARITARIAS_URLS + FERIADOS_URLS + [f"impuesto-{i[0]}" for i in IMPUESTOS] + ["datos-al-dia", "dolar-hoy"] + [t["slug"] for t in TEMAS_RESP] + [b[0] for b in BCRA_RESP] + [x[0] for x in DOLARES]] + [
         f"<url><loc>{base}escala-{c['slug']}.html</loc><lastmod>{str(c.get('actualizado') or hoy)[:10]}</lastmod></url>" for c in convenios] + [
         f"<url><loc>{base}nota-{n['slug']}.html</loc><lastmod>{str(n.get('actualizado') or n['fecha'])[:10]}</lastmod></url>" for n in notas]
     mapa = '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' + "".join(urls) + "</urlset>"
@@ -1265,6 +1272,7 @@ def bloque_aguinaldo(n, notas):
 
 
 PARITARIAS_URLS = []
+FERIADOS_URLS = []
 MES_DESDE = "2026-11"  # primer mes con páginas propias (quedan publicadas para siempre)
 PAGINAS_MES = [  # (prefijo de la URL, dato del día, título, pregunta)
     ("aumento-jubilados", "jubilacion-minima-y-bono", "Aumento de jubilados {mes}: cuánto cobra la mínima", "¿Cuánto cobra un jubilado con la mínima en {mes}?"),
@@ -1385,6 +1393,43 @@ def pagina_paritaria(c, mes, notas):
     return pagina(f"{titulo} | Ramacontable", cuerpo, "sueldos",
                   f"Paritarias {c['nombre']} ({c.get('cct') or ''}) {mes_txt}: escala salarial vigente, aumentos y sumas no remunerativas.",
                   f"paritarias-{c['slug']}-{nombre_mes}-{mes[:4]}.html", migas=[("Escalas por convenio", "convenios.html"), (titulo, f"paritarias-{c['slug']}-{nombre_mes}-{mes[:4]}.html")])
+
+
+DIAS_SEM = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"]
+
+
+def pagina_feriados_anio(ruta, notas):
+    d = json.load(open(ruta, encoding="utf-8"))
+    anio = d["anio"]
+    hoy = datetime.date.today().isoformat()
+    def fila(x):
+        f = datetime.date.fromisoformat(x["fecha"])
+        cls = {"Inamovible": "t-ina", "Trasladable": "t-tra"}.get(x["tipo"], "t-no")
+        return (f'<tr data-f="{x["fecha"]}"><td>{DIAS_SEM[f.weekday()].capitalize()} {f.day} de {MESES[f.month - 1]}</td><td>{e(x["nombre"])}</td>'
+                f'<td><span class="tipo-f {cls}">{e(x["tipo"])}</span></td></tr>')
+    lista = sorted(d["feriados"], key=lambda x: x["fecha"])
+    prox = next((x for x in lista if x["fecha"] >= hoy), None)
+    n_ina = sum(1 for x in lista if x["tipo"] == "Inamovible")
+    fuentes = " · ".join(f'<a href="{e(f["url"])}" rel="nofollow noopener" target="_blank">{e(f["nombre"])}</a>' for f in d.get("fuente", []))
+    qs = [{"p": f"¿Cuántos feriados hay en {anio}?", "r": f"El calendario {anio} tiene {n_ina} feriados inamovibles, {sum(1 for x in lista if x['tipo'] == 'Trasladable')} trasladables y {sum(1 for x in lista if x['tipo'] == 'No laborable')} días no laborables, sin contar los días con fines turísticos que fije el Gobierno."},
+          {"p": f"¿Cuándo es Carnaval {anio}?", "r": "Carnaval " + str(anio) + ": " + " y ".join(f"{DIAS_SEM[datetime.date.fromisoformat(x['fecha']).weekday()]} {int(x['fecha'][8:])} de {MESES[int(x['fecha'][5:7]) - 1]}" for x in lista if x["nombre"] == "Carnaval") + "."},
+          {"p": "¿Qué pasa con los feriados trasladables?", "r": "Según la Ley 27.399, los feriados trasladables que caen martes o miércoles pasan al lunes anterior, y los que caen jueves o viernes pasan al lunes siguiente. El Gobierno confirma los traslados y los días no laborables con fines turísticos por decreto."}]
+    cuerpo = f"""<div class="grilla"><article class="nota calc">
+<p class="ante">Calendario | Ley 27.399</p>
+<h1>Feriados {anio} en Argentina: calendario completo</h1>
+<p class="firma">Redacción Ramacontable · Actualizado {fecha_larga(datetime.date.today().isoformat())}</p>
+{f'<div class="encorto"><b>Primer feriado de {anio}</b><p>{e(prox["nombre"])}: {DIAS_SEM[datetime.date.fromisoformat(prox["fecha"]).weekday()]} {int(prox["fecha"][8:])} de {MESES[int(prox["fecha"][5:7]) - 1]}.</p></div>' if prox else ''}
+<div class="tabla"><table class="feriados"><thead><tr><th>Fecha</th><th>Feriado</th><th>Tipo</th></tr></thead><tbody>{''.join(fila(x) for x in lista)}</tbody></table></div>
+<p class="ayuda">Los feriados trasladables figuran en su fecha original: el Gobierno confirma por decreto a qué lunes se mueven y si habrá días no laborables con fines turísticos (puentes). Lo actualizamos apenas se publique.</p>
+{preguntas_html({"preguntas": qs})}
+<p class="fuente"><b>Fuente:</b> {fuentes}</p>
+<p><a href="dias-habiles.html">Calculadora de días hábiles</a> · <a href="feriados.html">Feriados del año en curso</a></p>
+</article>{lateral(notas)}</div>"""
+    ld = '<script type="application/ld+json">' + json.dumps({"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [
+        {"@type": "Question", "name": q["p"], "acceptedAnswer": {"@type": "Answer", "text": q["r"]}} for q in qs]}, ensure_ascii=False) + "</script>"
+    return anio, pagina(f"Feriados {anio} en Argentina: calendario completo, inamovibles y trasladables | Ramacontable", cuerpo, "",
+                        f"Calendario de feriados {anio} en Argentina: inamovibles, trasladables, Carnaval, Semana Santa y días no laborables.",
+                        f"feriados-{anio}.html", ld, [("Feriados", "feriados.html"), (f"Feriados {anio}", f"feriados-{anio}.html")])
 
 
 def pagina_datos(notas):
@@ -1643,6 +1688,10 @@ def main():
     for c in convenios:
         for m in _meses_paginas():
             escribir(f"paritarias-{c['slug']}-{MESES[int(m[5:]) - 1]}-{m[:4]}.html", pagina_paritaria(c, m, notas))
+    for ruta in glob.glob(os.path.join(RAIZ, "feriados", "*.json")):
+        anio, h = pagina_feriados_anio(ruta, notas)
+        escribir(f"feriados-{anio}.html", h)
+        FERIADOS_URLS.append(f"feriados-{anio}")
     escribir("cuando-cambia-cada-dato.html", pagina_calendario_datos(notas))
     g = pagina_glosario(notas)
     if g:
