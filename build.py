@@ -1772,8 +1772,10 @@ def pagina_tabla_juris(j, t, notas):
     filas = d["filas"]
     por = {f[0]: f for f in filas}
     dest = [por[c] for c in t.get("destacados") or [] if c in por]
-    fila = lambda f: f'<tr><td>{e(f[0])}</td><td>{e(f[1])}</td><td><b>{e(f[2])}</b></td><td>{e(f[3])}</td></tr>'
+    fila = lambda f: "<tr>" + "".join(f"<td>{'<b>' + e(x) + '</b>' if i == 2 else e(x)}</td>" for i, x in enumerate(f)) + "</tr>"
     cab = "".join(f"<th>{e(c)}</th>" for c in d["columnas"])
+    if len(d["columnas"]) < 4:
+        return _pagina_tabla_simple(j, t, d, filas, dest, fila, cab, notas)
     cuenta = {}
     for f in filas:
         cuenta[f[2]] = cuenta.get(f[2], 0) + 1
@@ -1808,6 +1810,35 @@ i.addEventListener('input',function(){{var q=n(i.value).trim().split(/\\s+/),k=0
 <p class="fuente"><b>Fuente:</b> <a href="{e(d["fuente"]["url"])}" rel="nofollow noopener" target="_blank">{e(d["fuente"]["nombre"])}</a>. {e(d.get("aclaracion", ""))}</p>
 <p><a href="{j["ruta"]}.html">Más sobre {e(j["nombre"])}: Monotasa, novedades y vencimientos →</a></p>
 <p class="aviso">Las alícuotas y mínimos del Anexo son máximos: la Municipalidad no puede cobrar más. Verificá siempre tu caso en la Municipalidad o con tu contador.</p>
+</div></article>{lateral(notas)}</div>"""
+    return pagina(f'{t["titulo"]} | Ramacontable', cuerpo, "impuestos", t["descripcion"], t["ruta"] + ".html", ld,
+                  [("Provincias y municipios", "provincias-y-municipios.html"), (j["titulo_corto"], j["ruta"] + ".html"), (t["titulo_corto"], t["ruta"] + ".html")])
+
+
+def _pagina_tabla_simple(j, t, d, filas, dest, fila, cab, notas):
+    qs = d.get("preguntas") or []
+    ld = ('<script type="application/ld+json">' + json.dumps({"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [
+        {"@type": "Question", "name": q["p"], "acceptedAnswer": {"@type": "Answer", "text": q["r"]}} for q in qs]}, ensure_ascii=False).replace("</", "<\\/") + "</script>") if qs else ""
+    cuerpo = f"""<div class="grilla"><article class="nota calc"><div class="nota-contenido">
+<p class="miga"><a href="provincias-y-municipios.html">Provincias y municipios</a> › <a href="{j["ruta"]}.html">{e(j["nombre"])}</a></p>
+<p class="ante">{e(j["organismo"])} | {e(d["norma"])}</p>
+<h1>{e(t["titulo"])}</h1>
+<p class="firma">Redacción Ramacontable · {e(d["vigencia"])}</p>
+<div class="encorto"><b>En corto</b><p>{e(d.get("encorto", ""))}</p></div>
+<h2>Las actividades más buscadas</h2>
+<div class="tabla"><table><thead><tr>{cab}</tr></thead><tbody>{"".join(fila(f) for f in dest)}</tbody></table></div>
+<h2>Buscá tu actividad ({len(filas)} actividades con alícuota especial)</h2>
+<p><input id="busca-tabla" type="search" placeholder="Código o palabra (ej.: 471110, seguros, autos)" style="width:100%;padding:.7em;font-size:1rem" autocomplete="off"></p>
+<p class="ayuda" id="busca-cuenta">{len(filas)} actividades</p>
+<div class="tabla"><table id="tabla-grande"><thead><tr>{cab}</tr></thead><tbody>{"".join(fila(f) for f in filas)}</tbody></table></div>
+<script>(function(){{var i=document.getElementById('busca-tabla'),t=document.getElementById('tabla-grande'),c=document.getElementById('busca-cuenta');
+var n=function(s){{return (s||'').toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g,'')}};
+var rows=[].slice.call(t.tBodies[0].rows);rows.forEach(function(r){{r._t=n(r.textContent)}});
+i.addEventListener('input',function(){{var q=n(i.value).trim().split(/\\s+/),k=0;rows.forEach(function(r){{var ok=q.every(function(w){{return r._t.indexOf(w)>=0}});r.style.display=ok?'':'none';if(ok)k++}});c.textContent=k+' actividades'}});}})();</script>
+{preguntas_html({"preguntas": qs})}
+<p class="fuente"><b>Fuente:</b> <a href="{e(d["fuente"]["url"])}" rel="nofollow noopener" target="_blank">{e(d["fuente"]["nombre"])}</a>. {e(d.get("aclaracion", ""))}</p>
+<p><a href="{j["ruta"]}.html">Más sobre {e(j["nombre"])}: alícuota general, mínimos y Monotasa →</a></p>
+<p class="aviso">Información de carácter general. Verificá siempre tu caso en la Municipalidad o con tu contador.</p>
 </div></article>{lateral(notas)}</div>"""
     return pagina(f'{t["titulo"]} | Ramacontable', cuerpo, "impuestos", t["descripcion"], t["ruta"] + ".html", ld,
                   [("Provincias y municipios", "provincias-y-municipios.html"), (j["titulo_corto"], j["ruta"] + ".html"), (t["titulo_corto"], t["ruta"] + ".html")])

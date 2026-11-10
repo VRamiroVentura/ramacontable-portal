@@ -1,0 +1,31 @@
+{
+ "slug": "salta",
+ "nombre": "Salta",
+ "tipo": "provincia",
+ "orden": 7,
+ "portada": false,
+ "ruta": "impuestos-salta",
+ "organismo": "DGR Salta (Dirección General de Rentas)",
+ "titulo": "Régimen Simplificado Salta 2026: montos por categoría, vencimientos y novedades de Rentas",
+ "titulo_corto": "Salta (DGR)",
+ "descripcion": "Régimen Simplificado Provincial de Salta: montos fijos del Impuesto a las Actividades Económicas por categoría desde agosto 2026, vencimientos y novedades de la DGR Salta.",
+ "intro": "Lo que más se busca de Salta: el monto fijo mensual del Régimen Simplificado Provincial (Impuesto a las Actividades Económicas) por categoría, los vencimientos y las novedades de la DGR.",
+ "claves": [
+  "salta",
+  "salteño",
+  "dgr salta",
+  "rentas salta"
+ ],
+ "venc_claves": [
+  "salta",
+  "convenio multilateral"
+ ],
+ "fuentes": [],
+ "oficiales": [
+  {
+   "nombre": "DGR Salta",
+   "url": "https://www.dgrsalta.gov.ar/"
+  }
+ ],
+ "bloques": []
+}

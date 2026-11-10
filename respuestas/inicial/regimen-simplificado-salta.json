@@ -1,0 +1,182 @@
+{
+ "slug": "regimen-simplificado-salta",
+ "titulo": "Régimen Simplificado Salta: Actividades Económicas por categoría",
+ "revisado": "2026-11-10T21:00:00-03:00",
+ "cambiado": "2026-08-01",
+ "fuentes": [
+  {
+   "nombre": "DGR Salta (tabla oficial de montos del RSP)",
+   "url": "https://www.dgrsalta.gov.ar/Inicio/RegimenSimplificado"
+  },
+  {
+   "nombre": "Tributo Simple (valores de febrero 2026)",
+   "url": "https://tributosimple.com/valores-monotributo-unificado-salta/"
+  }
+ ],
+ "historial": [
+  {
+   "fecha": "2026-02-01",
+   "valor": "Categoría A: $ 15.473,66 por mes",
+   "norma": "RG DGR 4/2021, art. 6"
+  },
+  {
+   "fecha": "2026-08-01",
+   "valor": "Categoría A: $ 18.080,34 por mes",
+   "norma": "RG DGR 4/2021, art. 6"
+  }
+ ],
+ "datos": {
+  "valor": "Categoría A: $ 18.080,34 por mes",
+  "monto": 18080.34,
+  "vigencia": "período 08/2026",
+  "proximo": "Se actualiza sola con el Monotributo nacional (febrero 2027)",
+  "norma": "Régimen Simplificado Provincial de Salta; montos actualizados según la RG DGR 4/2021, art. 6",
+  "respuesta": "Desde el período 08/2026, el monto fijo mensual del Impuesto a las Actividades Económicas del Régimen Simplificado Provincial de Salta va de $ 18.080,34 (categoría A) a $ 528.330,46 (categoría K). El trabajador promovido paga $ 9.040,16.",
+  "tabla": [
+   [
+    "Categoría",
+    "Ingresos brutos anuales hasta (Monotributo)",
+    "Monto mensual desde 08/2026",
+    "02/2026 a 07/2026"
+   ],
+   [
+    "Promovido",
+    "-",
+    "$ 9.040,16",
+    "$ 7.736,82"
+   ],
+   [
+    "A",
+    "$ 12.009.410,45",
+    "$ 18.080,34",
+    "$ 15.473,66"
+   ],
+   [
+    "B",
+    "$ 17.595.182,74",
+    "$ 26.503,98",
+    "$ 22.682,85"
+   ],
+   [
+    "C",
+    "$ 24.670.494,31",
+    "$ 36.232,69",
+    "$ 31.008,95"
+   ],
+   [
+    "D",
+    "$ 30.628.651,43",
+    "$ 53.170,87",
+    "$ 45.505,12"
+   ],
+   [
+    "E",
+    "$ 36.028.231,33",
+    "$ 71.905,09",
+    "$ 61.538,39"
+   ],
+   [
+    "F",
+    "$ 45.151.659,41",
+    "$ 92.126,12",
+    "$ 78.844,12"
+   ],
+   [
+    "G",
+    "$ 53.995.798,87",
+    "$ 136.117,41",
+    "$ 116.493,10"
+   ],
+   [
+    "H",
+    "$ 81.924.660,37",
+    "$ 220.613,72",
+    "$ 188.807,41"
+   ],
+   [
+    "I",
+    "$ 91.699.761,90",
+    "$ 339.179,80",
+    "$ 290.279,59"
+   ],
+   [
+    "J",
+    "$ 105.012.519,20",
+    "$ 405.729,03",
+    "$ 347.234,29"
+   ],
+   [
+    "K",
+    "$ 126.610.838,75",
+    "$ 528.330,46",
+    "$ 452.160,03"
+   ]
+  ],
+  "explicacion": [
+   "En Salta el impuesto provincial se llama Impuesto a las Actividades Económicas (equivalente a Ingresos Brutos). El Régimen Simplificado Provincial usa las mismas categorías del Monotributo nacional.",
+   "No hay una resolución nueva cada semestre: desde 01/2022 los montos se actualizan con el mismo porcentaje que aplica la Nación al Monotributo (RG DGR 4/2021, art. 6). En agosto 2026 subieron 16,85%, según la tabla oficial de la DGR Salta."
+  ],
+  "preguntas": [
+   {
+    "p": "¿Cuánto se paga del Régimen Simplificado de Salta?",
+    "r": "Desde agosto 2026, entre $ 18.080,34 (categoría A) y $ 528.330,46 (categoría K) por mes; el trabajador promovido, $ 9.040,16."
+   },
+   {
+    "p": "¿Qué norma fija los montos?",
+    "r": "La RG DGR 4/2021 (art. 6): los montos se actualizan solos con los aumentos del Monotributo nacional. La DGR Salta publica la tabla en su web."
+   }
+  ],
+  "estructurado": {
+   "categorias": [
+    {
+     "categoria": "Promovido",
+     "importe": 9040.16
+    },
+    {
+     "categoria": "A",
+     "importe": 18080.34
+    },
+    {
+     "categoria": "B",
+     "importe": 26503.98
+    },
+    {
+     "categoria": "C",
+     "importe": 36232.69
+    },
+    {
+     "categoria": "D",
+     "importe": 53170.87
+    },
+    {
+     "categoria": "E",
+     "importe": 71905.09
+    },
+    {
+     "categoria": "F",
+     "importe": 92126.12
+    },
+    {
+     "categoria": "G",
+     "importe": 136117.41
+    },
+    {
+     "categoria": "H",
+     "importe": 220613.72
+    },
+    {
+     "categoria": "I",
+     "importe": 339179.8
+    },
+    {
+     "categoria": "J",
+     "importe": 405729.03
+    },
+    {
+     "categoria": "K",
+     "importe": 528330.46
+    }
+   ]
+  }
+ }
+}

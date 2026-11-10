@@ -1,0 +1,193 @@
+{
+ "slug": "mar-del-plata",
+ "nombre": "Mar del Plata",
+ "tipo": "municipio",
+ "orden": 8,
+ "portada": false,
+ "ruta": "tasas-municipales-mar-del-plata",
+ "organismo": "Municipalidad de General Pueyrredon",
+ "titulo": "Seguridad e Higiene Mar del Plata 2026: alícuotas, mínimos y Monotasa (Ordenanza 26.899)",
+ "titulo_corto": "Mar del Plata (General Pueyrredon)",
+ "descripcion": "Tasa de Seguridad e Higiene de Mar del Plata 2026: alícuota general 0,6%, alícuotas especiales por actividad, mínimos mensuales y Monotasa, según la Ordenanza Impositiva 26.899.",
+ "intro": "La Tasa por Inspección de Seguridad e Higiene de General Pueyrredon (Mar del Plata, Batán y Sierra de los Padres) para 2026: alícuotas, mínimos por actividad y la Monotasa, según la Ordenanza Impositiva 26.899.",
+ "claves": [
+  "mar del plata",
+  "marplatense",
+  "general pueyrredon",
+  "batán"
+ ],
+ "venc_claves": [
+  "mar del plata",
+  "general pueyrredon"
+ ],
+ "fuentes": [],
+ "oficiales": [
+  {
+   "nombre": "Ordenanza Impositiva 26.899 (Concejo Deliberante)",
+   "url": "https://www.concejomdp.gov.ar/biblioteca/novedadesnormativas/26899%20-%20ORDENANZAIMPOSITIVA%20EJERCICIO%202026.pdf"
+  },
+  {
+   "nombre": "Publicación en SIBOM",
+   "url": "https://sibom.slyt.gba.gob.ar/bulletins/14538/contents/2356313"
+  }
+ ],
+ "bloques": [
+  {
+   "h": "Tasa por Inspección de Seguridad e Higiene 2026: alícuotas"
+  },
+  {
+   "p": "La Ordenanza Impositiva 2026 N° 26.899 (sancionada y promulgada el 27/02/2026, Decreto 322/26) fija en su artículo 8:"
+  },
+  {
+   "tabla": [
+    [
+     "Caso",
+     "Alícuota"
+    ],
+    [
+     "General (actividades del NAIIBB-18 sin otro tratamiento)",
+     "0,6%"
+    ],
+    [
+     "Contribuyentes con ingresos del año anterior en el Partido de más de $ 513.500.000",
+     "0,8%"
+    ],
+    [
+     "Contribuyentes con ingresos del año anterior en el Partido de más de $ 3.313.800.000",
+     "0,9%"
+    ],
+    [
+     "Actividades con alícuota especial (inciso d): tabaco, energía, comisiones, autos, bancos, seguros, juego y otras",
+     "Del 0,35% al 5%"
+    ],
+    [
+     "Gastronomía (códigos 561011, 561012, 561014 y 561019) con baile",
+     "2%"
+    ]
+   ]
+  },
+  {
+   "h": "Mínimos mensuales 2026"
+  },
+  {
+   "p": "El artículo 9 fija importes mínimos por mes, que funcionan como anticipo y no se pueden compensar con otros períodos. No se aplican a las actividades industriales y de producción de bienes muebles."
+  },
+  {
+   "tabla": [
+    [
+     "Concepto",
+     "Mínimo por mes"
+    ],
+    [
+     "Venta de cosas muebles (hasta 2 titulares)",
+     "$ 24.550"
+    ],
+    [
+     "Servicios y resto de actividades (hasta 2 titulares)",
+     "$ 17.930"
+    ],
+    [
+     "Adicional por cada titular a partir del tercero",
+     "$ 7.870"
+    ],
+    [
+     "Gastronomía hasta 50 m²",
+     "$ 18.600"
+    ],
+    [
+     "Gastronomía de más de 50 a 75 m²",
+     "$ 27.960"
+    ],
+    [
+     "Gastronomía de más de 75 a 100 m²",
+     "$ 37.370"
+    ],
+    [
+     "Gastronomía de más de 100 a 200 m²",
+     "$ 52.260"
+    ],
+    [
+     "Gastronomía de más de 200 a 300 m²",
+     "$ 74.180"
+    ],
+    [
+     "Gastronomía de más de 300 a 400 m²",
+     "$ 97.430"
+    ],
+    [
+     "Gastronomía de más de 400 m²",
+     "$ 116.860"
+    ],
+    [
+     "Comercios de más de 200 m² (o códigos 471120, 471130, o más de 4 códigos) hasta 300 m²",
+     "$ 219.280"
+    ],
+    [
+     "Ídem, de más de 300 a 450 m²",
+     "$ 249.220"
+    ],
+    [
+     "Ídem, de más de 450 m²",
+     "$ 289.920"
+    ],
+    [
+     "Garajes y playas de estacionamiento hasta 500 m²",
+     "$ 35.320"
+    ],
+    [
+     "Garajes de más de 500 a 1.000 m²",
+     "$ 70.510"
+    ],
+    [
+     "Garajes de más de 1.000 a 1.500 m²",
+     "$ 107.760"
+    ],
+    [
+     "Garajes de más de 1.500 m²",
+     "$ 180.280"
+    ],
+    [
+     "Confiterías bailables, boliches y similares hasta 500 m²",
+     "$ 185.900"
+    ],
+    [
+     "Ídem, de más de 500 m²",
+     "$ 371.950"
+    ],
+    [
+     "Hoteles alojamiento (por hora)",
+     "$ 232.390"
+    ],
+    [
+     "Balnearios en enero y febrero, hasta 100 unidades de sombra",
+     "$ 176.670"
+    ]
+   ]
+  }
+ ],
+ "tablas": [
+  {
+   "archivo": "tablas/mar-del-plata-seguridad-e-higiene-2026.json",
+   "ruta": "alicuotas-seguridad-e-higiene-mar-del-plata",
+   "titulo": "Alícuotas especiales de Seguridad e Higiene Mar del Plata 2026 por actividad",
+   "titulo_corto": "Alícuotas especiales de Seguridad e Higiene 2026",
+   "descripcion": "Buscá tu actividad: alícuotas especiales de la Tasa de Seguridad e Higiene de General Pueyrredon 2026 (art. 8 inc. d, Ordenanza 26.899). El resto paga la general del 0,6%.",
+   "destacados": [
+    "471110",
+    "472300",
+    "471192",
+    "451111",
+    "451112",
+    "551010",
+    "939030",
+    "920001",
+    "612000",
+    "731001",
+    "682099",
+    "641931",
+    "649220",
+    "651220"
+   ]
+  }
+ ]
+}

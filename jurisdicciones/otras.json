@@ -8,24 +8,8 @@
    "claves": [
     "tucumán",
     "tucuman"
-   ]
-  },
-  {
-   "slug": "salta",
-   "nombre": "Salta",
-   "organismo": "DGR Salta",
-   "claves": [
-    "salta"
-   ]
-  },
-  {
-   "slug": "mar-del-plata",
-   "nombre": "Mar del Plata (General Pueyrredon)",
-   "organismo": "Municipalidad de General Pueyrredon",
-   "claves": [
-    "mar del plata",
-    "general pueyrredon"
-   ]
+   ],
+   "nota": "El Código Tributario prevé un régimen simplificado (art. 227), pero no encontramos importes vigentes."
   },
   {
    "slug": "caba",

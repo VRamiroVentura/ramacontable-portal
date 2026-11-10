@@ -1,0 +1,143 @@
+{
+ "slug": "monotasa-mar-del-plata",
+ "titulo": "Monotasa Mar del Plata 2026: Seguridad e Higiene para pequeños establecimientos",
+ "revisado": "2026-11-10T21:00:00-03:00",
+ "cambiado": "2026-03-02",
+ "fuentes": [
+  {
+   "nombre": "Ordenanza Impositiva 2026 N° 26.899 (Concejo Deliberante)",
+   "url": "https://www.concejomdp.gov.ar/biblioteca/novedadesnormativas/26899%20-%20ORDENANZAIMPOSITIVA%20EJERCICIO%202026.pdf"
+  },
+  {
+   "nombre": "Publicación en SIBOM",
+   "url": "https://sibom.slyt.gba.gob.ar/bulletins/14538/contents/2356313"
+  }
+ ],
+ "historial": [
+  {
+   "fecha": "2026-03-02",
+   "valor": "Categoría A: $ 4.230 por mes",
+   "norma": "Ordenanza Impositiva 26.899, art. 79"
+  }
+ ],
+ "datos": {
+  "valor": "Categoría A: $ 4.230 por mes",
+  "monto": 4230,
+  "vigencia": "ejercicio fiscal 2026",
+  "proximo": "Nueva Ordenanza Impositiva para 2027",
+  "norma": "Ordenanza Impositiva 2026 N° 26.899 de General Pueyrredon, Anexo I, art. 79 (promulgada por Decreto 322/26)",
+  "respuesta": "En 2026, los contribuyentes de Mar del Plata (General Pueyrredon) en el Régimen Simplificado para Pequeños Establecimientos (Monotasa) pagan por mes de $ 4.230 (categoría A del Monotributo) a $ 44.640 (categoría K), según la Ordenanza Impositiva 26.899.",
+  "tabla": [
+   [
+    "Categoría del Monotributo",
+    "Monotasa por mes"
+   ],
+   [
+    "A",
+    "$ 4.230"
+   ],
+   [
+    "B",
+    "$ 6.200"
+   ],
+   [
+    "C",
+    "$ 8.690"
+   ],
+   [
+    "D",
+    "$ 10.800"
+   ],
+   [
+    "E",
+    "$ 12.700"
+   ],
+   [
+    "F",
+    "$ 15.920"
+   ],
+   [
+    "G",
+    "$ 19.030"
+   ],
+   [
+    "H",
+    "$ 28.880"
+   ],
+   [
+    "I",
+    "$ 32.330"
+   ],
+   [
+    "J",
+    "$ 37.020"
+   ],
+   [
+    "K",
+    "$ 44.640"
+   ]
+  ],
+  "explicacion": [
+   "La Monotasa es el régimen simplificado de la Tasa por Inspección de Seguridad e Higiene para pequeños establecimientos: se paga un importe fijo por mes según la categoría del Monotributo.",
+   "Los contribuyentes de la Monotasa exentos de la Tasa de Seguridad e Higiene (art. 281 inc. l de la Ordenanza Fiscal) pagan un anticipo mensual de $ 2.670."
+  ],
+  "preguntas": [
+   {
+    "p": "¿Cuánto paga un monotasa exento de Seguridad e Higiene?",
+    "r": "Un anticipo mensual de $ 2.670."
+   },
+   {
+    "p": "¿Cuánto se paga de Monotasa en Mar del Plata en 2026?",
+    "r": "Por mes, $ 4.230 en la categoría A y $ 44.640 en la categoría K del Monotributo (Ordenanza Impositiva 26.899, art. 79)."
+   }
+  ],
+  "estructurado": {
+   "categorias": [
+    {
+     "categoria": "A",
+     "importe": 4230
+    },
+    {
+     "categoria": "B",
+     "importe": 6200
+    },
+    {
+     "categoria": "C",
+     "importe": 8690
+    },
+    {
+     "categoria": "D",
+     "importe": 10800
+    },
+    {
+     "categoria": "E",
+     "importe": 12700
+    },
+    {
+     "categoria": "F",
+     "importe": 15920
+    },
+    {
+     "categoria": "G",
+     "importe": 19030
+    },
+    {
+     "categoria": "H",
+     "importe": 28880
+    },
+    {
+     "categoria": "I",
+     "importe": 32330
+    },
+    {
+     "categoria": "J",
+     "importe": 37020
+    },
+    {
+     "categoria": "K",
+     "importe": 44640
+    }
+   ]
+  }
+ }
+}

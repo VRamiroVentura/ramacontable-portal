@@ -385,5 +385,56 @@
   },
   "estructura": "estructurado: {\"categorias\": [{\"categoria\": \"texto\", \"importe_servicios\": numero, \"importe_resto\": numero}]}",
   "cuando": "Dos veces por año, junto con el Monotributo nacional (febrero y agosto)"
+ },
+ {
+  "slug": "regimen-simplificado-salta",
+  "titulo": "Régimen Simplificado Salta: Actividades Económicas por categoría",
+  "seccion": "provincias",
+  "jurisdiccion": "salta",
+  "pregunta": "¿Cuánto se paga del Régimen Simplificado de Salta?",
+  "pide": "Monto fijo mensual del Impuesto a las Actividades Económicas del Régimen Simplificado Provincial de Salta para promovido y categorías A a K, período desde el que rige y norma (DGR Salta).",
+  "busqueda": "regimen simplificado salta montos categorias",
+  "claves": [
+   "régimen simplificado provincial",
+   "rentas salta",
+   "dgr salta"
+  ],
+  "oficial": [
+   "https://www.dgrsalta.gov.ar/Inicio/RegimenSimplificado"
+  ],
+  "ciclo": {
+   "tipo": "semestral",
+   "ventanas": [
+    "01-10/02-15",
+    "07-10/08-15"
+   ]
+  },
+  "estructura": "estructurado: {\"categorias\": [{\"categoria\": \"texto\", \"importe\": numero}]}",
+  "cuando": "Dos veces por año, con el Monotributo nacional (febrero y agosto)"
+ },
+ {
+  "slug": "monotasa-mar-del-plata",
+  "titulo": "Monotasa Mar del Plata 2026: Seguridad e Higiene para pequeños establecimientos",
+  "seccion": "provincias",
+  "jurisdiccion": "mar-del-plata",
+  "pregunta": "¿Cuánto se paga de Monotasa (Seguridad e Higiene) en Mar del Plata?",
+  "pide": "Importes mensuales de la Monotasa (Régimen Simplificado para Pequeños Establecimientos) de General Pueyrredon para cada categoría del Monotributo, año y número de Ordenanza Impositiva.",
+  "busqueda": "monotasa mar del plata ordenanza impositiva",
+  "claves": [
+   "monotasa mar del plata",
+   "general pueyrredon"
+  ],
+  "oficial": [
+   "https://www.concejomdp.gov.ar/biblioteca/novedadesnormativas/26899%20-%20ORDENANZAIMPOSITIVA%20EJERCICIO%202026.pdf"
+  ],
+  "ciclo": {
+   "tipo": "semestral",
+   "ventanas": [
+    "12-10/03-31"
+   ],
+   "semanas": 4
+  },
+  "estructura": "estructurado: {\"categorias\": [{\"categoria\": \"texto\", \"importe\": numero}]}",
+  "cuando": "Una vez por año, con la Ordenanza Impositiva"
  }
 ]

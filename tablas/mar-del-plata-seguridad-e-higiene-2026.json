@@ -1,0 +1,557 @@
+{
+"titulo": "Tasa por Inspección de Seguridad e Higiene – General Pueyrredon (Mar del Plata) 2026",
+"norma": "Ordenanza Impositiva 2026 N° 26.899, Anexo I, Capítulo IV, art. 8 inciso d)",
+"vigencia": "Ejercicio fiscal 2026",
+"fuente": {
+"nombre": "Ordenanza 26.899 (Concejo Deliberante de General Pueyrredon)",
+"url": "https://www.concejomdp.gov.ar/biblioteca/novedadesnormativas/26899%20-%20ORDENANZAIMPOSITIVA%20EJERCICIO%202026.pdf"
+},
+"columnas": [
+"Código NAIIBB-18",
+"Actividad",
+"Alícuota"
+],
+"aclaracion": "Actividades con alícuota especial (art. 8 inc. d). El resto de las actividades tributa la alícuota general del 0,6% (0,8% o 0,9% según los ingresos del año anterior). Transcripción del anexo escaneado, revisada fila por fila contra el original.",
+"filas": [
+[
+"120010",
+"Preparación de hojas de tabaco",
+"2,00%"
+],
+[
+"120091",
+"Elaboración de cigarrillos",
+"2,00%"
+],
+[
+"120099",
+"Elaboración de productos de tabaco n.c.p.",
+"2,00%"
+],
+[
+"463300",
+"Venta al por mayor de cigarrillos y productos de tabaco",
+"1,30%"
+],
+[
+"471192",
+"Venta al por menor de tabaco, cigarros y cigarrillos en kioscos, polirrubros y comercios no especializados n.c.p.",
+"1,30%"
+],
+[
+"472300",
+"Venta al por menor de tabaco en comercios especializados",
+"1,30%"
+],
+[
+"351201",
+"Transporte de energía eléctrica",
+"5,00%"
+],
+[
+"351310",
+"Comercio mayorista de energía eléctrica",
+"5,00%"
+],
+[
+"351320",
+"Distribución de energía eléctrica",
+"5,00%"
+],
+[
+"461014",
+"Acopio y acondicionamiento en comisión o consignación de cereales (incluye arroz), oleaginosas y forrajeras excepto semillas",
+"1,00%"
+],
+[
+"462110",
+"Acopio de otros productos agropecuarios, excepto cereales",
+"1,00%"
+],
+[
+"462131",
+"Venta al por mayor de cereales (incluye arroz), oleaginosas y forrajeras excepto semillas",
+"1,00%"
+],
+[
+"462132",
+"Acopio y acondicionamiento de cereales y semillas, excepto de algodón y semillas y granos para forrajes",
+"1,00%"
+],
+[
+"464310",
+"Venta al por mayor de productos farmacéuticos",
+"2,00%"
+],
+[
+"464311",
+"Venta al por mayor de productos farmacéuticos cuando sus establecimientos estén ubicados en la Prov. de Buenos Aires",
+"2,00%"
+],
+[
+"464312",
+"Venta al por mayor de productos farmacéuticos excepto cuando sus establecimientos estén ubicados en la Prov. de Buenos Aires",
+"2,00%"
+],
+[
+"464420",
+"Venta al por mayor de artículos de relojería, joyería y fantasías",
+"1,00%"
+],
+[
+"477420",
+"Venta al por menor de artículos de relojería y joyería",
+"1,00%"
+],
+[
+"477840",
+"Venta al por menor de oro, monedas, sellos y similares",
+"3,00%"
+],
+[
+"451111",
+"Venta de autos, camionetas y utilitarios nuevos excepto en comisión",
+"1,00%"
+],
+[
+"451112",
+"Venta en comisión de autos, camionetas y utilitarios nuevos",
+"3,00%"
+],
+[
+"451191",
+"Venta de vehículos automotores nuevos n.c.p.",
+"1,00%"
+],
+[
+"451192",
+"Venta en comisión de vehículos automotores nuevos n.c.p.",
+"3,00%"
+],
+[
+"451211",
+"Venta de autos, camionetas y utilitarios, usados, excepto en comisión",
+"1,00%"
+],
+[
+"451212",
+"Venta en comisión de autos, camionetas y utilitarios, usados",
+"3,00%"
+],
+[
+"451291",
+"Venta de vehículos automotores usados n.c.p. excepto en comisión",
+"1,00%"
+],
+[
+"451292",
+"Venta en comisión de vehículos automotores usados n.c.p.",
+"3,00%"
+],
+[
+"473009",
+"Venta en comisión al por menor de combustible para vehículos automotores y motocicletas",
+"2,00%"
+],
+[
+"454011",
+"Venta de motocicletas y de sus partes, piezas y accesorios, excepto en comisión",
+"1,00%"
+],
+[
+"454012",
+"Venta en comisión de motocicletas y de sus partes, piezas y accesorios",
+"3,00%"
+],
+[
+"476310",
+"Venta al por menor de equipos y artículos deportivos-embarcaciones",
+"1,00%"
+],
+[
+"471110",
+"Venta al por menor en hipermercados",
+"1,00%"
+],
+[
+"939030",
+"Servicios de salones de baile, discotecas y similares",
+"2,00%"
+],
+[
+"551010",
+"Servicios de alojamiento por hora",
+"3,00%"
+],
+[
+"551021",
+"Servicios de alojamiento en pensiones",
+"0,35%"
+],
+[
+"612000",
+"Servicios de telefonía móvil",
+"2,50%"
+],
+[
+"611090",
+"Servicios de telefonía fija, excepto locutorios",
+"2,50%"
+],
+[
+"613000",
+"Servicios de telecomunicaciones vía satélite, excepto servicios de transmisión de televisión",
+"2,50%"
+],
+[
+"920001",
+"Servicios de recepción de apuestas de quiniela, lotería y similares",
+"1,50%"
+],
+[
+"920002",
+"Servicios de explotación de salas de bingo",
+"4,00%"
+],
+[
+"920003",
+"Servicios de explotación de máquinas tragamonedas",
+"4,00%"
+],
+[
+"920004",
+"Servicios relacionados con juegos de azar y apuestas on line",
+"4,00%"
+],
+[
+"920009",
+"Servicios relacionados con juegos de azar y apuestas n.c.p.",
+"4,00%"
+],
+[
+"602200",
+"Operadores de televisión por suscripción",
+"1,50%"
+],
+[
+"731001",
+"Servicios de comercialización de tiempo y espacio publicitario",
+"1,50%"
+],
+[
+"731002",
+"Servicios de publicidad, por actividades de intermediación",
+"1,50%"
+],
+[
+"731009",
+"Servicios de publicidad n.c.p.",
+"1,50%"
+],
+[
+"732000",
+"Estudio de mercado, realización de encuestas de opinión pública",
+"1,50%"
+],
+[
+"801020",
+"Servicios de sistemas de seguridad",
+"1,00%"
+],
+[
+"801090",
+"Servicios de seguridad e investigación n.c.p.",
+"1,00%"
+],
+[
+"682099",
+"Servicios inmobiliarios realizados a cambio de una retribución o por contrato n.c.p. y todas aquellas actividades de intermediación independientemente de la denominación que la retribución que se perciba",
+"2,00%"
+],
+[
+"461011",
+"Venta al por mayor en comisión o consignación de cereales (incluye arroz), oleaginosas y forrajeras excepto semillas",
+"1,00%"
+],
+[
+"461012",
+"Venta al por mayor en comisión o consignación de semillas",
+"1,00%"
+],
+[
+"461013",
+"Venta al por mayor en comisión o consignación de frutas",
+"1,00%"
+],
+[
+"461019",
+"Venta al por mayor en comisión o consignación de productos agrícolas n.c.p.",
+"1,00%"
+],
+[
+"461021",
+"Venta al por mayor en comisión o consignación de ganado bovino en pie",
+"1,00%"
+],
+[
+"461022",
+"Venta al por mayor en comisión o consignación de ganado en pie excepto bovino",
+"1,00%"
+],
+[
+"461029",
+"Venta al por mayor en comisión o consignación de productos pecuarios n.c.p.",
+"1,00%"
+],
+[
+"461031",
+"Operaciones de intermediación de carne – consignatario directo",
+"1,00%"
+],
+[
+"461032",
+"Operaciones de intermediación de carne excepto consignatario directo",
+"1,00%"
+],
+[
+"461039",
+"Venta al por mayor en comisión o consignación de alimentos, bebidas y tabaco n.c.p.",
+"1,00%"
+],
+[
+"461040",
+"Venta al por mayor en comisión o consignación de combustibles",
+"1,00%"
+],
+[
+"461091",
+"Venta al por mayor en comisión o consignación de productos textiles, prendas de vestir, calzado excepto el ortopédico, artículos de marroquinería, paraguas y similares y productos de cuero n.c.p.",
+"1,00%"
+],
+[
+"461092",
+"Venta al por mayor en comisión o consignación de madera y materiales para la construcción",
+"1,00%"
+],
+[
+"461093",
+"Venta al por mayor en comisión o consignación de minerales, metales y productos químicos industriales",
+"1,00%"
+],
+[
+"461094",
+"Venta al por mayor en comisión o consignación de maquinaria, equipo profesional industrial y comercial, embarcaciones y aeronaves",
+"1,00%"
+],
+[
+"461095",
+"Venta al por mayor en comisión o consignación de papel, cartón, libros, revistas, diarios, materiales de embalaje y artículos de librería",
+"1,00%"
+],
+[
+"461099",
+"Venta al por mayor en comisión o consignación de mercaderías n.c.p.",
+"1,00%"
+],
+[
+"641100",
+"Servicios de la banca central",
+"5,00%"
+],
+[
+"641910",
+"Servicios de la banca mayorista",
+"5,00%"
+],
+[
+"641920",
+"Servicios de la banca de inversión",
+"5,00%"
+],
+[
+"641931",
+"Servicios de la banca minorista, excepto los correspondientes a los intereses y ajustes de capital de los préstamos hipotecarios a personas físicas para vivienda única, familiar y de ocupación permanente",
+"5,00%"
+],
+[
+"641932",
+"Servicios de la banca minorista correspondientes a los intereses y ajustes de capital de los préstamos hipotecarios a personas físicas para vivienda única, familiar y de ocupación permanente",
+"5,00%"
+],
+[
+"641941",
+"Servicios de intermediación financiera realizada por las compañías financieras",
+"5,00%"
+],
+[
+"641942",
+"Servicios de intermediación financiera realizada por sociedades de ahorro y préstamo para la vivienda y otros inmuebles",
+"1,00%"
+],
+[
+"641943",
+"Servicios de intermediación financiera realizada por cajas de crédito",
+"2,00%"
+],
+[
+"641944",
+"Servicios de las entidades financieras no bancarias, excepto los correspondientes a los intereses y ajustes de capital de los préstamos hipotecarios a personas físicas para vivienda",
+"5,00%"
+],
+[
+"641949",
+"Servicios de las entidades financieras no bancarias correspondientes a los intereses y ajustes de capital de los préstamos hipotecarios a personas físicas para vivienda única familiar",
+"5,00%"
+],
+[
+"642000",
+"Servicios de sociedades de cartera",
+"5,00%"
+],
+[
+"643001",
+"Servicios de fideicomisos",
+"2,00%"
+],
+[
+"643009",
+"Fondos y sociedades de inversión y entidades financieras similares n.c.p.",
+"5,00%"
+],
+[
+"649100",
+"Arrendamiento financiero, leasing",
+"5,00%"
+],
+[
+"649210",
+"Actividades de crédito para financiar otras actividades económicas",
+"2,00%"
+],
+[
+"649220",
+"Servicios de entidades de tarjeta de compra y/o crédito",
+"3,00%"
+],
+[
+"649290",
+"Servicios de crédito n.c.p.",
+"5,00%"
+],
+[
+"649910",
+"Servicios de agentes de mercado abierto \"puros\"",
+"5,00%"
+],
+[
+"649991",
+"Servicios de socios inversores en sociedades regulares según Ley 19.550 (S.R.L., S.C.A., etc.), excepto socios inversores en sociedades anónimas incluidos en 649999",
+"5,00%"
+],
+[
+"649999",
+"Servicios de financiación y actividades financieras n.c.p.",
+"5,00%"
+],
+[
+"651120",
+"Servicios de seguros de vida",
+"2,00%"
+],
+[
+"651130",
+"Servicios de seguros personales excepto los de salud y de vida",
+"2,00%"
+],
+[
+"651210",
+"Servicios de aseguradoras de riesgo de trabajo (ART)",
+"2,00%"
+],
+[
+"651220",
+"Servicios de seguros patrimoniales, excepto los de las aseguradoras de riesgo de trabajo (ART)",
+"2,00%"
+],
+[
+"661111",
+"Servicios de mercados y cajas de valores",
+"5,00%"
+],
+[
+"661121",
+"Servicios de mercados a término",
+"5,00%"
+],
+[
+"661131",
+"Servicios de bolsas de comercio",
+"3,00%"
+],
+[
+"661910",
+"Servicios bursátiles de mediación o por cuenta de terceros",
+"3,00%"
+],
+[
+"661920",
+"Servicios de casas y agencias de cambio",
+"5,00%"
+],
+[
+"661930",
+"Servicios de sociedades calificadoras de riesgos financieros",
+"5,00%"
+],
+[
+"661991",
+"Servicios de envío y recepción de fondos desde y hacia el exterior",
+"5,00%"
+],
+[
+"661992",
+"Servicios de administradoras de vales y tickets",
+"5,00%"
+],
+[
+"661999",
+"Servicios auxiliares a la intermediación financiera n.c.p.",
+"5,00%"
+],
+[
+"662010",
+"Servicios de evaluación de riesgos y daños",
+"2,00%"
+],
+[
+"662020",
+"Servicios de productores y asesores de seguros",
+"2,00%"
+],
+[
+"662090",
+"Servicios auxiliares a los servicios de seguros n.c.p.",
+"2,00%"
+],
+[
+"663000",
+"Servicios de gestión de fondos a cambio de una retribución o por contrata",
+"5,00%"
+]
+],
+"encorto": "En Mar del Plata (General Pueyrredon) la alícuota general de la Tasa de Seguridad e Higiene 2026 es 0,6% (0,8% o 0,9% para contribuyentes con ingresos altos en el Partido). Las actividades de esta tabla tienen una alícuota especial, del 0,35% al 5%.",
+"preguntas": [
+{
+"p": "¿Cuál es la alícuota de Seguridad e Higiene en Mar del Plata en 2026?",
+"r": "La general es 0,6%. Sube a 0,8% si los ingresos del año anterior en el Partido superaron $ 513.500.000 y a 0,9% si superaron $ 3.313.800.000. Algunas actividades tienen alícuota especial, del 0,35% al 5% (Ordenanza Impositiva 26.899, art. 8)."
+},
+{
+"p": "¿Cuál es el mínimo mensual?",
+"r": "Depende de la actividad: $ 24.550 para venta de cosas muebles y $ 17.930 para servicios (hasta 2 titulares, más $ 7.870 por titular adicional), con mínimos propios para gastronomía, comercios grandes, garajes, boliches y balnearios (art. 9)."
+},
+{
+"p": "¿Cómo encuentro mi actividad?",
+"r": "Buscala por el código del nomenclador NAIIBB-18 o por una palabra. Si no está en esta tabla, paga la alícuota general."
+}
+]
+}
