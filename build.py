@@ -687,6 +687,7 @@ def llms_txt(notas, convenios):
         ("actualizacion-alquiler", "Actualización de alquiler (ICL / IPC)"), ("embargo-sueldo", "Embargo de sueldo (Decreto 484/87)"),
         ("retencion-ganancias", "Retención de Ganancias sobre el sueldo"), ("agenda-vencimientos", "Agenda de vencimientos por CUIT"),
         ("comparador-escalas", "Aumentos por convenio vs. inflación"), ("glosario", "Glosario contable, impositivo y laboral")]]
+    l += [f"- [Planilla de aguinaldo para varios empleados (Excel)]({base}planillas/planilla-aguinaldo-varios-empleados.xlsx): mejor remuneración del semestre, proporcional por días, tope del SAC, descuentos y neto"]
     l += ["", "## Últimas notas"] + [f"- [{n['titulo']}]({base}nota-{n['slug']}.html): {(n.get('encorto') or '')[:200]}"
                                      for n in notas[:40]]
     return "\n".join(l) + "\n"
@@ -1295,6 +1296,7 @@ def bloque_aguinaldo(n, notas):
     dia_sem = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"][vto.weekday()]
     return (f'<section class="dato-hoy"><h2>Aguinaldo de {nombre_mes} {vto.year}: se paga hasta el {dia_sem} {vto.day} de {nombre_mes}</h2>'
             f'<p class="nota-chica">Actualizado el {hoy.day}/{hoy.month}/{hoy.year}</p><ul><li>{cuenta}</li>{tope}</ul>'
+            + '<p><a class="btn" href="planillas/planilla-aguinaldo-varios-empleados.xlsx" download>Descargar planilla de aguinaldo para varios empleados (Excel)</a></p>'
             + (f"<h3>Novedades del aguinaldo</h3><ul>{lis}</ul>" if lis else "") + "</section>")
 
 

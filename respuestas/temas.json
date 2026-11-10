@@ -333,5 +333,57 @@
   },
   "estructura": "estructurado: {\"categorias\": [{\"categoria\": \"texto\", \"importe\": numero}]}",
   "cuando": "Una vez por año, con la Ordenanza Impositiva (diciembre o enero)"
+ },
+ {
+  "slug": "monotributo-unificado-mendoza",
+  "titulo": "Monotributo Unificado Mendoza: Ingresos Brutos por categoría",
+  "seccion": "provincias",
+  "jurisdiccion": "mendoza",
+  "pregunta": "¿Cuánto se paga de Ingresos Brutos en el Monotributo Unificado de Mendoza?",
+  "pide": "Importe fijo mensual de Ingresos Brutos de Mendoza (componente provincial del Monotributo Unificado) para cada categoría A a K, desde cuándo rige y número de Resolución General de la ATM.",
+  "busqueda": "monotributo unificado mendoza valores",
+  "claves": [
+   "monotributo unificado mendoza",
+   "monotributo unificado de mendoza",
+   "atm mendoza"
+  ],
+  "oficial": [
+   "https://www.atm.mendoza.gov.ar/"
+  ],
+  "ciclo": {
+   "tipo": "semestral",
+   "ventanas": [
+    "01-10/02-10",
+    "07-10/08-10"
+   ]
+  },
+  "estructura": "estructurado: {\"categorias\": [{\"categoria\": \"texto\", \"importe\": numero}]}",
+  "cuando": "Dos veces por año, junto con el Monotributo nacional (febrero y agosto)"
+ },
+ {
+  "slug": "monotributo-unificado-entre-rios",
+  "titulo": "Monotributo Unificado Entre Ríos: Ingresos Brutos por categoría",
+  "seccion": "provincias",
+  "jurisdiccion": "entre-rios",
+  "pregunta": "¿Cuánto se paga de Ingresos Brutos en el Monotributo Unificado de Entre Ríos?",
+  "pide": "Importe fijo mensual de Ingresos Brutos de Entre Ríos (Régimen Simplificado, Ley 10.782) para cada categoría A a K, separado en servicios y resto de actividades, importe del trabajador promovido, desde cuándo rige y norma de ATER.",
+  "busqueda": "monotributo unificado entre rios valores",
+  "claves": [
+   "monotributo unificado entre ríos",
+   "monotributo unificado de entre ríos",
+   "ater"
+  ],
+  "oficial": [
+   "https://www.ater.gob.ar/"
+  ],
+  "ciclo": {
+   "tipo": "semestral",
+   "ventanas": [
+    "01-10/02-10",
+    "07-10/08-10"
+   ]
+  },
+  "estructura": "estructurado: {\"categorias\": [{\"categoria\": \"texto\", \"importe_servicios\": numero, \"importe_resto\": numero}]}",
+  "cuando": "Dos veces por año, junto con el Monotributo nacional (febrero y agosto)"
  }
 ]

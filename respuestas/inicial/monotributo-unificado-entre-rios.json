@@ -1,0 +1,178 @@
+{
+ "slug": "monotributo-unificado-entre-rios",
+ "titulo": "Monotributo Unificado Entre Ríos: Ingresos Brutos por categoría",
+ "revisado": "2026-11-10T21:00:00-03:00",
+ "cambiado": "2026-08-01",
+ "fuentes": [
+  {
+   "nombre": "Contadores en Red",
+   "url": "https://contadoresenred.com/entre-rios-monotributo-unificado-valores-a-partir-de-agosto-2026/"
+  },
+  {
+   "nombre": "Tributo Simple (valores anteriores)",
+   "url": "https://tributosimple.com/valores-monotributo-unificado-entre-rios/"
+  }
+ ],
+ "historial": [
+  {
+   "fecha": "2026-08-01",
+   "valor": "Categoría A: $ 10.843 por mes",
+   "norma": "Ley 10.782 (Régimen Simplificado de Entre Ríos)"
+  }
+ ],
+ "datos": {
+  "valor": "Categoría A: $ 10.843 por mes",
+  "monto": 10843,
+  "vigencia": "agosto 2026",
+  "proximo": "Nuevos valores desde febrero 2027, con el Monotributo nacional",
+  "norma": "Régimen Simplificado de Ingresos Brutos de Entre Ríos (Ley 10.782), valores actualizados por ATER desde agosto 2026",
+  "respuesta": "Desde agosto 2026, el importe mensual de Ingresos Brutos de Entre Ríos en el Monotributo Unificado va de $ 10.843 (categoría A) a $ 429.070 (categoría K, servicios) o $ 173.750 (categoría K, resto de actividades). El trabajador promovido paga $ 4.337.",
+  "tabla": [
+   [
+    "Categoría",
+    "Ingresos brutos anuales hasta (Monotributo)",
+    "Servicios",
+    "Resto de actividades"
+   ],
+   [
+    "A",
+    "$ 12.009.410,45",
+    "$ 10.843",
+    "$ 10.843"
+   ],
+   [
+    "B",
+    "$ 17.595.182,74",
+    "$ 16.242",
+    "$ 16.242"
+   ],
+   [
+    "C",
+    "$ 24.670.494,31",
+    "$ 22.785",
+    "$ 22.656"
+   ],
+   [
+    "D",
+    "$ 30.628.651,43",
+    "$ 28.639",
+    "$ 28.861"
+   ],
+   [
+    "E",
+    "$ 36.028.231,33",
+    "$ 39.587",
+    "$ 40.499"
+   ],
+   [
+    "F",
+    "$ 45.151.659,41",
+    "$ 51.681",
+    "$ 51.564"
+   ],
+   [
+    "G",
+    "$ 53.995.798,87",
+    "$ 97.344",
+    "$ 67.443"
+   ],
+   [
+    "H",
+    "$ 81.924.660,37",
+    "$ 159.051",
+    "$ 102.614"
+   ],
+   [
+    "I",
+    "$ 91.699.761,90",
+    "$ 310.752",
+    "$ 127.736"
+   ],
+   [
+    "J",
+    "$ 105.012.519,20",
+    "$ 355.866",
+    "$ 151.526"
+   ],
+   [
+    "K",
+    "$ 126.610.838,75",
+    "$ 429.070",
+    "$ 173.750"
+   ]
+  ],
+  "explicacion": [
+   "En Entre Ríos el Régimen Simplificado de Ingresos Brutos (Ley 10.782) se paga junto con el Monotributo nacional, con la misma categoría. Hay dos columnas: locaciones y prestaciones de servicios, y resto de actividades.",
+   "Los importes de servicios suben 16,85% respecto de los valores anteriores, el mismo porcentaje de la actualización del Monotributo de agosto 2026. El trabajador promovido paga $ 4.337 por mes."
+  ],
+  "preguntas": [
+   {
+    "p": "¿Cuánto se paga de Ingresos Brutos en el Monotributo Unificado de Entre Ríos?",
+    "r": "Desde agosto 2026, desde $ 10.843 por mes en la categoría A. En la K, $ 429.070 para servicios y $ 173.750 para el resto de actividades."
+   },
+   {
+    "p": "¿Cuánto paga el trabajador promovido?",
+    "r": "$ 4.337 por mes desde agosto 2026."
+   }
+  ],
+  "estructurado": {
+   "categorias": [
+    {
+     "categoria": "A",
+     "importe_servicios": 10843,
+     "importe_resto": 10843
+    },
+    {
+     "categoria": "B",
+     "importe_servicios": 16242,
+     "importe_resto": 16242
+    },
+    {
+     "categoria": "C",
+     "importe_servicios": 22785,
+     "importe_resto": 22656
+    },
+    {
+     "categoria": "D",
+     "importe_servicios": 28639,
+     "importe_resto": 28861
+    },
+    {
+     "categoria": "E",
+     "importe_servicios": 39587,
+     "importe_resto": 40499
+    },
+    {
+     "categoria": "F",
+     "importe_servicios": 51681,
+     "importe_resto": 51564
+    },
+    {
+     "categoria": "G",
+     "importe_servicios": 97344,
+     "importe_resto": 67443
+    },
+    {
+     "categoria": "H",
+     "importe_servicios": 159051,
+     "importe_resto": 102614
+    },
+    {
+     "categoria": "I",
+     "importe_servicios": 310752,
+     "importe_resto": 127736
+    },
+    {
+     "categoria": "J",
+     "importe_servicios": 355866,
+     "importe_resto": 151526
+    },
+    {
+     "categoria": "K",
+     "importe_servicios": 429070,
+     "importe_resto": 173750
+    }
+   ]
+  }
+ }
+}

@@ -2,15 +2,6 @@
  "_ayuda": "Provincias que por ahora solo muestran novedades (sin datos fijos).",
  "lista": [
   {
-   "slug": "mendoza",
-   "nombre": "Mendoza",
-   "organismo": "ATM",
-   "claves": [
-    "mendoza",
-    "atm mendoza"
-   ]
-  },
-  {
    "slug": "tucuman",
    "nombre": "Tucumán",
    "organismo": "DGR Tucumán",
@@ -25,16 +16,6 @@
    "organismo": "DGR Salta",
    "claves": [
     "salta"
-   ]
-  },
-  {
-   "slug": "entre-rios",
-   "nombre": "Entre Ríos",
-   "organismo": "ATER",
-   "claves": [
-    "entre ríos",
-    "entre rios",
-    "ater"
    ]
   },
   {
