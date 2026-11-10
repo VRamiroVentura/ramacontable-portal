@@ -1,0 +1,60 @@
+{
+ "slug": "asignaciones-familiares-auh",
+ "titulo": "Asignaciones familiares y AUH",
+ "revisado": "2026-11-10T15:00:00-03:00",
+ "cambiado": "2026-10-28",
+ "fuentes": [
+  {
+   "nombre": "C5N",
+   "url": "https://www.c5n.com/economia/anses-aumenta-los-montos-auh-y-suaf-noviembre-2026-cuanto-llegan-n253038"
+  },
+  {
+   "nombre": "iProfesional",
+   "url": "https://www.iprofesional.com/actualidad/467956-auh-de-anses-cuanto-se-cobra-en-noviembre-y-cuando-se-paga.amp"
+  }
+ ],
+ "historial": [
+  {
+   "fecha": "2026-10-28",
+   "valor": "AUH $ 159.611 por hijo",
+   "norma": "Resolución 303/2026 de ANSES"
+  }
+ ],
+ "datos": {
+  "valor": "AUH $ 159.611 por hijo",
+  "monto": 159611,
+  "mes_vigente": "2026-11",
+  "norma": "Resolución 303/2026 de ANSES",
+  "respuesta": "En noviembre de 2026 la AUH es de $ 159.611 por hijo (aumento de 1,93%): se cobra el 80% por mes ($ 127.688,80) y el 20% restante ($ 31.922,20) se retiene hasta presentar la libreta. Por hijo con discapacidad: $ 519.704.",
+  "tabla": [
+   [
+    "Concepto",
+    "Importe"
+   ],
+   [
+    "AUH por hijo (bruto)",
+    "$ 159.611"
+   ],
+   [
+    "Se cobra por mes (80%)",
+    "$ 127.688,80"
+   ],
+   [
+    "Retención anual (20%)",
+    "$ 31.922,20"
+   ],
+   [
+    "AUH por hijo con discapacidad",
+    "$ 519.704"
+   ],
+   [
+    "AUH por hijo, zona 1 (Neuquén y Río Negro)",
+    "$ 207.495"
+   ]
+  ],
+  "estructurado": {
+   "auh": 159611,
+   "hijo_primer_tramo": null
+  }
+ }
+}

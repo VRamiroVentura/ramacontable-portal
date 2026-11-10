@@ -1,0 +1,51 @@
+{
+ "slug": "intereses-resarcitorios-arca",
+ "titulo": "Intereses resarcitorios y punitorios de ARCA",
+ "revisado": "2026-11-10T15:00:00-03:00",
+ "cambiado": "2025-07-01",
+ "fuentes": [
+  {
+   "nombre": "Fuente oficial (afip.gob.ar)",
+   "url": "https://serviciosweb.afip.gob.ar/genericos/CalculoInteres/tasas-de-interes-generales/documentos/Intereses-res-3-24-ME-1-7-2025.pdf"
+  },
+  {
+   "nombre": "Blog del Contador",
+   "url": "https://blogdelcontador.com.ar/news-45958-nuevas-tasas-arca-2025-bajan-intereses-resarcitorios-y-punitorios-desde-julio"
+  }
+ ],
+ "historial": [
+  {
+   "fecha": "2025-07-01",
+   "valor": "Resarcitorio 2,75% mensual",
+   "norma": "Resolución 3/2024 del Ministerio de Economía (tasas desde el 1/07/2025)"
+  }
+ ],
+ "datos": {
+  "valor": "Resarcitorio 2,75% mensual",
+  "monto": 2.75,
+  "vigencia": "01/07/2025",
+  "norma": "Resolución 3/2024 del Ministerio de Economía (tasas desde el 1/07/2025)",
+  "respuesta": "Desde el 1 de julio de 2025 la tasa de interés resarcitorio de ARCA para obligaciones impositivas y previsionales es del 2,75% mensual y la de interés punitorio, del 3,50% mensual.",
+  "tabla": [
+   [
+    "Interés",
+    "Tasa mensual",
+    "Tasa diaria"
+   ],
+   [
+    "Resarcitorio (art. 37 Ley 11.683)",
+    "2,75%",
+    "0,091667%"
+   ],
+   [
+    "Punitorio (art. 52 Ley 11.683)",
+    "3,50%",
+    "0,116667%"
+   ]
+  ],
+  "estructurado": {
+   "resarcitorio_mensual": 2.75,
+   "punitorio_mensual": 3.5
+  }
+ }
+}

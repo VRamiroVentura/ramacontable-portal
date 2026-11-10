@@ -1,0 +1,57 @@
+{
+ "slug": "seguro-de-desempleo-montos",
+ "titulo": "Seguro de desempleo: montos",
+ "revisado": "2026-11-10T15:00:00-03:00",
+ "cambiado": "2026-09-02",
+ "fuentes": [
+  {
+   "nombre": "iProfesional",
+   "url": "https://www.iprofesional.com/management/463664-prestacion-por-desempleo-anses-y-los-nuevos-montos-minimos-y-maximo"
+  },
+  {
+   "nombre": "Blog del Contador (Res. 4/2026)",
+   "url": "https://siap.blogdelcontador.com.ar/novedades/salario-minimo-aumentos-mensuales-437000-abril-2027/"
+  }
+ ],
+ "historial": [
+  {
+   "fecha": "2026-09-02",
+   "valor": "Mínimo $ 199.400 · máximo $ 398.800",
+   "norma": "Resolución 4/2026 del Consejo del Salario (50% y 100% del salario mínimo)"
+  }
+ ],
+ "datos": {
+  "valor": "Mínimo $ 199.400 · máximo $ 398.800",
+  "monto": 199400,
+  "mes_vigente": "2026-11",
+  "norma": "Resolución 4/2026 del Consejo del Salario (50% y 100% del salario mínimo)",
+  "proximo": "Diciembre 2026: mínimo $ 203.200 y máximo $ 406.400",
+  "respuesta": "En noviembre de 2026 la prestación por desempleo va de $ 199.400 (mínimo, 50% del salario mínimo) a $ 398.800 (máximo, 100% del salario mínimo), según la Resolución 4/2026 del Consejo del Salario.",
+  "tabla": [
+   [
+    "Mes",
+    "Mínimo",
+    "Máximo"
+   ],
+   [
+    "Noviembre 2026",
+    "$ 199.400",
+    "$ 398.800"
+   ],
+   [
+    "Diciembre 2026",
+    "$ 203.200",
+    "$ 406.400"
+   ],
+   [
+    "Abril 2027",
+    "$ 218.500",
+    "$ 437.000"
+   ]
+  ],
+  "estructurado": {
+   "minimo": 199400,
+   "maximo": 398800
+  }
+ }
+}
