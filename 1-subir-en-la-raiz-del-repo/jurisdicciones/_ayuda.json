@@ -1,3 +1,0 @@
-{
- "_ayuda": "Una jurisdicción por archivo (provincia o municipio). build.py arma su página y la suma a 'Provincias y municipios'; la fábrica lee sus 'fuentes'. Los datos fijos con números van como temas en respuestas/temas.json con \"jurisdiccion\": \"<slug>\" (así la fábrica los vuelve a chequear sola). 'claves' marca qué notas son de esa jurisdicción. 'portada': false saca esas notas de la página de inicio. otras.json: provincias que por ahora solo tienen novedades."
-}
