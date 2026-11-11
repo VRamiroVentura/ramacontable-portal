@@ -43,3 +43,4 @@ Títulos para buscadores:
 - Usá las palabras con que lo busca un contador: "tope de aportes" (no solo "base imponible"), "paritarias" y "escala salarial" junto al nombre del gremio (ej.: "UTHGRA").
 
 - Si la novedad es de una provincia o un municipio, el título tiene que decir cuál (ej.: "Córdoba: ...", "Santa Fe: ...", "La Plata: ...").
+- En el slug, el año tiene que ser el de la novedad (normalmente el año en curso). No pongas un año que no figure en el título de la nota.

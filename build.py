@@ -242,6 +242,8 @@ def cargar_notas():
         # Supabase manda: si una nota se editó o se borró allá, vale lo de allá
         todas = {r["slug"]: r for r in remotas}
         for s, n in locales.items():
+            if s in todas and n.get("preguntas") and not todas[s].get("preguntas"):
+                todas[s]["preguntas"] = n["preguntas"]  # la copia de la base se cargó antes de sumarle las preguntas
             if s not in todas and not no_publicada(s):
                 todas[s] = n
         notas = list(todas.values())
@@ -327,7 +329,9 @@ def pagina_convenio(c, notas, aportes=None):
 <button class="btn ancho" data-nuevo-paso>Subir una explicación</button>
 </section>
 </article>{lateral(notas)}</div>"""
-    seo_t = f"Escala {c['nombre']} {periodo} ({c['cct']}): básicos, NR y cómo liquidar".replace("  ", " ")
+    nom_c = re.sub(r"\s*\([^)]*\)\s*$", "", c["nombre"])
+    seo_t = _titulo_seo(f"Escala {c['nombre']} {periodo} ({c['cct']}): básicos, NR y cómo liquidar", f"Escala {c['nombre']} {periodo} ({c['cct']}): básicos y NR",
+                        f"Escala {c['nombre']} {periodo}: básicos y NR", f"Escala {c['nombre']} ({c['cct']})", f"Escala salarial {nom_c} {periodo}", f"Escala salarial {nom_c}")
     desc = f"Escala salarial vigente de {c['nombre']} ({c['cct']}): valores por categoría, sumas no remunerativas, aportes y cómo se liquida."
     ld = {"@context": "https://schema.org", "@type": "Article", "headline": titulo_vis[:110], "description": desc,
           "dateModified": str(c.get("actualizado") or datetime.date.today().isoformat()), "inLanguage": "es-AR",
@@ -393,6 +397,8 @@ def pagina_impuesto(imp, notas, guias, catalogo):
                   else f'<li class="prox"><b>{e(tit_cat.get(s, s))}</b><span>Próximamente</span></li>')
     relacionadas_i = [n for n in notas if any(c in _N(n["titulo"] + " " + n.get("antetitulo", "") + " " + (n.get("tema") or "")) for c in claves)]
     lista = ('<div class="tarjetas">' + "".join(tarjeta(n) for n in relacionadas_i[:20]) + "</div>") if relacionadas_i else '<p class="vacio">Todavía no hay novedades de este tema.</p>'
+    if not relacionadas_i and not any(por_slug.get("guia-" + s_) for s_ in guias_slugs) and not (slug == "ingresos-brutos" and JURIS):
+        PAGINAS_FINAS.add(f"impuesto-{slug}")  # sin guías ni novedades todavía: no se indexa hasta que tenga contenido
     cuerpo = (f'<div class="grilla"><section><p class="miga"><a href="impuestos.html">Impuestos</a></p><h1 class="titsec">{e(nombre)}</h1>'
               f'<section class="rama-guias"><h2>Guías de {e(nombre)}</h2><ul class="lista-guias">{items}</ul></section>'
               + ('<div class="conv-chips"><b>Por provincia:</b> ' + " ".join(f'<a href="{j["ruta"]}.html">{e(j["titulo_corto"])}</a>' for j in JURIS)
@@ -471,6 +477,14 @@ def pagina(titulo, cuerpo, actual="", descripcion="", ruta="", extra_head="", mi
         "guias": [(f"guias.html#{k}", v) for k, v in GRUPOS_GUIAS.items()] + [("guias.html", "Todas las guías"), ("glosario.html", "Glosario")],
         "datos-al-dia": [x for gid, nombre, items in grupos_datos() for x in [("#g", nombre)] + [(f"{sl}.html", ti) for sl, ti, _ in items][:7]],
     }
+    # Google corta los títulos largos y las descripciones de más de ~160 caracteres
+    if len(titulo) > 62 and titulo.endswith(" | Ramacontable"):
+        titulo = titulo[:-len(" | Ramacontable")]
+    if descripcion and len(descripcion) > 160:
+        corte = max(descripcion[:160].rfind(". "), descripcion[:160].rfind("; "))
+        descripcion = descripcion[:corte + 1] if corte >= 90 else descripcion[:157].rsplit(" ", 1)[0].rstrip(",;:") + "…"
+    if ruta and ruta[:-5] in PAGINAS_FINAS and "noindex" not in extra_head:
+        extra_head += NOI
     menu = "".join(
         f'<div class="dd{" dd-datos" if k == "datos-al-dia" else ""}"><a href="{k}.html"{" aria-current=page" if k == actual else ""}>{v}</a>'
         f'<div class="dd-m">' + "".join((f'<span class="dd-g">{e(t)}</span>' if u == "#g" else f'<a href="{u}"{" class=sep" if ("guias.html" in u or "datos-al-dia.html#" in u) and k in ("sueldos", "impuestos") else ""}>{e(t)}</a>') for u, t in sub.get(k, [])) + '</div></div>'
@@ -498,7 +512,7 @@ def pagina(titulo, cuerpo, actual="", descripcion="", ruta="", extra_head="", mi
 </head><body>
 <header class="cab"><div class="wrap fila">
 <a class="logo" href="index.html">{LOGO_SVG}<span>ramacontable</span></a>
-<nav class="menu">{menu}<a class="chico" href="calculadoras.html">Calculadoras</a><a class="chico2" href="herramientas.html">Vencimientos</a></nav>
+<nav class="menu">{menu}<a class="chico" href="calculadoras.html">Calculadoras</a><a class="chico2" href="herramientas.html">Vencimientos</a><a class="chico2" href="buscar.html" aria-label="Buscar en Ramacontable">🔍 Buscar</a></nav>
 <div id="sesion" class="sesion"><button class="btn" data-ingresar>Ingresar</button></div>
 </div></header>
 <main class="wrap">{cuerpo}</main>
@@ -582,9 +596,27 @@ def lateral(notas):
     return _lateral(notas, caja_venc)
 
 
+def _titulo_seo(*opciones, largo=65):
+    """De varias formas de titular la página (de la más completa a la más corta), la primera que entra sin que Google la corte."""
+    ops = [o.replace("  ", " ").strip() for o in opciones if o]
+    return next((o for o in ops if len(o) <= largo), min(ops, key=len))
+
+
+def _corto(v, largo=34):
+    """Valor para la barra lateral: sin paréntesis y cortado en una palabra entera (nunca a la mitad)."""
+    v = str(v or "").split(" (")[0].strip()
+    if len(v) <= largo:
+        return v
+    for sep in (" y ", " · ", " + ", ", "):
+        if sep in v and len(v.split(sep)[0]) <= largo:
+            return v.split(sep)[0].strip()
+    corte = v[:largo].rsplit(" ", 1)[0].rstrip(" $:·,")
+    return corte if re.search(r"\d", corte) else v  # nunca dejar el dato sin el número
+
+
 def _lateral(notas, caja_venc):
     datos = "".join(
-        f'<li><a href="{t["slug"]}.html">{e(t["titulo"])}</a><b>{e((ajustar_tramo((RESP.get(t["slug"]) or {}).get("datos") or {}).get("valor") or "").split(" (")[0][:28])}</b></li>'
+        f'<li><a href="{t["slug"]}.html">{e(t["titulo"])}</a><b>{e(_corto(ajustar_tramo((RESP.get(t["slug"]) or {}).get("datos") or {}).get("valor")))}</b></li>'
         for t in TEMAS_RESP[:6])
     return f"""<aside class="lateral">
 <section class="caja"><h3>Datos del día</h3><ul class="datos-lat">{datos}</ul><a class="mas" href="datos-al-dia.html">Ver todos</a></section>
@@ -665,7 +697,7 @@ def llms_txt(notas, convenios):
          "por convenio, vencimientos, guías y calculadoras gratuitas. Cada nota cita la fuente oficial y la fecha.", "",
          "## Secciones", f"- [Sueldos]({base}sueldos.html): novedades laborales y de liquidación de sueldos",
          f"- [Impuestos]({base}impuestos.html): novedades de ARCA y rentas", f"- [Guías]({base}guias.html): guías actualizadas por tema",
-         f"- [Vencimientos]({base}vencimientos.html): próximos vencimientos impositivos y previsionales",
+         f"- [Vencimientos]({base}herramientas.html): próximos vencimientos impositivos y previsionales",
          f"- [Feriados]({base}feriados.html): feriados del año y cómo se pagan",
          f"- [Datos del día]({base}datos-al-dia.html): datos vigentes revisados todos los días", "",
          "## Datos al día (revisados a diario contra fuentes oficiales)"]
@@ -944,7 +976,9 @@ def pagina_respuesta(t, r, notas, aportes=None, extra=""):
             {"@type": "Question", "name": q["p"], "acceptedAnswer": {"@type": "Answer", "text": q["r"]}} for q in qs]})
     head = "".join(f'<script type="application/ld+json">{json.dumps(x, ensure_ascii=False).replace("</", "<\\/")}</script>' for x in ld)
     desc = (d.get("respuesta") or t["pregunta"])[:300]
-    return pagina(f"{titulo_h}: {d.get('valor') or 'dato vigente'} | Ramacontable", contenido, "impuestos" if t.get("seccion") == "provincias" else "datos-al-dia",
+    val_t = d.get("valor") or "dato vigente"
+    nom_t = t.get("titulo_corto") or t["titulo"].split(":")[0]
+    return pagina(_titulo_seo(f"{titulo_h}: {val_t}", f"{t['titulo']} ({mes}): {_corto(val_t, 40)}", f"{nom_t} {mes}: {_corto(val_t, 40)}", f"{nom_t}: {_corto(val_t, 40)}", f"{nom_t} ({mes})"), contenido, "impuestos" if t.get("seccion") == "provincias" else "datos-al-dia",
                   desc, t["slug"] + ".html", head, migas_r)
 
 
@@ -1766,7 +1800,7 @@ def pagina_jurisdiccion(j, notas):
     if not cajas and not fijos and not rel and not venc:
         PAGINAS_FINAS.add(j["ruta"])
         ld += NOI
-    return pagina(f'{j["titulo"]} | Ramacontable', cuerpo, "impuestos", j["descripcion"], j["ruta"] + ".html", ld,
+    return pagina(j.get("seo_titulo") or f'{j["titulo"]} | Ramacontable', cuerpo, "impuestos", j["descripcion"], j["ruta"] + ".html", ld,
                   [("Provincias y municipios", "provincias-y-municipios.html"), (j["titulo_corto"], j["ruta"] + ".html")])
 
 
@@ -1873,6 +1907,54 @@ def pagina_extra_juris(j, pg, notas):
                   [("Provincias y municipios", "provincias-y-municipios.html"), (j["titulo_corto"], j["ruta"] + ".html"), (pg["titulo_corto"], pg["ruta"] + ".html")])
 
 
+def pagina_buscar(notas, guias, convenios):
+    """Buscador del portal: índice liviano (título, descripción y dirección) que se filtra en el navegador."""
+    idx = []
+    add = lambda t, u, d="", k="": idx.append({"t": t, "u": u, "d": (d or "")[:160], "k": k})
+    for n in notas + guias:
+        add(n["titulo"], f"nota-{n['slug']}.html", n.get("encorto"), "Guía" if es_guia(n) else "Nota")
+    for t in TEMAS_RESP:
+        d = ajustar_tramo((RESP.get(t["slug"]) or {}).get("datos") or {})
+        add(t["titulo"], t["slug"] + ".html", d.get("respuesta") or t["pregunta"], "Dato")
+    for c in convenios:
+        add("Escala salarial " + c.get("nombre", c["slug"]), f"escala-{c['slug']}.html", c.get("descripcion"), "Escala")
+    for j in JURIS:
+        add(j["titulo"], j["ruta"] + ".html", j["descripcion"], "Provincias")
+        for x in (j.get("tablas") or []) + (j.get("paginas") or []):
+            add(x["titulo"], x["ruta"] + ".html", x["descripcion"], "Provincias")
+    for o in OBLIGACIONES:
+        add("Vencimientos de " + o[1], o[0] + ".html", "Fechas por terminación de CUIT", "Vencimientos")
+    for b in BCRA_RESP:
+        add(b[2], b[0] + ".html", b[3], "Dato")
+    add("Dólar hoy: oficial, MEP, CCL, tarjeta, cripto y blue", "dolar-hoy.html", "Todas las cotizaciones del día", "Dato")
+    for a, t in [("aguinaldo", "Calculadora de aguinaldo (SAC)"), ("sueldo-comercio", "Calculadora de sueldo de Comercio"), ("sueldo-casas-particulares", "Calculadora de sueldo de casas particulares"),
+                 ("liquidacion-final", "Calculadora de liquidación final e indemnización"), ("vacaciones", "Calculadora de vacaciones"), ("horas-extras", "Calculadora de horas extras"),
+                 ("retencion-ganancias", "Calculadora de retención de Ganancias"), ("monotributo-categoria", "Calculadora de categoría del Monotributo"), ("embargo-sueldo", "Calculadora de embargo de sueldo"),
+                 ("intereses-arca", "Calculadora de intereses de ARCA"), ("actualizacion-alquiler", "Calculadora de actualización de alquiler"), ("actualizacion", "Actualización de montos por inflación, CER, UVA y dólar"),
+                 ("conversor-dolar", "Conversor de dólar"), ("iva", "Calculadora de IVA"), ("dias-habiles", "Calculadora de días hábiles"), ("plazo-fijo", "Simulador de plazo fijo"), ("prestamos", "Calculadora de préstamos"),
+                 ("agenda-vencimientos", "Agenda de vencimientos por CUIT"), ("feriados", "Feriados del año"), ("herramientas", "Vencimientos del mes"), ("glosario", "Glosario contable"),
+                 ("comparador-escalas", "Aumentos por convenio vs. inflación"), ("planillas/planilla-aguinaldo-varios-empleados.xlsx", "Planilla Excel de aguinaldo para varios empleados"),
+                 ("planillas/planilla-liquidacion-final.xlsx", "Planilla Excel de liquidación final"), ("planillas/planilla-vacaciones.xlsx", "Planilla Excel de vacaciones")]:
+        add(t, a if a.endswith(".xlsx") else a + ".html", "", "Planilla" if a.endswith(".xlsx") else "Calculadora")
+    with open(os.path.join(SALIDA, "datos", "buscar.json"), "w", encoding="utf-8") as f:
+        json.dump(idx, f, ensure_ascii=False)
+    cuerpo = """<div class="grilla"><section><h1 class="titsec">Buscar en Ramacontable</h1>
+<p><input id="q" type="search" placeholder="Ej.: aguinaldo, monotributo, UOCRA, tope de aportes, Córdoba" style="width:100%;padding:.8em;font-size:1.05rem" autocomplete="off" autofocus></p>
+<p class="ayuda" id="q-cuenta">Escribí qué estás buscando: notas, guías, datos del día, escalas, calculadoras y planillas.</p>
+<ul class="lista-guias" id="q-res"></ul>
+<script>(function(){var q=document.getElementById('q'),r=document.getElementById('q-res'),c=document.getElementById('q-cuenta'),D=null;
+var n=function(s){return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')};
+var esc=function(s){return String(s||'').replace(/[&<>"]/g,function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]})};
+function ver(){var t=n(q.value).trim();if(!D||t.length<2){r.innerHTML='';c.textContent=t.length?'Escribí al menos 2 letras.':'Escribí qué estás buscando: notas, guías, datos del día, escalas, calculadoras y planillas.';return}
+var p=t.split(/\\s+/),res=[];D.forEach(function(x){var ti=x._t,to=x._a;if(!p.every(function(w){return to.indexOf(w)>=0}))return;var s=0;p.forEach(function(w){if(ti.indexOf(w)>=0)s+=3});if(x.k!=='Nota')s+=1;res.push([s,x])});
+res.sort(function(a,b){return b[0]-a[0]});c.textContent=res.length?res.length+(res.length===1?' resultado':' resultados'):'No encontramos nada con esas palabras. Probá con menos palabras.';
+r.innerHTML=res.slice(0,40).map(function(y){var x=y[1];return '<li><a href="'+esc(x.u)+'"><b>'+esc(x.t)+'</b><span>'+esc(x.k)+(x.d?' · '+esc(x.d):'')+'</span></a></li>'}).join('')}
+fetch('datos/buscar.json').then(function(x){return x.json()}).then(function(d){D=d;D.forEach(function(x){x._t=n(x.t);x._a=n(x.t+' '+x.d+' '+x.k)});var u=new URLSearchParams(location.search).get('q');if(u){q.value=u}ver()});
+q.addEventListener('input',ver)})();</script>
+</section></div>"""
+    return pagina("Buscar en Ramacontable", cuerpo, "", "Buscá notas, guías, datos del día, escalas salariales, calculadoras y planillas de Ramacontable.", "buscar.html", NOI)
+
+
 def pagina_provincias(notas):
     tarj = ""
     for j in JURIS:
@@ -1901,6 +1983,8 @@ def pagina_provincias(notas):
 def portada(notas, titulo_pag="Ramacontable | Comunidad contable", actual="", encabezado="", extra=""):
     if not notas:
         lista = '<p class="vacio">Todavía no hay notas en esta sección.</p>'
+        if actual:
+            PAGINAS_FINAS.add(actual)
     else:
         lista = tarjeta(notas[0], grande=True) + '<div class="tarjetas">' + "".join(tarjeta(n) for n in notas[1:]) + "</div>"
     cab = f'<h1 class="titsec">{e(encabezado)}</h1>' if encabezado else ""
@@ -2031,6 +2115,7 @@ def main():
     if g:
         escribir("glosario.html", g)
     escribir("comparador-escalas.html", pagina_comparador(convenios, notas))
+    escribir("buscar.html", pagina_buscar(notas, guias, convenios))
     escribir(os.path.join("datos", "vencimientos.json"), json.dumps(proximos_vencimientos(), ensure_ascii=False))
     escribir("datos-al-dia.html", pagina_datos(notas))
     os.makedirs(os.path.join(SALIDA, "datos"), exist_ok=True)

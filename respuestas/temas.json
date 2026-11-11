@@ -62,7 +62,8 @@
    "tipo": "movilidad"
   },
   "estructura": "monto = base máxima (número). estructurado: {\"base_minima\": numero, \"base_maxima\": numero}",
-  "cuando": "Todos los meses, junto con la movilidad jubilatoria"
+  "cuando": "Todos los meses, junto con la movilidad jubilatoria",
+  "titulo_corto": "Tope de aportes (base máxima)"
  },
  {
   "slug": "ffep-fondo-enfermedades-profesionales",
@@ -80,7 +81,8 @@
    "tipo": "libre"
   },
   "estructura": "monto = importe mensual por trabajador (número). estructurado: {\"importe\": numero, \"desde_periodo\": \"aaaa-mm\"}",
-  "cuando": "Cuando la SRT dicta una disposición nueva (sin fecha fija); se paga por trabajador con la ART"
+  "cuando": "Cuando la SRT dicta una disposición nueva (sin fecha fija); se paga por trabajador con la ART",
+  "titulo_corto": "FFEP"
  },
  {
   "slug": "asignaciones-familiares-auh",
@@ -101,7 +103,8 @@
    "tipo": "movilidad"
   },
   "estructura": "monto = AUH por hijo (número). estructurado: {\"auh\": numero, \"hijo_primer_tramo\": numero}",
-  "cuando": "Todos los meses, junto con la movilidad jubilatoria"
+  "cuando": "Todos los meses, junto con la movilidad jubilatoria",
+  "titulo_corto": "AUH y asignaciones familiares"
  },
  {
   "slug": "monotributo-categorias-vigentes",
@@ -128,7 +131,8 @@
    ]
   },
   "estructura": "estructurado: {\"categorias\": [{\"categoria\": \"A\", \"ingresos_max\": numero, \"cuota_servicios\": numero, \"cuota_bienes\": numero}]}, una fila por categoría A a K, todos números",
-  "cuando": "Dos veces por año: los montos nuevos se conocen alrededor de mediados de enero y de julio, y la recategorización vence en febrero y agosto"
+  "cuando": "Dos veces por año: los montos nuevos se conocen alrededor de mediados de enero y de julio, y la recategorización vence en febrero y agosto",
+  "titulo_corto": "Cuotas del Monotributo"
  },
  {
   "slug": "ganancias-deducciones-sueldos",
@@ -154,7 +158,8 @@
    ]
   },
   "estructura": "estructurado: {\"periodo\": \"texto (ej.: julio a diciembre 2026)\", \"anual\": true, \"ganancia_no_imponible\": numero, \"deduccion_especial_dependencia\": numero, \"conyuge\": numero, \"hijo\": numero, \"escala\": [{\"desde\": numero, \"hasta\": numero o null, \"fijo\": numero, \"pct\": numero}]} con valores ANUALES y la escala del artículo 94 completa",
-  "cuando": "Dos veces por año: tablas de enero a junio y de julio a diciembre"
+  "cuando": "Dos veces por año: tablas de enero a junio y de julio a diciembre",
+  "titulo_corto": "Ganancias sueldos"
  },
  {
   "slug": "intereses-resarcitorios-arca",
@@ -172,7 +177,8 @@
    "tipo": "libre"
   },
   "estructura": "estructurado: {\"resarcitorio_mensual\": numero, \"punitorio_mensual\": numero} (porcentajes mensuales, ej. 2.5)",
-  "cuando": "Cuando ARCA dicta una resolución nueva (sin fecha fija)"
+  "cuando": "Cuando ARCA dicta una resolución nueva (sin fecha fija)",
+  "titulo_corto": "Intereses de ARCA"
  },
  {
   "slug": "autonomos-categorias-aportes",
@@ -189,7 +195,8 @@
    "tipo": "movilidad"
   },
   "estructura": "monto = aporte de la categoría más baja (número). estructurado: {\"categorias\": [{\"categoria\": \"texto\", \"aporte\": numero}]}",
-  "cuando": "Todos los meses, junto con la movilidad jubilatoria"
+  "cuando": "Todos los meses, junto con la movilidad jubilatoria",
+  "titulo_corto": "Aportes de autónomos"
  },
  {
   "slug": "seguro-de-desempleo-montos",
@@ -233,7 +240,8 @@
   },
   "estructura": "estructurado: {\"categorias\": [{\"categoria\": \"texto\", \"ingresos_max\": numero, \"importe\": numero}]}",
   "cuando": "Dos veces por año, junto con el Monotributo unificado (febrero y agosto)",
-  "jurisdiccion": "buenos-aires"
+  "jurisdiccion": "buenos-aires",
+  "titulo_corto": "Ingresos Brutos ARBA simplificado"
  },
  {
   "slug": "bienes-personales-minimo-no-imponible",
@@ -254,7 +262,8 @@
    "semanas": 4
   },
   "estructura": "estructurado: {\"minimo_no_imponible\": numero, \"casa_habitacion\": numero, \"periodo\": \"aaaa\"}",
-  "cuando": "Una vez por año, para cada período fiscal"
+  "cuando": "Una vez por año, para cada período fiscal",
+  "titulo_corto": "Bienes Personales"
  },
  {
   "slug": "monotributo-unificado-cordoba",
@@ -280,7 +289,8 @@
    ]
   },
   "estructura": "estructurado: {\"categorias\": [{\"categoria\": \"texto\", \"importe\": numero}]}",
-  "cuando": "Dos veces por año, junto con el Monotributo nacional (febrero y agosto)"
+  "cuando": "Dos veces por año, junto con el Monotributo nacional (febrero y agosto)",
+  "titulo_corto": "Monotributo Unificado Córdoba"
  },
  {
   "slug": "ingresos-brutos-santa-fe-regimen-simplificado",
@@ -306,7 +316,8 @@
    ]
   },
   "estructura": "estructurado: {\"categorias\": [{\"categoria\": \"texto\", \"ingresos_max\": numero, \"importe\": numero}]}",
-  "cuando": "Dos veces por año, según la inflación del semestre (enero y julio)"
+  "cuando": "Dos veces por año, según la inflación del semestre (enero y julio)",
+  "titulo_corto": "IIBB Santa Fe simplificado"
  },
  {
   "slug": "monotasa-la-plata",
@@ -332,7 +343,8 @@
    "semanas": 4
   },
   "estructura": "estructurado: {\"categorias\": [{\"categoria\": \"texto\", \"importe\": numero}]}",
-  "cuando": "Una vez por año, con la Ordenanza Impositiva (diciembre o enero)"
+  "cuando": "Una vez por año, con la Ordenanza Impositiva (diciembre o enero)",
+  "titulo_corto": "Monotasa La Plata 2026"
  },
  {
   "slug": "monotributo-unificado-mendoza",
@@ -358,7 +370,8 @@
    ]
   },
   "estructura": "estructurado: {\"categorias\": [{\"categoria\": \"texto\", \"importe\": numero}]}",
-  "cuando": "Dos veces por año, junto con el Monotributo nacional (febrero y agosto)"
+  "cuando": "Dos veces por año, junto con el Monotributo nacional (febrero y agosto)",
+  "titulo_corto": "Monotributo Unificado Mendoza"
  },
  {
   "slug": "monotributo-unificado-entre-rios",
@@ -384,7 +397,8 @@
    ]
   },
   "estructura": "estructurado: {\"categorias\": [{\"categoria\": \"texto\", \"importe_servicios\": numero, \"importe_resto\": numero}]}",
-  "cuando": "Dos veces por año, junto con el Monotributo nacional (febrero y agosto)"
+  "cuando": "Dos veces por año, junto con el Monotributo nacional (febrero y agosto)",
+  "titulo_corto": "Monotributo Unificado Entre Ríos"
  },
  {
   "slug": "regimen-simplificado-salta",
@@ -410,7 +424,8 @@
    ]
   },
   "estructura": "estructurado: {\"categorias\": [{\"categoria\": \"texto\", \"importe\": numero}]}",
-  "cuando": "Dos veces por año, con el Monotributo nacional (febrero y agosto)"
+  "cuando": "Dos veces por año, con el Monotributo nacional (febrero y agosto)",
+  "titulo_corto": "Régimen Simplificado Salta"
  },
  {
   "slug": "monotasa-mar-del-plata",
@@ -435,6 +450,7 @@
    "semanas": 4
   },
   "estructura": "estructurado: {\"categorias\": [{\"categoria\": \"texto\", \"importe\": numero}]}",
-  "cuando": "Una vez por año, con la Ordenanza Impositiva"
+  "cuando": "Una vez por año, con la Ordenanza Impositiva",
+  "titulo_corto": "Monotasa Mar del Plata 2026"
  }
 ]

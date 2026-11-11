@@ -30,6 +30,23 @@ def _slug(t):
     return re.sub(r"[^a-z0-9]+", "-", t).strip("-")[:80] or "nota"
 
 
+def _slug_sin_anio_falso(slug, nota):
+    """El redactor a veces inventa un año viejo en la dirección (ej.: «...-octubre-2024» en una nota de 2026).
+    Si el año de la dirección no figura en el título ni en el «En corto», se saca (junto con el mes que lo acompaña)."""
+    texto = f"{nota.get('titulo', '')} {nota.get('encorto', '')} {nota.get('seo_titulo', '')}"
+    meses = "enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre"
+    for anio in set(re.findall(r"(?<![0-9])(20[0-9]{2})(?![0-9])", slug)):
+        if anio in texto or anio == str(util.ahora().year):
+            continue
+        actual = str(util.ahora().year)
+        if actual in texto and actual not in slug:  # el título habla de este año: se corrige el año y se conserva el mes
+            slug = re.sub(rf"(?<![0-9]){anio}(?![0-9])", actual, slug)
+            continue
+        slug = re.sub(rf"(-(?:{meses}))*-{anio}(?=-|$)", "", slug)
+        slug = re.sub(rf"^{anio}-", "", slug)
+    return slug.strip("-") or "nota"
+
+
 def _bloques_ok(cuerpo):
     salida = []
     for b in cuerpo if isinstance(cuerpo, list) else []:
@@ -374,7 +391,7 @@ class Fabrica:
                 self.vencimientos_cambio = True
 
     def armar_fila(self, grupo, items, nota, control, usados):
-        base = _slug(nota.get("slug") or nota.get("titulo"))
+        base = _slug_sin_anio_falso(_slug(nota.get("slug") or nota.get("titulo")), nota)
         slug, k = base, 2
         while slug in usados:
             slug, k = f"{base}-{k}", k + 1
