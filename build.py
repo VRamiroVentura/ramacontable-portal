@@ -1993,6 +1993,51 @@ def portada(notas, titulo_pag="Ramacontable | Comunidad contable", actual="", en
                   f"{actual}.html" if actual else "", migas=[(encabezado, f"{actual}.html")] if actual else None)
 
 
+def _plano(x):
+    """Texto corrido de cualquier estructura de la nota (cuerpo, listas, tablas)."""
+    if isinstance(x, str):
+        return texto_plano(x)
+    if isinstance(x, list):
+        return " ".join(t for t in (_plano(y) for y in x) if t)
+    if isinstance(x, dict):
+        return " ".join(t for t in (_plano(v) for v in x.values()) if t)
+    return ""
+
+
+def para_shorts(notas, dias=14, tope=25):
+    """datos/para-shorts.json: notas publicadas de los últimos días + próximos vencimientos, para la fábrica de
+    videos (shorts-fabrica). Solo entran notas publicadas: las que están en revisión nunca llegan acá."""
+    desde = (datetime.date.today() - datetime.timedelta(days=dias)).isoformat()
+    base = sitio_url()
+    lista = []
+    for n in notas:
+        if str(n.get("fecha", ""))[:10] < desde or n.get("motivo_revision"):
+            continue
+        cuerpo = n.get("cuerpo")
+        if isinstance(cuerpo, str):
+            try:
+                cuerpo = json.loads(cuerpo)
+            except Exception:
+                pass
+        preguntas = n.get("preguntas")
+        if isinstance(preguntas, str):
+            try:
+                preguntas = json.loads(preguntas)
+            except Exception:
+                preguntas = []
+        lista.append({
+            "slug": n["slug"], "url": f"{base}nota-{n['slug']}.html", "fecha": str(n.get("fecha", ""))[:10],
+            "tipo": n.get("tipo", ""), "seccion": n.get("seccion", ""), "antetitulo": n.get("antetitulo", ""),
+            "titulo": n.get("titulo", ""), "encorto": n.get("encorto", ""), "clave": n.get("clave", ""),
+            "dato": n.get("dato", ""), "fuente": n.get("fuente", ""), "texto": _plano(cuerpo)[:6000],
+            "preguntas": [q for q in (preguntas or []) if isinstance(q, dict)][:5],
+        })
+        if len(lista) >= tope:
+            break
+    return {"actualizado": datetime.datetime.now().isoformat(timespec="minutes"), "sitio": base,
+            "notas": lista, "vencimientos": proximos_vencimientos(40)}
+
+
 def main():
     if os.path.exists(SALIDA):
         shutil.rmtree(SALIDA)
@@ -2120,6 +2165,10 @@ def main():
     escribir("datos-al-dia.html", pagina_datos(notas))
     os.makedirs(os.path.join(SALIDA, "datos"), exist_ok=True)
     escribir(os.path.join("datos", "datos-del-dia.json"), json.dumps(datos_para_calculadoras(), ensure_ascii=False))
+    try:
+        escribir(os.path.join("datos", "para-shorts.json"), json.dumps(para_shorts(notas), ensure_ascii=False))
+    except Exception as ex:  # el puente con la fábrica de videos nunca tiene que frenar la web
+        print("Aviso: no pude armar datos/para-shorts.json:", ex)
     por_slug = {c["slug"]: c for c in convenios}
     def calc_conv(archivo, salida_html, slug, titulo, desc):
         c = por_slug.get(slug) or {}
