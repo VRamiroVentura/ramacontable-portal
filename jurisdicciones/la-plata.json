@@ -91,122 +91,16 @@
    "p": "Los terrenos baldíos pagan un adicional del 125% (la categoría A paga como la B más el 125%), y los clubes de campo, barrios cerrados y PH especial un adicional del 20%. Si el servicio se presta más de 18 días por mes, puede haber un incremento de hasta el 20% (art. 2)."
   },
   {
-   "h": "Patente de rodados municipal 2026 (motos)"
+   "h": "Patente municipal de motos 2026"
   },
   {
-   "p": "Se paga por año sobre la valuación fiscal del rodado (puede tomarse desde el 60% de la valuación), para modelos 2006 en adelante. El mínimo anual es $ 13.200 y el aumento no puede superar el 40% de lo pagado el año anterior (arts. 25, 27 y 28)."
+   "p": "La patente de rodados municipal (motos, modelos 2006 en adelante) tiene un mínimo anual de $ 13.200 y una escala del 2,31% al 5% sobre la valuación. Escala completa y ejemplos en la página de la patente."
   },
   {
-   "tabla": [
-    [
-     "Valuación mayor a",
-     "Menor o igual a",
-     "Monto fijo",
-     "Alícuota sobre el excedente"
-    ],
-    [
-     "$ 0",
-     "$ 1.500.000",
-     "$ 0",
-     "2,31%"
-    ],
-    [
-     "$ 1.500.000",
-     "$ 1.800.000",
-     "$ 34.575",
-     "3,45%"
-    ],
-    [
-     "$ 1.800.000",
-     "$ 2.000.000",
-     "$ 44.913",
-     "3,98%"
-    ],
-    [
-     "$ 2.000.000",
-     "$ 2.300.000",
-     "$ 52.877",
-     "4,30%"
-    ],
-    [
-     "$ 2.300.000",
-     "$ 2.600.000",
-     "$ 65.771",
-     "4,49%"
-    ],
-    [
-     "$ 2.600.000",
-     "$ 2.800.000",
-     "$ 79.265",
-     "4,58%"
-    ],
-    [
-     "$ 2.800.000",
-     "$ 3.000.000",
-     "$ 88.403",
-     "4,72%"
-    ],
-    [
-     "$ 3.000.000",
-     "$ 3.200.000",
-     "$ 97.849",
-     "4,81%"
-    ],
-    [
-     "$ 3.200.000",
-     "$ 3.600.000",
-     "$ 107.459",
-     "4,93%"
-    ],
-    [
-     "$ 3.600.000",
-     "-",
-     "$ 127.171",
-     "5,00%"
-    ]
-   ]
+   "h": "Licencia de conducir 2026"
   },
   {
-   "h": "Licencia de conducir en La Plata 2026: cuánto cuesta"
-  },
-  {
-   "p": "Derechos de Oficina máximos de la Ordenanza Impositiva 12682 (art. 16, inciso 9). Son solo los valores municipales: puede haber otros costos que se cobran aparte."
-  },
-  {
-   "tabla": [
-    [
-     "Trámite",
-     "Valor"
-    ],
-    [
-     "Particular (A, B, G) de 18 a 65 años, por 5 años",
-     "$ 20.000"
-    ],
-    [
-     "Particular de 66 a 70 años, por 3 años",
-     "$ 12.000"
-    ],
-    [
-     "Particular de 71 años en adelante y menores de edad, por 1 año",
-     "$ 4.000"
-    ],
-    [
-     "Profesional (C, D, E) de 21 a 45 años, por 2 años",
-     "$ 12.000"
-    ],
-    [
-     "Profesional de 46 años en adelante, por 1 año",
-     "$ 6.000"
-    ],
-    [
-     "Mayores de 65 que cobran la jubilación mínima",
-     "$ 4.000"
-    ],
-    [
-     "Duplicados, reemplazos, reconocimientos y otras certificaciones",
-     "$ 5.000"
-    ]
-   ]
+   "p": "El derecho municipal de la licencia de conducir particular (18 a 65 años, por 5 años) es de hasta $ 20.000. Todos los valores por edad y categoría, en la página de la licencia."
   },
   {
    "h": "Publicidad y propaganda 2026"
@@ -297,6 +191,184 @@
     "620104",
     "869090",
     "641931"
+   ]
+  }
+ ],
+ "paginas": [
+  {
+   "ruta": "licencia-de-conducir-la-plata",
+   "titulo": "Licencia de conducir La Plata 2026: cuánto sale sacarla y renovarla",
+   "titulo_corto": "Licencia de conducir 2026",
+   "descripcion": "Cuánto cuesta la licencia de conducir en La Plata en 2026: valores municipales por edad y categoría (particular y profesional), renovación y duplicado, según la Ordenanza Impositiva 12682.",
+   "encorto": "En La Plata, en 2026, el derecho municipal de la licencia de conducir particular (A, B, G) para personas de 18 a 65 años es de hasta $ 20.000 por 5 años. Para profesionales (C, D, E) de 21 a 45 años, hasta $ 12.000 por 2 años.",
+   "bloques": [
+    {
+     "h": "Licencia de conducir en La Plata 2026: cuánto cuesta"
+    },
+    {
+     "p": "Derechos de Oficina máximos de la Ordenanza Impositiva 12682 (art. 16, inciso 9). Son solo los valores municipales: puede haber otros costos que se cobran aparte."
+    },
+    {
+     "tabla": [
+      [
+       "Trámite",
+       "Valor"
+      ],
+      [
+       "Particular (A, B, G) de 18 a 65 años, por 5 años",
+       "$ 20.000"
+      ],
+      [
+       "Particular de 66 a 70 años, por 3 años",
+       "$ 12.000"
+      ],
+      [
+       "Particular de 71 años en adelante y menores de edad, por 1 año",
+       "$ 4.000"
+      ],
+      [
+       "Profesional (C, D, E) de 21 a 45 años, por 2 años",
+       "$ 12.000"
+      ],
+      [
+       "Profesional de 46 años en adelante, por 1 año",
+       "$ 6.000"
+      ],
+      [
+       "Mayores de 65 que cobran la jubilación mínima",
+       "$ 4.000"
+      ],
+      [
+       "Duplicados, reemplazos, reconocimientos y otras certificaciones",
+       "$ 5.000"
+      ]
+     ]
+    },
+    {
+     "p": "Los mayores de 65 años que cobran el haber mínimo de jubilación pagan $ 4.000. Duplicados, reemplazos y certificaciones: $ 5.000."
+    },
+    {
+     "p": "Son valores máximos de la Ordenanza Impositiva 12682 (Derechos de Oficina). La Municipalidad puede cobrar hasta el doble por trámites urgentes (48 horas) con un incremento de hasta el 600% por gestión inmediata (art. 17)."
+    }
+   ],
+   "preguntas": [
+    {
+     "p": "¿Cuánto cuesta sacar la licencia de conducir en La Plata en 2026?",
+     "r": "El derecho municipal para la licencia particular (A, B, G) de 18 a 65 años es de hasta $ 20.000 por 5 años (Ordenanza Impositiva 12682, art. 16 inc. 9). Pueden sumarse otros costos que se cobran aparte."
+    },
+    {
+     "p": "¿Cuánto cuesta renovar la licencia si tengo más de 65 años?",
+     "r": "De 66 a 70 años, hasta $ 12.000 por 3 años; desde los 71, hasta $ 4.000 por 1 año. Si cobrás la jubilación mínima, $ 4.000."
+    },
+    {
+     "p": "¿Cuánto sale un duplicado?",
+     "r": "Hasta $ 5.000."
+    }
+   ]
+  },
+  {
+   "ruta": "patente-motos-la-plata",
+   "titulo": "Patente de motos La Plata 2026: escala, mínimo y cómo se calcula",
+   "titulo_corto": "Patente de motos 2026",
+   "descripcion": "Patente municipal de motos en La Plata 2026: escala por valuación del 2,31% al 5%, mínimo anual de $ 13.200, tope de aumento del 40% y qué modelos pagan, según la Ordenanza Impositiva 12682.",
+   "encorto": "En La Plata, la patente municipal de rodados (motos) 2026 se paga por año según la valuación fiscal: va del 2,31% al 5% con montos fijos por tramo, con un mínimo de $ 13.200 por año. Alcanza a modelos 2006 en adelante.",
+   "bloques": [
+    {
+     "h": "Patente de rodados municipal 2026 (motos)"
+    },
+    {
+     "p": "Se paga por año sobre la valuación fiscal del rodado (puede tomarse desde el 60% de la valuación), para modelos 2006 en adelante. El mínimo anual es $ 13.200 y el aumento no puede superar el 40% de lo pagado el año anterior (arts. 25, 27 y 28)."
+    },
+    {
+     "tabla": [
+      [
+       "Valuación mayor a",
+       "Menor o igual a",
+       "Monto fijo",
+       "Alícuota sobre el excedente"
+      ],
+      [
+       "$ 0",
+       "$ 1.500.000",
+       "$ 0",
+       "2,31%"
+      ],
+      [
+       "$ 1.500.000",
+       "$ 1.800.000",
+       "$ 34.575",
+       "3,45%"
+      ],
+      [
+       "$ 1.800.000",
+       "$ 2.000.000",
+       "$ 44.913",
+       "3,98%"
+      ],
+      [
+       "$ 2.000.000",
+       "$ 2.300.000",
+       "$ 52.877",
+       "4,30%"
+      ],
+      [
+       "$ 2.300.000",
+       "$ 2.600.000",
+       "$ 65.771",
+       "4,49%"
+      ],
+      [
+       "$ 2.600.000",
+       "$ 2.800.000",
+       "$ 79.265",
+       "4,58%"
+      ],
+      [
+       "$ 2.800.000",
+       "$ 3.000.000",
+       "$ 88.403",
+       "4,72%"
+      ],
+      [
+       "$ 3.000.000",
+       "$ 3.200.000",
+       "$ 97.849",
+       "4,81%"
+      ],
+      [
+       "$ 3.200.000",
+       "$ 3.600.000",
+       "$ 107.459",
+       "4,93%"
+      ],
+      [
+       "$ 3.600.000",
+       "-",
+       "$ 127.171",
+       "5,00%"
+      ]
+     ]
+    },
+    {
+     "h": "Ejemplo"
+    },
+    {
+     "p": "Una moto con base imponible de $ 2.500.000 está en el tramo de $ 2.300.000 a $ 2.600.000: paga $ 65.771 más el 4,49% de los $ 200.000 excedentes ($ 8.980), es decir $ 74.751 por año, siempre que no supere en más del 40% lo pagado el año anterior."
+    }
+   ],
+   "preguntas": [
+    {
+     "p": "¿Cuánto se paga de patente de moto en La Plata en 2026?",
+     "r": "Depende de la valuación: del 2,31% al 5% según el tramo, con un mínimo de $ 13.200 por año (Ordenanza Impositiva 12682, arts. 25 a 28)."
+    },
+    {
+     "p": "¿Qué motos pagan patente municipal en 2026?",
+     "r": "Los modelos 2006 en adelante."
+    },
+    {
+     "p": "¿Cuánto puede aumentar respecto del año pasado?",
+     "r": "Hasta un 40% más de lo que correspondió pagar en el año fiscal anterior."
+    }
    ]
   }
  ]

@@ -675,7 +675,7 @@ def llms_txt(notas, convenios):
     l += [f"- [Vencimientos de {o[1]} por terminación de CUIT]({base}{o[0]}.html)" for o in OBLIGACIONES]
     l += ["", "## Provincias y municipios", f"- [Impuestos provinciales y municipales]({base}provincias-y-municipios.html): Ingresos Brutos y tasas por jurisdicción"]
     l += [f"- [{j['titulo']}]({base}{j['ruta']}.html)" for j in JURIS]
-    l += [f"- [{t['titulo']}]({base}{t['ruta']}.html): {t['descripcion']}" for j in JURIS for t in j.get("tablas") or []]
+    l += [f"- [{t['titulo']}]({base}{t['ruta']}.html): {t['descripcion']}" for j in JURIS for t in (j.get("tablas") or []) + (j.get("paginas") or [])]
     l += ["", "## Escalas salariales por convenio"]
     l += [f"- [{c.get('nombre', c['slug'])}]({base}escala-{c['slug']}.html)" for c in convenios]
     l += ["", "## Calculadoras"] + [f"- [{t}]({base}{a}.html)" for a, t in [
@@ -687,6 +687,7 @@ def llms_txt(notas, convenios):
         ("actualizacion-alquiler", "Actualización de alquiler (ICL / IPC)"), ("embargo-sueldo", "Embargo de sueldo (Decreto 484/87)"),
         ("retencion-ganancias", "Retención de Ganancias sobre el sueldo"), ("agenda-vencimientos", "Agenda de vencimientos por CUIT"),
         ("comparador-escalas", "Aumentos por convenio vs. inflación"), ("glosario", "Glosario contable, impositivo y laboral")]]
+    l += [f"- [Planilla de liquidación final e indemnización (Excel)]({base}planillas/planilla-liquidacion-final.xlsx): días trabajados, SAC, vacaciones no gozadas, art. 245, preaviso e integración"]
     l += [f"- [Planilla de aguinaldo para varios empleados (Excel)]({base}planillas/planilla-aguinaldo-varios-empleados.xlsx): mejor remuneración del semestre, proporcional por días, tope del SAC, descuentos y neto"]
     l += ["", "## Últimas notas"] + [f"- [{n['titulo']}]({base}nota-{n['slug']}.html): {(n.get('encorto') or '')[:200]}"
                                      for n in notas[:40]]
@@ -1727,6 +1728,8 @@ def pagina_jurisdiccion(j, notas):
                       + f'<p><a class="btn sec" href="{t["slug"]}.html">Ver la tabla completa por categoría →</a></p></div>')
     fijos = "".join(bloque(b) for b in j.get("bloques") or [])
     fijos += "".join(f'<p><a class="btn" href="{t["ruta"]}.html">{e(t["titulo_corto"])}: buscá tu actividad →</a></p>' for t in j.get("tablas") or [])
+    if j.get("paginas"):
+        fijos += '<p>' + " · ".join(f'<a href="{pg["ruta"]}.html">{e(pg["titulo_corto"])} →</a>' for pg in j["paginas"]) + '</p>'
     venc = _venc_de(j.get("venc_claves") or [])
     venc_html = ""
     if venc:
@@ -1842,6 +1845,31 @@ i.addEventListener('input',function(){{var q=n(i.value).trim().split(/\\s+/),k=0
 </div></article>{lateral(notas)}</div>"""
     return pagina(f'{t["titulo"]} | Ramacontable', cuerpo, "impuestos", t["descripcion"], t["ruta"] + ".html", ld,
                   [("Provincias y municipios", "provincias-y-municipios.html"), (j["titulo_corto"], j["ruta"] + ".html"), (t["titulo_corto"], t["ruta"] + ".html")])
+
+
+def pagina_extra_juris(j, pg, notas):
+    """Página propia de un tema de la jurisdicción (ej.: licencia de conducir, patente) con sus bloques y preguntas."""
+    hoy = datetime.date.today()
+    qs = pg.get("preguntas") or []
+    ld = ('<script type="application/ld+json">' + json.dumps({"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [
+        {"@type": "Question", "name": q["p"], "acceptedAnswer": {"@type": "Answer", "text": q["r"]}} for q in qs]}, ensure_ascii=False).replace("</", "<\\/") + "</script>") if qs else ""
+    of = " · ".join(f'<a href="{e(o["url"])}" rel="nofollow noopener" target="_blank">{e(o["nombre"])}</a>' for o in j.get("oficiales") or [])
+    otras = "".join(f'<li><a href="{x["ruta"]}.html">{e(x["titulo_corto"])}</a></li>' for x in (j.get("paginas") or []) + (j.get("tablas") or []) if x["ruta"] != pg["ruta"])
+    cuerpo = f"""<div class="grilla"><article class="nota"><div class="nota-contenido">
+<p class="miga"><a href="provincias-y-municipios.html">Provincias y municipios</a> › <a href="{j["ruta"]}.html">{e(j["nombre"])}</a></p>
+<p class="ante">{e(j["organismo"])}</p>
+<h1>{e(pg["titulo"])}</h1>
+<p class="firma">Redacción Ramacontable · Actualizado {fecha_larga(hoy.isoformat())}</p>
+<div class="encorto"><b>En corto</b><p>{e(pg.get("encorto", ""))}</p></div>
+{"".join(bloque(b) for b in pg.get("bloques") or [])}
+{preguntas_html({"preguntas": qs})}
+{f'<p class="fuente"><b>Fuente:</b> {of}</p>' if of else ""}
+<p class="aviso">Información de carácter general. Verificá siempre en la Municipalidad.</p>
+</div>
+<section class="relacionadas"><h2>Más de {e(j["nombre"])}</h2><ul><li><a href="{j["ruta"]}.html">{e(j["titulo_corto"])}: todas las tasas</a></li>{otras}</ul></section>
+</article>{lateral(notas)}</div>"""
+    return pagina(f'{pg["titulo"]} | Ramacontable', cuerpo, "impuestos", pg["descripcion"], pg["ruta"] + ".html", ld,
+                  [("Provincias y municipios", "provincias-y-municipios.html"), (j["titulo_corto"], j["ruta"] + ".html"), (pg["titulo_corto"], pg["ruta"] + ".html")])
 
 
 def pagina_provincias(notas):
@@ -1987,6 +2015,9 @@ def main():
     escribir("cuando-cambia-cada-dato.html", pagina_calendario_datos(notas))
     for j in JURIS:
         escribir(j["ruta"] + ".html", pagina_jurisdiccion(j, notas))
+        for pg in j.get("paginas") or []:
+            escribir(pg["ruta"] + ".html", pagina_extra_juris(j, pg, notas))
+            TABLAS_URLS.append(pg["ruta"])
         for t in j.get("tablas") or []:
             try:
                 escribir(t["ruta"] + ".html", pagina_tabla_juris(j, t, notas))
