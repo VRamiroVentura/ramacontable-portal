@@ -636,7 +636,7 @@ def sitemaps(notas, convenios=()):
     fijas = ["aguinaldo", "convenios", "guias", "calculadoras", "feriados", "sueldo-comercio", "sueldo-casas-particulares", "actualizacion", "dias-habiles",
              "plazo-fijo", "prestamos", "vacaciones", "liquidacion-final", "horas-extras", "iva", "conversor-dolar", "monotributo-categoria", "intereses-arca",
              "actualizacion-alquiler", "embargo-sueldo", "cuando-cambia-cada-dato", "glosario", "comparador-escalas", "agenda-vencimientos",
-             "retencion-ganancias"] + JURIS_URLS + PARITARIAS_URLS + FERIADOS_URLS + [f"impuesto-{i[0]}" for i in IMPUESTOS]
+             "retencion-ganancias", "calculadoras-para-tu-web"] + JURIS_URLS + PARITARIAS_URLS + FERIADOS_URLS + [f"impuesto-{i[0]}" for i in IMPUESTOS]
     urls = [f"<url><loc>{base}</loc><lastmod>{hoy}</lastmod></url>"] + [
         f"<url><loc>{base}{k}.html</loc><lastmod>{hoy}</lastmod></url>" for k in diarias if k not in PAGINAS_FINAS] + [
         f"<url><loc>{base}{k}.html</loc></url>" for k in fijas if k not in PAGINAS_FINAS] + [
@@ -687,6 +687,7 @@ def llms_txt(notas, convenios):
         ("actualizacion-alquiler", "Actualización de alquiler (ICL / IPC)"), ("embargo-sueldo", "Embargo de sueldo (Decreto 484/87)"),
         ("retencion-ganancias", "Retención de Ganancias sobre el sueldo"), ("agenda-vencimientos", "Agenda de vencimientos por CUIT"),
         ("comparador-escalas", "Aumentos por convenio vs. inflación"), ("glosario", "Glosario contable, impositivo y laboral")]]
+    l += [f"- [Planilla de vacaciones para varios empleados (Excel)]({base}planillas/planilla-vacaciones.xlsx): días por antigüedad, art. 153, valor del día y total", f"- [Calculadoras gratis para tu web]({base}calculadoras-para-tu-web.html): código para insertar las calculadoras en otra página"]
     l += [f"- [Planilla de liquidación final e indemnización (Excel)]({base}planillas/planilla-liquidacion-final.xlsx): días trabajados, SAC, vacaciones no gozadas, art. 245, preaviso e integración"]
     l += [f"- [Planilla de aguinaldo para varios empleados (Excel)]({base}planillas/planilla-aguinaldo-varios-empleados.xlsx): mejor remuneración del semestre, proporcional por días, tope del SAC, descuentos y neto"]
     l += ["", "## Últimas notas"] + [f"- [{n['titulo']}]({base}nota-{n['slug']}.html): {(n.get('encorto') or '')[:200]}"
@@ -1872,6 +1873,54 @@ def pagina_extra_juris(j, pg, notas):
                   [("Provincias y municipios", "provincias-y-municipios.html"), (j["titulo_corto"], j["ruta"] + ".html"), (pg["titulo_corto"], pg["ruta"] + ".html")])
 
 
+EMBEDS = [("aguinaldo", "Calculadora de aguinaldo (SAC)"), ("liquidacion-final", "Calculadora de liquidación final e indemnización"),
+          ("vacaciones", "Calculadora de vacaciones"), ("horas-extras", "Calculadora de horas extras"), ("iva", "Calculadora de IVA"),
+          ("monotributo-categoria", "Calculadora de categoría del Monotributo"), ("dias-habiles", "Calculadora de días hábiles"),
+          ("embargo-sueldo", "Calculadora de embargo de sueldo")]
+
+
+def pagina_embed(archivo, titulo):
+    """Versión para insertar en otras webs: solo el formulario y el resultado, con link a Ramacontable."""
+    s = open(os.path.join(RAIZ, "paginas", archivo + ".html"), encoding="utf-8").read()
+    i = s.index("<form")
+    m = re.search(r'<section id="resultado[^"]*"[^>]*></section>', s[i:])
+    cuerpo = s[i:i + m.end()]
+    scripts = "".join(re.findall(r'<script src="[^"]+"></script>', s))
+    url = sitio_url() + archivo + ".html"
+    return f"""<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{e(titulo)} | Ramacontable</title><meta name="robots" content="noindex,follow"><link rel="canonical" href="{url}">
+<link rel="stylesheet" href="estilos.css?v={VERSION}"><style>body{{background:transparent;margin:0;padding:8px}}.rc-emb{{max-width:760px;margin:0 auto}}.rc-emb h2{{font-size:1.15rem;margin:.2em 0 .6em}}.rc-pie{{font-size:.85rem;margin-top:1em;text-align:right}}</style>
+</head><body><main class="rc-emb nota calc"><h2>{e(titulo)}</h2>{cuerpo}
+<p class="rc-pie">Calculadora gratuita de <a href="{url}" target="_blank" rel="noopener">Ramacontable</a> · datos actualizados en ramacontable.com.ar</p></main>
+<script defer src="config.js?v={VERSION}"></script>{scripts}
+<script>(function(){{var u=function(){{parent.postMessage({{rcAlto:Math.ceil(document.querySelector(".rc-emb").getBoundingClientRect().bottom)+24,rcCalc:{json.dumps(archivo)}}},'*')}};addEventListener('load',u);new MutationObserver(u).observe(document.body,{{subtree:true,childList:true,attributes:true}});setInterval(u,1500)}})();</script>
+</body></html>"""
+
+
+def codigo_embed(archivo, titulo):
+    base = sitio_url()
+    ide = "rc-" + archivo
+    return (f'<iframe id="{ide}" src="{base}embed-{archivo}.html" title="{titulo}" width="100%" height="760" style="border:0;max-width:780px" loading="lazy"></iframe>\n'
+            f'<p style="font-size:13px"><a href="{base}{archivo}.html">{titulo}</a> de Ramacontable</p>\n'
+            f'<script>addEventListener("message",function(e){{if(e.data&&e.data.rcCalc==="{archivo}"){{document.getElementById("{ide}").style.height=e.data.rcAlto+"px"}}}});</script>')
+
+
+def pagina_embeds(notas):
+    items = ""
+    for a, t in EMBEDS:
+        items += (f'<section class="rama-guias"><h2>{e(t)}</h2><p><a href="{a}.html">Ver la calculadora</a> · <a href="embed-{a}.html" target="_blank" rel="noopener">Vista previa</a></p>'
+                  f'<textarea readonly rows="5" style="width:100%;font-family:monospace;font-size:.8rem" onclick="this.select()">{e(codigo_embed(a, t))}</textarea>'
+                  f'<p><button class="btn sec" type="button" onclick="var t=this.parentNode.previousElementSibling;t.select();navigator.clipboard&&navigator.clipboard.writeText(t.value);this.textContent=\'¡Copiado!\'">Copiar código</button></p></section>')
+    cuerpo = f"""<div class="grilla"><section><p class="miga"><a href="calculadoras.html">Calculadoras</a></p>
+<h1 class="titsec">Calculadoras gratis para tu web</h1>
+<p>Si tenés un estudio contable, un blog o la web de tu empresa, podés sumar nuestras calculadoras gratis: copiás el código y lo pegás en tu página (en WordPress, en un bloque «HTML personalizado»). Se actualizan solas con los datos vigentes y se adaptan al alto del resultado.</p>
+<p class="ayuda">Solo te pedimos que dejes el link a Ramacontable que viene en el código.</p>
+{items}</section>{lateral(notas)}</div>"""
+    return pagina("Calculadoras gratis para tu web: aguinaldo, liquidación final, vacaciones e IVA | Ramacontable", cuerpo, "",
+                  "Insertá gratis en tu web las calculadoras de Ramacontable: aguinaldo, liquidación final, vacaciones, horas extras, IVA, Monotributo, días hábiles y embargo. Copiá y pegá el código.",
+                  "calculadoras-para-tu-web.html", migas=[("Calculadoras", "calculadoras.html"), ("Para tu web", "calculadoras-para-tu-web.html")])
+
+
 def pagina_provincias(notas):
     tarj = ""
     for j in JURIS:
@@ -2030,6 +2079,12 @@ def main():
     if g:
         escribir("glosario.html", g)
     escribir("comparador-escalas.html", pagina_comparador(convenios, notas))
+    for a_, t_ in EMBEDS:
+        try:
+            escribir(f"embed-{a_}.html", pagina_embed(a_, t_))
+        except Exception as ex:
+            print("Aviso: no pude armar el embed de", a_, ex)
+    escribir("calculadoras-para-tu-web.html", pagina_embeds(notas))
     escribir(os.path.join("datos", "vencimientos.json"), json.dumps(proximos_vencimientos(), ensure_ascii=False))
     escribir("datos-al-dia.html", pagina_datos(notas))
     os.makedirs(os.path.join(SALIDA, "datos"), exist_ok=True)

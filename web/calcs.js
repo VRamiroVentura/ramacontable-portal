@@ -133,7 +133,10 @@
     let anios = fin.getUTCFullYear() - ing.getUTCFullYear();
     if (fin.getUTCMonth() < ing.getUTCMonth() || (fin.getUTCMonth() === ing.getUTCMonth() && fin.getUTCDate() < ing.getUTCDate())) anios--;
     const meses = (fin - ing) / DIA / 30.4375;
-    const dias = anios < 5 ? 14 : anios < 10 ? 21 : anios < 20 ? 28 : 35;
+    // art. 150: «mayor de» 5, 10 o 20 años. Si ingresó un 31/12, al 31/12 tiene años exactos y todavía no los supera.
+    const exacto = ing.getUTCMonth() === 11 && ing.getUTCDate() === 31;
+    const a = anios - (exacto ? 1 : 0);
+    const dias = a < 5 ? 14 : a < 10 ? 21 : a < 20 ? 28 : 35;
     return { dias, anios: Math.max(0, anios), meses };
   }
   function vacaciones({ ingreso, anio, sueldo, tipo = 'mensual', jornal = 0, feriados = [] }) {
