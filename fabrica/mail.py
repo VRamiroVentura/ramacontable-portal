@@ -40,12 +40,12 @@ def avisar(notas, sitio, destino, conv_ok=(), conv_rev=(), alertas=(), observaci
         filas.insert(0, f"<tr><td style='padding:12px 0;border-bottom:1px solid #ddd'>"
                      f"<div style='font:bold 12px sans-serif;color:#8C1D18;text-transform:uppercase'>🚨 {escape(a['que'])}</div>"
                      f"<div style='font:bold 16px Georgia,serif;color:#13271F;margin:4px 0'>{escape(a['titulo'])}</div>"
-                     f"<div style='margin-top:8px'><a href='{a['url']}' style='color:#A8844F'>Ver publicación de Ignacio</a> · "
+                     f"<div style='margin-top:8px'><a href='{a['url']}' style='color:#A8844F'>Ver la publicación original</a> · "
                      f"<a href='{sitio}nota-{a['nota']}.html?admin=1' style='color:#A8844F'>Revisar nuestra nota</a></div></td></tr>")
     for t, o in observaciones:
-        filas.append(f"<tr><td style='padding:8px 0;font:13px sans-serif;color:#555'>Publicada aunque el verificador observó (fuente Ignacio) · <b>{escape(t)}</b>: {escape(o)}</td></tr>")
+        filas.append(f"<tr><td style='padding:8px 0;font:13px sans-serif;color:#555'>Publicada con observaciones menores · <b>{escape(t)}</b>: {escape(o)}</td></tr>")
     if alertas:
-        asunto = f"Ramacontable: Ignacio editó o borró {len(alertas)} publicación(es) que usamos"
+        asunto = f"Ramacontable: un blog de confianza editó o borró {len(alertas)} publicación(es) que usamos"
     elif not notas:
         asunto = "Ramacontable: escalas de convenios actualizadas"
     elif len(notas) == 1 and notas[0]["estado"] == "publicada":

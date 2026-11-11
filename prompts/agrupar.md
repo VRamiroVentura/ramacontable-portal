@@ -15,6 +15,7 @@ Tu tarea:
    - "clase": qué tipo de nota es:
      - "novedad": una norma, resolución, cambio impositivo o laboral, vencimiento, prórroga, acuerdo salarial, escala o anuncio oficial de un organismo (ARCA, ANSES, BCRA, Trabajo, rentas, consejos, sindicatos). Es información que publican todos.
      - "propia": un trabajo propio de un medio o portal: investigación, encuesta, relevamiento, estadística elaborada por ellos, informe de una consultora, análisis u opinión de un autor, entrevista, caso particular. Ejemplo: "Una de cada siete pymes industriales enfrenta embargos de ARCA" es "propia".
+       También es "propia" toda nota que no nace de una norma, una actualización o una novedad oficial concreta y reciente: notas explicativas o atemporales ("qué es", "cómo hacer", "lo que tenés que saber"), consejos, listas, recopilaciones, proyecciones o estimaciones del propio blog, preguntas frecuentes y notas armadas para atraer visitas. Si dudás, es "propia".
 
 Respondé SOLO con JSON con esta forma:
 {"grupos": [{"tema": "...", "items": [ids], "profesion": true, "seccion": "sueldos", "repetido": false, "actualiza": null, "convenio": null, "escala": false, "clase": "novedad", "motivo": "una línea"}]}

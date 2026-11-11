@@ -15,6 +15,9 @@ from . import fuentes, gemini, mail, util
 FUENTES_EXTRA = [{"nombre": "ARBA", "tipo": "oficial", "url": "https://web.arba.gov.ar/noticias"}, {"nombre": "Gobierno nacional (argentina.gob.ar)", "tipo": "oficial", "url": "https://www.argentina.gob.ar/noticias", "filtro": ["arca", "afip", "anses", "monotribut", "ganancias", "impuest", "iva", "salario", "jubil", "asignaci", "auh", "bcra", "banco central", "feriado", "decreto", "resolucion general", "aportes", "contribuciones", "trabajo", "empleo", "paritari", "convenio", "srt", "riesgos del trabajo", "aduana", "retencion", "percepcion"]}, {"nombre": "Tributum", "tipo": "portal", "url": "https://tributum.news/feed/"}, {"nombre": "Estudio Vilaplana", "tipo": "portal", "url": "https://www.estudiovilaplana.com.ar/feed/"}, {"nombre": "iProfesional Impuestos", "tipo": "apoyo", "url": "https://www.iprofesional.com/rss/impuestos.xml", "filtro": ["arca", "afip", "anses", "monotribut", "ganancias", "iva", "bienes personales", "ingresos brutos", "arba", "agip", "impuesto", "boletin oficial", "resolucion general", "decreto", "convenio", "paritaria", "escala", "salari", "sueldo", "aguinaldo", "indemniz", "aportes", "contribuciones", "seguridad social", "art ", "feriado", "vencimiento", "bcra", "comunicacion a", "reforma laboral"]}, {"nombre": "Calcular Sueldo", "tipo": "apoyo", "url": "https://calcularsueldo.com.ar/feed/", "filtro": ["arca", "afip", "anses", "monotribut", "ganancias", "iva", "bienes personales", "ingresos brutos", "arba", "agip", "impuesto", "boletin oficial", "resolucion general", "decreto", "convenio", "paritaria", "escala", "salari", "sueldo", "aguinaldo", "indemniz", "aportes", "contribuciones", "seguridad social", "art ", "feriado", "vencimiento", "bcra", "comunicacion a", "reforma laboral"]}, {"nombre": "Econoblog", "tipo": "apoyo", "url": "https://www.econoblog.com.ar/feed/", "filtro": ["arca", "afip", "anses", "monotribut", "ganancias", "iva", "bienes personales", "ingresos brutos", "arba", "agip", "impuesto", "boletin oficial", "resolucion general", "decreto", "convenio", "paritaria", "escala", "salari", "sueldo", "aguinaldo", "indemniz", "aportes", "contribuciones", "seguridad social", "art ", "feriado", "vencimiento", "bcra", "comunicacion a", "reforma laboral"]}]
 
 CONFIABLE = "Ignacio Online"  # lo que publica Ignacio se toma como correcto (pedido de Ramiro); se vigila si después lo edita o borra
+# Blogs de confianza (pedido de Ramiro): con una sola nota de ellos alcanza para publicar; se vigila si la editan o la borran.
+# Los de menor confianza (tipo "apoyo") siguen necesitando dos blogs o la fuente oficial. Se puede cambiar con "fuentes_confiables" en config.json.
+CONFIABLES = ("Ignacio Online", "Contadores en Red", "Blog del Contador", "Tributum", "Estudio Vilaplana")
 
 
 def _prompt(nombre):
@@ -40,6 +43,37 @@ def _bloques_ok(cuerpo):
     return salida
 
 
+def _clasificar(control, dudas=()):
+    """Separa los problemas del verificador en graves (pueden arruinar la nota) y menores."""
+    altas, bajas = [], []
+    for p in (control or {}).get("problemas") or []:
+        if isinstance(p, dict):
+            (bajas if str(p.get("gravedad", "")).lower() == "baja" else altas).append(
+                {"dato": str(p.get("dato") or "")[:220], "fuente": str(p.get("fuente") or "")[:220], "revisar": str(p.get("revisar") or "")[:220]})
+        elif str(p).strip():  # formato viejo (texto suelto): se trata como grave para no dejar pasar nada
+            altas.append({"dato": str(p)[:300], "fuente": "", "revisar": ""})
+    for d in dudas or []:
+        altas.append({"dato": f"Duda del redactor: {str(d)[:250]}", "fuente": "", "revisar": ""})
+    if (control or {}).get("agrega_ejemplos"):
+        bajas.append({"dato": "Agrega un ejemplo práctico que no está en las fuentes", "fuente": "", "revisar": ""})
+    return altas, bajas
+
+
+def _motivo(altas):
+    """Texto claro para el administrador: cuántos datos chequear y qué mirar en cada uno."""
+    if not altas:
+        return None
+    lineas = [f"🔴 {len(altas)} {'dato' if len(altas) == 1 else 'datos'} para chequear antes de publicar"]
+    for i, a in enumerate(altas, 1):
+        txt = f"{i}) {a['revisar'] or a['dato']}"
+        if a["revisar"] and a["dato"]:
+            txt += f" — La nota dice: {a['dato']}"
+        if a["fuente"]:
+            txt += f" — Las fuentes: {a['fuente']}"
+        lineas.append(txt)
+    return "\n".join(lineas)[:1500]
+
+
 class Fabrica:
     def __init__(self, db=None):
         self.cfg = util.config()
@@ -47,6 +81,7 @@ class Fabrica:
         # vuelta rápida (cada 30 min): solo fuentes oficiales y el sumario del Boletín de Tributum; nada de guías ni escalas
         self.rapido = os.environ.get("RC_RAPIDO") == "1"
         self.db = db
+        self.confiables = set(self.cfg.get("fuentes_confiables") or CONFIABLES)
         self.publicadas, self.revision, self.descartes, self.esperando = [], [], [], []
         self.convenios_act, self.convenios_rev = [], []
         self.guias = []
@@ -205,11 +240,11 @@ class Fabrica:
             ap = nuevo.get("aumento_pct")
             hist.append({"periodo": per, "fecha": util.ahora().date().isoformat(), "nota": nota_slug,
                          "aumento_pct": float(ap) if isinstance(ap, (int, float)) and 0 < ap < 100 else None})
-        ok = bool(control.get("ok")) and not nuevo.get("dudas") and not control.get("agrega_ejemplos")
-        if not ok and any(CONFIABLE in t for t in textos):
-            self.observaciones.append((f"Escala {c['nombre']}", "; ".join(list(control.get("problemas") or []) + list(nuevo.get("dudas") or []))[:400]))
-            ok = True
-        motivo = "; ".join(list(control.get("problemas") or []) + [f"Duda: {d}" for d in (nuevo.get("dudas") or [])])[:600]
+        altas, bajas = _clasificar(control, nuevo.get("dudas"))
+        ok = not altas
+        if ok and bajas:
+            self.observaciones.append((f"Escala {c['nombre']}", "; ".join(b["dato"] for b in bajas)[:400]))
+        motivo = _motivo(altas) or ""
         registro = {"slug": c["slug"], "nombre": c["nombre"], "periodo": per, "motivo": motivo, "datos": datos}
         (self.convenios_act if ok else self.convenios_rev).append(registro)
         if self.activo and self.db:
@@ -344,14 +379,12 @@ class Fabrica:
         while slug in usados:
             slug, k = f"{base}-{k}", k + 1
         usados.add(slug)
-        problemas = list(control.get("problemas") or []) + [f"Duda: {d}" for d in (nota.get("dudas") or [])]
-        if control.get("agrega_ejemplos"):
-            problemas.append("Agrega ejemplos prácticos que no están en las fuentes.")
-        ok = bool(control.get("ok")) and not nota.get("dudas") and not control.get("agrega_ejemplos")
-        if not ok and any(it.get("fuente") == CONFIABLE for it in items):
-            # viene de Ignacio: se publica igual y las observaciones quedan en el mail para mirarlas
-            self.observaciones.append((nota.get("titulo", ""), "; ".join(problemas)[:400]))
-            ok = True
+        # Solo frena la nota lo grave (montos, fechas, normas, alcance...). Lo menor se publica y queda anotado.
+        # Vale también para lo que viene de Ignacio: si el problema grave lo agregó la redacción, hay que mirarlo.
+        altas, bajas = _clasificar(control, nota.get("dudas"))
+        ok = not altas
+        if ok and bajas:
+            self.observaciones.append((nota.get("titulo", ""), "; ".join(b["dato"] for b in bajas)[:400]))
         oficial = any(it["tipo"] == "oficial" for it in items)
         return {
             "slug": slug, "fecha": util.ahora().date().isoformat(), "seccion": grupo.get("seccion") if grupo.get("seccion") in ("sueldos", "impuestos", "profesion") else "profesion",
@@ -366,7 +399,7 @@ class Fabrica:
             "seo_titulo": str(nota.get("seo_titulo") or "")[:70] or None,
             "descripcion_seo": str(nota.get("descripcion_seo") or "")[:170] or None,
             "preguntas": [{"p": str(q.get("p", ""))[:200], "r": str(q.get("r", ""))[:500]} for q in (nota.get("preguntas") or [])
-                          if isinstance(q, dict) and q.get("p") and q.get("r")][:5], "motivo_revision": "; ".join(problemas)[:600] if not ok else None,
+                          if isinstance(q, dict) and q.get("p") and q.get("r")][:5], "motivo_revision": _motivo(altas) if not ok else None,
         }
 
     def correr(self):
@@ -436,19 +469,53 @@ class Fabrica:
                 continue
             # Las notas propias de un medio (investigaciones, encuestas, opinión) no se replican:
             # solo novedades normativas u oficiales, o temas que ya publicaron varios portales.
-            if g.get("clase") == "propia" and not oficial and len(portales) < int(self.cfg.get("portales_para_nota_propia", 3)):
-                self.descartes.append((g.get("tema"), "nota propia de un portal (investigación u opinión): no se replica"))
-                self.marcar(urls, g.get("tema"), None)
-                continue
+            # (pedido de Ramiro: con un solo blog no se replican; si la sacan dos o más blogs distintos se arma pero queda en revisión)
+            propia_varios = False
+            if g.get("clase") == "propia" and not oficial:
+                if len(portales) >= 2:
+                    propia_varios = True
+                else:
+                    self.descartes.append((g.get("tema"), "nota propia de un blog (no sale de una norma, actualización ni novedad oficial): no se replica"))
+                    self.marcar(urls, g.get("tema"), None)
+                    continue
             # Regla de fuentes: se publica si hay fuente oficial, si lo trae Ignacio Online, si lo publicaron
             # al menos 2 portales, o si la nota del portal cita la fuente oficial y la podemos leer para chequear.
             # Los blogs de "apoyo" (generalistas) nunca arrancan una nota solos: solo confirman un tema
             # que ya trae una fuente oficial o un blog contable principal.
             principales = {m["fuente"] for m in miembros if m["tipo"] == "portal"}
             if not oficial and not principales:
-                self.esperando.append((g.get("tema"), f"solo en blogs de apoyo ({', '.join(sorted(portales))}): espera un blog contable o la fuente oficial"))
-                continue
-            if not oficial and CONFIABLE not in portales and len(portales) < int(self.cfg.get("portales_minimos", 2)):
+                # blogs de apoyo solos: alcanza si coinciden dos distintos, o si uno cita la fuente oficial y se puede chequear
+                apoyos = {m["fuente"] for m in miembros if m["tipo"] == "apoyo"}
+                if len(apoyos) >= 2:
+                    self.observaciones.append((g.get("tema") or "", f"Lo confirman dos blogs de apoyo ({', '.join(sorted(apoyos))})"))
+                else:
+                    citada = None
+                    for m in [x for x in miembros if x["tipo"] == "apoyo"][:2]:
+                        try:
+                            citada = fuentes.fuente_oficial_citada(m["url"])
+                        except Exception:  # noqa
+                            citada = None
+                        if citada and not citada.get("pdf"):
+                            break
+                        citada = None
+                    if not citada:
+                        self.esperando.append((g.get("tema"), f"solo en un blog de apoyo ({', '.join(sorted(portales))}) y sin fuente oficial para chequear: espera otro blog o la fuente oficial"))
+                        continue
+                    miembros = miembros + [citada]
+                    oficial = True
+                    self.observaciones.append((g.get("tema") or "", f"Un blog de apoyo; se chequeó con la fuente oficial que cita: {citada['url']}"))
+            de_confianza = portales & self.confiables
+            if not oficial and de_confianza:
+                # un blog de confianza alcanza; si cita la fuente oficial y se puede leer, se suma para chequear los datos
+                try:
+                    m0 = next(x for x in miembros if x["fuente"] in de_confianza)
+                    citada = fuentes.fuente_oficial_citada(m0["url"])
+                except Exception:  # noqa
+                    citada = None
+                if citada and not citada.get("pdf"):
+                    miembros = miembros + [citada]
+                    oficial = True
+            if not oficial and not de_confianza and len(portales) < int(self.cfg.get("portales_minimos", 2)):
                 citada = None
                 for m in [x for x in miembros if x["tipo"] == "portal"][:2]:
                     try:
@@ -470,6 +537,15 @@ class Fabrica:
             try:
                 nota, control = self.redactar(g, miembros, recientes)
                 fila = self.armar_fila(g, miembros, nota, control, usados_slug)
+                if propia_varios:
+                    puntos = [f"Es una nota propia de {', '.join(sorted(portales))} (no sale de una norma ni de una novedad oficial). "
+                              "La armamos porque la publicaron dos o más blogs: decidí si la publicamos"]
+                    previo = fila.get("motivo_revision") or ""
+                    if previo.startswith("🔴"):
+                        puntos += [re.sub(r"^\d+\)\s*", "", x) for x in previo.split("\n")[1:] if x.strip()]
+                    fila["estado"], fila["verificada"] = "revision", False
+                    fila["motivo_revision"] = (f"🔴 {len(puntos)} {'dato' if len(puntos) == 1 else 'datos'} para chequear antes de publicar\n"
+                                               + "\n".join(f"{i}) {t}" for i, t in enumerate(puntos, 1)))[:1500]
             except gemini.SinTiempo:
                 self.esperando.append((g.get("tema"), "sin tiempo en esta vuelta: queda para la próxima"))
                 continue
@@ -486,7 +562,7 @@ class Fabrica:
                 self.db.upsert("notas", [fila], "slug")
                 self.marcar(urls, g.get("tema"), fila["slug"])
                 for mi in miembros:
-                    if mi["fuente"] == CONFIABLE:
+                    if mi["fuente"] in self.confiables:
                         base_txt, _ = fuentes.detalle(mi["url"], largo=6000)
                         if base_txt:
                             self.db.update("radar", {"url": f"eq.{mi['url']}"}, {"texto": base_txt[:6000]})
@@ -505,8 +581,9 @@ class Fabrica:
         """Guías, escalas, vencimientos y vigilancia, en ese orden. Si se acaba el tiempo, lo que falta queda
         para la próxima vuelta y la vuelta cierra igual (publica la web, manda el mail y deja el resumen)."""
         try:
-            for nombre, tarea in [("datos al día", self.actualizar_respuestas), ("guías", self.escribir_guias), ("escalas oficiales", self.revisar_escalas_oficiales),
-                                  ("vencimientos", self.actualizar_vencimientos), ("vigilancia de Ignacio", self.vigilar_ignacio)]:
+            # la vigilancia va primero: no usa Gemini y si un blog de confianza borró o corrigió algo, nuestra nota sale ya
+            for nombre, tarea in [("vigilancia de los blogs de confianza", self.vigilar_ignacio), ("datos al día", self.actualizar_respuestas), ("guías", self.escribir_guias),
+                                  ("escalas oficiales", self.revisar_escalas_oficiales), ("vencimientos", self.actualizar_vencimientos)]:
                 try:
                     gemini._queda()
                     tarea()
@@ -754,26 +831,38 @@ class Fabrica:
             self.db.upsert("notas", [fila], "slug")
 
     def vigilar_ignacio(self):
-        """Revisa las notas de Ignacio que usamos en los últimos días: avisa si las editó o las borró."""
+        """Revisa las notas de los blogs de confianza que usamos en los últimos días. Si la borraron o cambiaron algún
+        número, nuestra nota sale de la portada y queda en revisión con el motivo claro; si solo cambió la redacción, avisa."""
         if not self.db:
             return
         import difflib
         desde = (util.ahora() - timedelta(days=int(self.cfg.get("dias_vigilancia", 4)))).isoformat()
+        lista = ",".join('"' + f.replace('"', "") + '"' for f in sorted(self.confiables))
         try:
-            filas = self.db.select("radar", {"select": "url,titulo,texto,nota", "fuente": f"eq.{CONFIABLE}", "usado": "eq.true",
-                                             "nota": "not.is.null", "visto": f"gte.{desde}", "limit": "200"})
+            filas = self.db.select("radar", {"select": "url,titulo,texto,nota,fuente", "fuente": f"in.({lista})", "usado": "eq.true",
+                                             "nota": "not.is.null", "visto": f"gte.{desde}", "limit": "300"})
         except gemini.SinTiempo:
             raise
         except Exception as e:  # noqa
-            util.log("No pude leer el radar para vigilar a Ignacio:", util.ocultar(str(e)))
+            util.log("No pude leer el radar para vigilar los blogs de confianza:", util.ocultar(str(e)))
             return
+        def a_revision(slug, texto):
+            if not self.activo:
+                return
+            try:
+                self.db.update("notas", {"slug": f"eq.{slug}"}, {"estado": "revision", "motivo_revision": texto[:1500]})
+                self.vencimientos_cambio = True  # fuerza que el sitio se vuelva a armar sin la nota
+            except Exception as e:  # noqa
+                util.log("No pude pasar a revisión", slug, util.ocultar(str(e)))
         for f in filas:
             antes = f.get("texto") or ""
+            quien = f.get("fuente") or "El blog"
             if antes.startswith("__BORRADA__") or len(antes) < 300:
                 continue
             codigo = fuentes.estado(f["url"])
             if codigo in (404, 410):
-                self.alertas.append({"titulo": f["titulo"], "nota": f["nota"], "url": f["url"], "que": "Ignacio BORRÓ la publicación"})
+                self.alertas.append({"titulo": f["titulo"], "nota": f["nota"], "url": f["url"], "que": f"{quien} BORRÓ la publicación (nuestra nota pasó a revisión)"})
+                a_revision(f["nota"], f"🔴 1 dato para chequear antes de publicar\n1) {quien} borró la publicación en la que se basa esta nota: confirmá si la novedad sigue vigente; si no, borrá la nota — {f['url']}")
                 if self.activo:
                     self.db.update("radar", {"url": f"eq.{f['url']}"}, {"texto": "__BORRADA__" + antes[:5000]})
                 continue
@@ -783,11 +872,22 @@ class Fabrica:
             norm = lambda t: re.sub(r"\s+", " ", t).strip().lower()
             a_, b_ = norm(antes), norm(ahora)
             parecido = difflib.SequenceMatcher(None, a_, b_, autojunk=False).ratio()
-            numeros = set(re.findall(r"\d[\d.,%]*", a_)) != set(re.findall(r"\d[\d.,%]*", b_))
+            na, nb = set(re.findall(r"\d[\d.,%]*", a_)), set(re.findall(r"\d[\d.,%]*", b_))
             negacion = a_.count("no remunerativ") != b_.count("no remunerativ")
-            if a_ != b_ and (parecido < float(self.cfg.get("umbral_edicion", 0.99)) or numeros or negacion):
+            if a_ != b_ and (parecido < float(self.cfg.get("umbral_edicion", 0.99)) or na != nb or negacion):
+                grave = na != nb or negacion
                 self.alertas.append({"titulo": f["titulo"], "nota": f["nota"], "url": f["url"],
-                                     "que": "Ignacio EDITÓ la publicación" + (" (cambió algún número)" if numeros else "") + (" (cambió remunerativo/no remunerativo)" if negacion else "") + f" · coincide {parecido:.1%}"})
+                                     "que": f"{quien} EDITÓ la publicación" + (" (cambió algún número)" if na != nb else "") + (" (cambió remunerativo/no remunerativo)" if negacion else "")
+                                     + f" · coincide {parecido:.1%}" + (" · nuestra nota pasó a revisión" if grave else "")})
+                if grave:
+                    det = []
+                    if na - nb:
+                        det.append("ya no dice: " + ", ".join(sorted(na - nb)[:6]))
+                    if nb - na:
+                        det.append("ahora dice: " + ", ".join(sorted(nb - na)[:6]))
+                    if negacion:
+                        det.append("cambió lo de remunerativo / no remunerativo")
+                    a_revision(f["nota"], f"🔴 1 dato para chequear antes de publicar\n1) {quien} corrigió la publicación en la que se basa esta nota ({'; '.join(det)}): revisá esos datos en nuestra nota — {f['url']}")
                 if self.activo:
                     self.db.update("radar", {"url": f"eq.{f['url']}"}, {"texto": ahora[:6000]})
 
@@ -834,9 +934,9 @@ class Fabrica:
             t = (c["datos"].get("escala") or {}).get("tabla") or []
             if t:
                 md.append(f"**Escala {c['nombre']} {c['periodo']}**\n\n| " + " | ".join(t[0]) + " |\n|" + "---|" * len(t[0]) + "\n" + "\n".join("| " + " | ".join(f) + " |" for f in t[1:]) + "\n")
-        md.append(f"## 🚨 Ignacio editó o borró ({len(self.alertas)})\n" + "".join(f"- {a['que']}: [{a['titulo']}]({a['url']}) → nuestra nota `{a['nota']}`\n" for a in self.alertas))
+        md.append(f"## 🚨 Blogs de confianza que editaron o borraron ({len(self.alertas)})\n" + "".join(f"- {a['que']}: [{a['titulo']}]({a['url']}) → nuestra nota `{a['nota']}`\n" for a in self.alertas))
         md.append(f"## 📊 Datos del día sin confirmar ({len(self.datos_obs)})\n" + ("".join(f"- {t}: {o}\n" for t, o in self.datos_obs) or "Ninguno.\n"))
-        md.append(f"## 📝 Publicadas con observaciones por venir de Ignacio ({len(self.observaciones)})\n" + "".join(f"- {t}: {o}\n" for t, o in self.observaciones))
+        md.append(f"## 📝 Publicadas con observaciones menores, no hace falta revisar ({len(self.observaciones)})\n" + "".join(f"- {t}: {o}\n" for t, o in self.observaciones))
         md.append(f"**Pedidos a Gemini en esta vuelta:** {gemini.PEDIDOS[0]} (datos del día: {getattr(self, 'pedidos_datos', 0)})\n")
         md.append("## 📅 Vencimientos y datos del día\n" + ("\n".join(f"- {x}" for x in self.vencimientos_info) or "Sin cambios (ya actualizados hoy).") + "\n")
         md.append(f"## 📘 Guías\n{self.guias_info or 'Sin datos.'}\n")

@@ -486,7 +486,15 @@
         n.estado !== 'publicada' ? h('button', { class: 'btn', onclick: () => cambiarEstado(n, 'publicada') }, '✅ Publicar') : null,
         h('button', { class: 'btn sec', onclick: () => editarNota(n) }, '✏️ Editar'),
         n.estado !== 'borrada' ? h('button', { class: 'btn sec', onclick: () => confirmarBorrar(n) }, '🗑️ Borrar') : null));
-    if (n.motivo_revision && n.estado === 'revision') barra.append(h('p', { class: 'motivo' }, 'Motivo de revisión: ' + n.motivo_revision));
+    if (n.motivo_revision && n.estado === 'revision') {
+      // 🔴 = datos que pueden arruinar la nota: se muestran uno por línea, con qué chequear
+      const lineas = String(n.motivo_revision).split('\n').filter(Boolean);
+      const grave = lineas[0].startsWith('🔴');
+      barra.append(h('div', { class: 'motivo' + (grave ? ' motivo-grave' : '') },
+        h('b', {}, grave ? lineas[0] : 'Para revisar'),
+        h('ul', {}, ...(grave ? lineas.slice(1) : lineas[0].split('; ')).map(t => h('li', {}, t))),
+        h('p', { class: 'ayuda' }, 'Si está bien, tocá ✅ Publicar. Si hay que corregir, ✏️ Editar.')));
+    }
     caja.prepend(barra);
   }
   async function cambiarEstado(n, estado) {
@@ -589,7 +597,8 @@
     if (!filas.length) { caja.append(h('p', { class: 'ayuda' }, 'Todavía no hay notas en la base.')); return; }
     const EST = { publicada: '✅ Publicada', revision: '🟡 Para revisar', borrada: '🗑️ Borrada' };
     filas.forEach(n => caja.append(h('a', { class: 'fila-admin', href: n.estado === 'publicada' ? `nota-${n.slug}.html` : `nota.html?n=${n.slug}` },
-      h('span', { class: 'est est-' + n.estado }, EST[n.estado]), h('b', {}, n.titulo), h('small', {}, `${fechaLarga(n.fecha)} · ${SECC[n.seccion] || ''}`))));
+      h('span', { class: 'est est-' + n.estado }, n.estado === 'revision' && String(n.motivo_revision || '').startsWith('🔴') ? '🔴 Revisar datos' : EST[n.estado]), h('b', {}, n.titulo), h('small', {}, `${fechaLarga(n.fecha)} · ${SECC[n.seccion] || ''}`),
+      n.estado === 'revision' && n.motivo_revision ? h('small', { class: 'motivo-corto' }, String(n.motivo_revision).split('\n').slice(0, 2).join(' · ')) : null)));
   }
 
   // ---------- convenios: escala al día y edición del administrador ----------

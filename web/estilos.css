@@ -353,3 +353,8 @@ table.feriados tr.prox-f td{background:var(--bronce-suave);font-weight:600}
 .termino{padding:8px 0;border-bottom:1px solid #eee}.termino h3{margin:0 0 4px;font-size:1.05rem}.termino p{margin:2px 0}
 .indice-letras a{display:inline-block;padding:2px 7px;margin:2px;border:1px solid #e4ddd0;border-radius:4px;text-decoration:none}
 .dato-vigente{background:#EEF3F8;border-left:3px solid #1F3A5F;padding:10px 12px;margin:10px 0;border-radius:4px;font-size:.95rem}
+
+.barra-admin .motivo{margin-top:.6em;padding:.7em .9em;border:1px solid #e0c36a;background:#fff8e1;border-radius:6px}
+.barra-admin .motivo-grave{border-color:#c0392b;background:#fdecea}
+.barra-admin .motivo ul{margin:.4em 0 .3em 1.1em;padding:0}.barra-admin .motivo li{margin:.25em 0}
+.fila-admin .motivo-corto{display:block;color:#a12a1d;font-weight:600;margin-top:.2em}
