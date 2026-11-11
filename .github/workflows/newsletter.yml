@@ -1,0 +1,33 @@
+name: Newsletter de los lunes
+
+on:
+  schedule:
+    # lunes 7:43 (hora de Argentina = UTC-3)
+    - cron: "43 10 * * 1"
+  workflow_dispatch:
+    inputs:
+      prueba:
+        description: "Solo armar el mail, sin mandarlo (true / false)"
+        default: "true"
+
+permissions:
+  contents: read
+
+jobs:
+  newsletter:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install requests
+      - name: Armar y mandar la newsletter
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          RC_NEWSLETTER_PRUEBA: ${{ github.event_name == 'workflow_dispatch' && inputs.prueba == 'true' && '1' || '0' }}
+        run: python -m fabrica.newsletter
