@@ -358,3 +358,6 @@ table.feriados tr.prox-f td{background:var(--bronce-suave);font-weight:600}
 .barra-admin .motivo-grave{border-color:#c0392b;background:#fdecea}
 .barra-admin .motivo ul{margin:.4em 0 .3em 1.1em;padding:0}.barra-admin .motivo li{margin:.25em 0}
 .fila-admin .motivo-corto{display:block;color:#a12a1d;font-weight:600;margin-top:.2em}
+/* título principal de la portada: lo leen Google y los lectores de pantalla, no se ve */
+.oculto{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.pie .secs a{margin:0 .15em}

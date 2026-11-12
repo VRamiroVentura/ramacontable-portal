@@ -12,6 +12,12 @@ RAIZ = os.path.dirname(os.path.abspath(__file__))
 VERSION = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%d%H%M")  # evita que el navegador muestre archivos viejos
 SALIDA = os.path.join(RAIZ, "sitio")
 
+TITULO_SECCION = {   # título para Google de cada sección (el menú sigue diciendo "Sueldos", "Impuestos"...)
+    "sueldos": "Novedades de sueldos: paritarias, escalas y aguinaldo",
+    "impuestos": "Novedades de impuestos: ARCA, monotributo y Ganancias",
+    "profesion": "Novedades de la profesión contable",
+    "economia": "Novedades económicas para contadores",
+}
 SECCIONES = {
     "sueldos": "Sueldos",
     "impuestos": "Impuestos",
@@ -142,6 +148,21 @@ SERIES_BCRA = {
 }
 
 
+def respaldo_publicado(nombre):
+    """Copia de datos/<nombre> que ya está publicada en la web. Se usa si una API no responde, para no borrar páginas."""
+    import ssl
+    try:
+        req = urllib.request.Request(sitio_url() + "datos/" + nombre, headers={"User-Agent": "ramacontable-build"})
+        try:
+            return json.load(urllib.request.urlopen(req, timeout=30, context=ssl.create_default_context()))
+        except ssl.SSLError:
+            import certifi
+            return json.load(urllib.request.urlopen(req, timeout=30, context=ssl.create_default_context(cafile=certifi.where())))
+    except Exception as ex:
+        print(f"Aviso: tampoco hay respaldo publicado de {nombre}:", ex)
+        return None
+
+
 def bajar_series(destino):
     """Escribe sitio/datos/serie-<clave>.json con {f: fechas, v: valores}. Si el BCRA no responde, esa serie queda sin archivo."""
     import ssl
@@ -170,7 +191,12 @@ def bajar_series(destino):
         except Exception as ex:
             print(f"Aviso: no se pudo bajar la serie {clave} del BCRA:", ex)
         if not puntos:
-            continue
+            viejo = respaldo_publicado(f"serie-{clave}.json")
+            if viejo and viejo.get("f"):
+                print(f"Aviso: uso la serie {clave} ya publicada (hasta {viejo['f'][-1]})")
+                puntos = dict(zip(viejo["f"], viejo["v"]))
+            else:
+                continue
         fechas = sorted(puntos)
         json.dump({"nombre": nombre, "tipo": tipo, "f": fechas, "v": [puntos[x] for x in fechas]},
                   open(os.path.join(destino, f"serie-{clave}.json"), "w", encoding="utf-8"), separators=(",", ":"))
@@ -519,6 +545,7 @@ def pagina(titulo, cuerpo, actual="", descripcion="", ruta="", extra_head="", mi
 <footer class="pie"><div class="wrap">
 <a class="logo" href="index.html">{LOGO_SVG}<span>ramacontable</span></a>
 <p>Novedades de la profesión contable explicadas claro.</p>
+<p class="secs">{" · ".join(f'<a href="{k}.html">{v}</a>' for k, v in SECCIONES.items())} · <a href="guias.html">Guías</a> · <a href="calculadoras.html">Calculadoras</a> · <a href="datos-al-dia.html">Datos del día</a></p>
 <div class="redes">{redes}</div>
 <p><a href="mailto:{MAIL}">{MAIL}</a></p>
 <p class="legal">Información de carácter general. Se recomienda verificar siempre en las fuentes oficiales. Cada profesional es responsable de su aplicación. · <a href="terminos.html">Términos y privacidad</a> · © {anio} Ramacontable</p>
@@ -1030,6 +1057,16 @@ def bajar_dolares(destino):
         actual = {d["casa"]: d for d in leer("https://dolarapi.com/v1/dolares")}
     except Exception as ex:
         print("Aviso: no pude leer las cotizaciones del dólar:", ex)
+        viejo = respaldo_publicado("dolares.json")
+        if viejo and viejo.get("actual"):
+            print("Aviso: uso las cotizaciones del dólar ya publicadas")
+            DOLAR = viejo
+            os.makedirs(destino, exist_ok=True)
+            json.dump(DOLAR, open(os.path.join(destino, "dolares.json"), "w", encoding="utf-8"), ensure_ascii=False)
+            for clave in ("dolar_mep", "dolar_ccl", "dolar_blue", "dolar_cripto"):
+                sr = respaldo_publicado(f"serie-{clave}.json")
+                if sr:
+                    json.dump(sr, open(os.path.join(destino, f"serie-{clave}.json"), "w", encoding="utf-8"), separators=(",", ":"))
         return
     hist = {}
     for _, casa, *_ in DOLARES:
@@ -1415,7 +1452,7 @@ def pagina_mes(pref, slug_dato, tit, preg, mes, notas):
         {"@type": "Question", "name": pregunta, "acceptedAnswer": {"@type": "Answer", "text": f"{valor}. {texto}" if valor else texto}}]}, ensure_ascii=False) + "</script>"
     if not valor:
         PAGINAS_FINAS.add(f"{pref}-{MESES[int(mes[5:]) - 1]}-{mes[:4]}")
-    return pagina(f"{titulo}{': ' + valor if valor else ''} | Ramacontable", cuerpo, "datos-al-dia",
+    return pagina(f"{titulo.split(':')[0] + ': ' + valor if valor else titulo} | Ramacontable", cuerpo, "datos-al-dia",
                   f"{pregunta} {valor or ''} {texto}"[:300], f"{pref}-{MESES[int(mes[5:]) - 1]}-{mes[:4]}.html", ld + ("" if valor else NOI),
                   [("Datos del día", "datos-al-dia.html"), (titulo, f"{pref}-{MESES[int(mes[5:]) - 1]}-{mes[:4]}.html")])
 
@@ -1462,7 +1499,8 @@ def pagina_paritaria(c, mes, notas):
 </div>{lateral(notas)}</div>"""
     if not periodo:
         PAGINAS_FINAS.add(f"paritarias-{c['slug']}-{nombre_mes}-{mes[:4]}")
-    return pagina(f"{titulo} | Ramacontable", cuerpo, "sueldos",
+    tit_seo = titulo if len(titulo) <= 65 else titulo.replace(": escala salarial y aumento", ": escala y aumento")
+    return pagina(f"{tit_seo} | Ramacontable", cuerpo, "sueldos",
                   f"Paritarias {c['nombre']} ({c.get('cct') or ''}) {mes_txt}: escala salarial vigente, aumentos y sumas no remunerativas.",
                   f"paritarias-{c['slug']}-{nombre_mes}-{mes[:4]}.html", NOI if not periodo else "", migas=[("Escalas por convenio", "convenios.html"), (titulo, f"paritarias-{c['slug']}-{nombre_mes}-{mes[:4]}.html")])
 
@@ -1987,7 +2025,7 @@ def portada(notas, titulo_pag="Ramacontable | Comunidad contable", actual="", en
             PAGINAS_FINAS.add(actual)
     else:
         lista = tarjeta(notas[0], grande=True) + '<div class="tarjetas">' + "".join(tarjeta(n) for n in notas[1:]) + "</div>"
-    cab = f'<h1 class="titsec">{e(encabezado)}</h1>' if encabezado else ""
+    cab = f'<h1 class="titsec">{e(encabezado)}</h1>' if encabezado else '<h1 class="oculto">Ramacontable: novedades contables, impositivas y laborales, guías y calculadoras</h1>'
     desc = DESC_SECCION.get(actual, "Novedades contables, impositivas y laborales explicadas claro, escalas salariales, guías, calculadoras y vencimientos.")
     return pagina(titulo_pag, f'<div class="grilla"><section>{cab}{extra}{lista}</section>{lateral(notas)}</div>', actual, desc,
                   f"{actual}.html" if actual else "", migas=[(encabezado, f"{actual}.html")] if actual else None)
@@ -2078,7 +2116,7 @@ def main():
                 f'<a href="impuesto-{s}.html">{e(n)}</a>' for s, n, _, _ in IMPUESTOS) + "</div>")
         if k in RAMAS_GUIAS:
             extra += tira_guias(guias, k)
-        escribir(f"{k}.html", portada([n for n in notas if n["seccion"] == k], f"{v} | Ramacontable", k, v, extra))
+        escribir(f"{k}.html", portada([n for n in notas if n["seccion"] == k], f"{TITULO_SECCION.get(k, v)} | Ramacontable", k, v, extra))
     aportes = cargar_aportes()
     import portadas
     if portadas.disponible():
@@ -2095,16 +2133,17 @@ def main():
         escribir(f"nota-{n['slug']}.html", pagina_nota(n, guias if es_guia(n) else notas, aportes.get(n['slug'])))
     escribir("herramientas.html", pagina_vencimientos(notas))
     with open(os.path.join(RAIZ, "paginas", "terminos.html"), encoding="utf-8") as f:
-        escribir("terminos.html", pagina("Términos y privacidad | Ramacontable", f.read()))
+        escribir("terminos.html", pagina("Términos y condiciones y política de privacidad | Ramacontable", f.read(), "",
+                 "Términos de uso, política de privacidad y tratamiento de datos de Ramacontable, la comunidad contable con novedades, guías y calculadoras.", "terminos.html"))
     with open(os.path.join(RAIZ, "paginas", "aguinaldo.html"), encoding="utf-8") as f:
         escribir("aguinaldo.html", pagina("Calculadora de aguinaldo diciembre 2026 (SAC): cálculo paso a paso | Ramacontable", f.read(), "",
                  "Calculá el aguinaldo de diciembre 2026: mensualizados y jornalizados, proporcional por días, descuentos y neto, con el cálculo paso a paso.",
                  "aguinaldo.html", herramienta_ld("Calculadora de aguinaldo (SAC)", "Calculá el aguinaldo con el cálculo paso a paso, descuentos y neto.", "aguinaldo.html"),
                  [("Calculadoras", "calculadoras.html"), ("Aguinaldo", "aguinaldo.html")]))
     with open(os.path.join(RAIZ, "paginas", "nota-dinamica.html"), encoding="utf-8") as f:
-        escribir("nota.html", pagina("Nota | Ramacontable", f.read()))
+        escribir("nota.html", pagina("Nota | Ramacontable", f.read(), "", "", "nota.html", NOI))
     with open(os.path.join(RAIZ, "paginas", "admin.html"), encoding="utf-8") as f:
-        escribir("admin.html", pagina("Administración | Ramacontable", f.read()))
+        escribir("admin.html", pagina("Administración | Ramacontable", f.read(), "", "", "admin.html", NOI))
     escribir("convenios.html", pagina_convenios(convenios, notas))
     if os.environ.get("RC_SIN_SERIES") != "1":
         bajar_series(os.path.join(SALIDA, "datos"))
