@@ -1,1432 +1,997 @@
-"""Punto de entrada: python -m fabrica.main generar | publicar --base-url URL | reporte"""
-import argparse
-import html
+"""Fábrica de notas de Ramacontable.
+
+Cada vuelta: lee fuentes oficiales y portales → agrupa por tema → decide qué publicar →
+redacta con Gemini → verifica que no haya datos inventados → publica (o deja para revisar) → avisa por mail.
+En modo "ensayo" no guarda nada: muestra en el resumen de la ejecución lo que hubiera publicado."""
+import glob
 import json
 import os
-import shutil
-import sys
+import re
+import unicodedata
+from datetime import timedelta
 
-from . import util
+from . import fuentes, gemini, mail, util
 
-SALIDA = util.RAIZ / "out"
-SITIO = SALIDA / "sitio"
+FUENTES_EXTRA = [{"nombre": "ARBA", "tipo": "oficial", "url": "https://web.arba.gov.ar/noticias"}, {"nombre": "Gobierno nacional (argentina.gob.ar)", "tipo": "oficial", "url": "https://www.argentina.gob.ar/noticias", "filtro": ["arca", "afip", "anses", "monotribut", "ganancias", "impuest", "iva", "salario", "jubil", "asignaci", "auh", "bcra", "banco central", "feriado", "decreto", "resolucion general", "aportes", "contribuciones", "trabajo", "empleo", "paritari", "convenio", "srt", "riesgos del trabajo", "aduana", "retencion", "percepcion"]}, {"nombre": "Tributum", "tipo": "portal", "url": "https://tributum.news/feed/"}, {"nombre": "Estudio Vilaplana", "tipo": "portal", "url": "https://www.estudiovilaplana.com.ar/feed/"}, {"nombre": "iProfesional Impuestos", "tipo": "apoyo", "url": "https://www.iprofesional.com/rss/impuestos.xml", "filtro": ["arca", "afip", "anses", "monotribut", "ganancias", "iva", "bienes personales", "ingresos brutos", "arba", "agip", "impuesto", "boletin oficial", "resolucion general", "decreto", "convenio", "paritaria", "escala", "salari", "sueldo", "aguinaldo", "indemniz", "aportes", "contribuciones", "seguridad social", "art ", "feriado", "vencimiento", "bcra", "comunicacion a", "reforma laboral"]}, {"nombre": "Calcular Sueldo", "tipo": "apoyo", "url": "https://calcularsueldo.com.ar/feed/", "filtro": ["arca", "afip", "anses", "monotribut", "ganancias", "iva", "bienes personales", "ingresos brutos", "arba", "agip", "impuesto", "boletin oficial", "resolucion general", "decreto", "convenio", "paritaria", "escala", "salari", "sueldo", "aguinaldo", "indemniz", "aportes", "contribuciones", "seguridad social", "art ", "feriado", "vencimiento", "bcra", "comunicacion a", "reforma laboral"]}, {"nombre": "Econoblog", "tipo": "apoyo", "url": "https://www.econoblog.com.ar/feed/", "filtro": ["arca", "afip", "anses", "monotribut", "ganancias", "iva", "bienes personales", "ingresos brutos", "arba", "agip", "impuesto", "boletin oficial", "resolucion general", "decreto", "convenio", "paritaria", "escala", "salari", "sueldo", "aguinaldo", "indemniz", "aportes", "contribuciones", "seguridad social", "art ", "feriado", "vencimiento", "bcra", "comunicacion a", "reforma laboral"]}]
 
-
-def _turno():
-    """1 = el video de siempre; 2 = el segundo video del día (turnos.json)."""
-    try:
-        return 2 if int(os.getenv("TURNO") or 1) == 2 else 1
-    except ValueError:
-        return 1
+CONFIABLE = "Ignacio Online"  # lo que publica Ignacio se toma como correcto (pedido de Ramiro); se vigila si después lo edita o borra
+# Blogs de confianza (pedido de Ramiro): con una sola nota de ellos alcanza para publicar; se vigila si la editan o la borran.
+# Los de menor confianza (tipo "apoyo") siguen necesitando dos blogs o la fuente oficial. Se puede cambiar con "fuentes_confiables" en config.json.
+CONFIABLES = ("Ignacio Online", "Contadores en Red", "Blog del Contador", "Tributum", "Estudio Vilaplana")
 
 
-def _turnos(cfg):
-    """Turnos activos: el 1 siempre; el 2 si turnos.json tiene segundo_turno en true."""
-    lista = [1]
-    if cfg.get("segundo_turno") and cfg.get("plan_semanal_2") and cfg.get("horarios_2"):
-        lista.append(2)
-    return lista
+def _prompt(nombre):
+    return (util.RAIZ / "prompts" / nombre).read_text(encoding="utf-8")
 
 
-def _horarios(cfg, turno):
-    return (cfg.get("horarios_2") if turno == 2 else cfg.get("horarios")) or {}
+def _slug(t):
+    t = unicodedata.normalize("NFD", str(t or "").lower())
+    t = "".join(c for c in t if unicodedata.category(c) != "Mn")
+    return re.sub(r"[^a-z0-9]+", "-", t).strip("-")[:80] or "nota"
 
 
-def _carpeta(fecha, turno):
-    return fecha if turno == 1 else f"{fecha}-t{turno}"
+def _slug_sin_anio_falso(slug, nota):
+    """El redactor a veces inventa un año viejo en la dirección (ej.: «...-octubre-2024» en una nota de 2026).
+    Si el año de la dirección no figura en el título ni en el «En corto», se saca (junto con el mes que lo acompaña)."""
+    texto = f"{nota.get('titulo', '')} {nota.get('encorto', '')} {nota.get('seo_titulo', '')}"
+    meses = "enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre"
+    for anio in set(re.findall(r"(?<![0-9])(20[0-9]{2})(?![0-9])", slug)):
+        if anio in texto or anio == str(util.ahora().year):
+            continue
+        actual = str(util.ahora().year)
+        if actual in texto and actual not in slug:  # el título habla de este año: se corrige el año y se conserva el mes
+            slug = re.sub(rf"(?<![0-9]){anio}(?![0-9])", actual, slug)
+            continue
+        slug = re.sub(rf"(-(?:{meses}))*-{anio}(?=-|$)", "", slug)
+        slug = re.sub(rf"^{anio}-", "", slug)
+    return slug.strip("-") or "nota"
 
 
-def _serie_del_dia(cfg, turno=None):
-    forzada = (os.getenv("SERIE") or "").strip().lower()
-    if forzada in cfg["series"]:
-        return forzada
-    dia = str(util.ahora().isoweekday())
-    turno = turno or _turno()
-    valor = (cfg.get("plan_semanal_2") or {}).get(dia) if turno == 2 else None
-    if not valor:
-        valor = cfg["plan_semanal"][dia]
-    return _resolver_plan(cfg, valor, dia, turno)
-
-
-# ---------------------------------------------------------------- franjas especiales de la grilla
-# En plan_semanal, además del nombre de una serie, puede ir:
-#   "a|b"           competencia: se alternan semana por semana y, al terminar la prueba, queda la que más puntúa
-#   "mejor:a|b"     cada semana sale la que viene puntuando más (según el último reporte)
-#   "capitulos"     series por capítulos (series/*.json); mientras no estén activas, va "capitulos_respaldo"
-RENDIMIENTO = "data/rendimiento_series.json"
-
-
-def puntaje_series():
-    """{clave: puntaje} del último reporte. Puntaje = (vistas + 15·(guardados+compartidos) + 10·comentarios) / videos."""
-    datos = util.leer_json(RENDIMIENTO, {}) or {}
-    salida = {}
-    for clave, a in (datos.get("series") or {}).items():
-        n = max(1, int(a.get("posts", 0)))
-        salida[clave] = (a.get("vistas", 0) + 15 * (a.get("guardados", 0) + a.get("compartidos", 0))
-                         + 10 * a.get("comentarios", 0)) / n
+def _bloques_ok(cuerpo):
+    salida = []
+    for b in cuerpo if isinstance(cuerpo, list) else []:
+        if isinstance(b, dict):
+            if b.get("h"):
+                salida.append({"h": str(b["h"])[:200]})
+            elif b.get("p"):
+                salida.append({"p": str(b["p"])[:3000]})
+            elif isinstance(b.get("tabla"), list) and b["tabla"]:
+                salida.append({"tabla": [[str(c)[:200] for c in fila][:8] for fila in b["tabla"][:40] if isinstance(fila, list)]})
     return salida
 
 
-def _semana():
-    return util.ahora().isocalendar()[1]
+def _clasificar(control, dudas=()):
+    """Separa los problemas del verificador en graves (pueden arruinar la nota) y menores."""
+    altas, bajas = [], []
+    for p in (control or {}).get("problemas") or []:
+        if isinstance(p, dict):
+            (bajas if str(p.get("gravedad", "")).lower() == "baja" else altas).append(
+                {"dato": str(p.get("dato") or "")[:220], "fuente": str(p.get("fuente") or "")[:220], "revisar": str(p.get("revisar") or "")[:220]})
+        elif str(p).strip():  # formato viejo (texto suelto): se trata como grave para no dejar pasar nada
+            altas.append({"dato": str(p)[:300], "fuente": "", "revisar": ""})
+    for d in dudas or []:
+        altas.append({"dato": f"Duda del redactor: {str(d)[:250]}", "fuente": "", "revisar": ""})
+    if (control or {}).get("agrega_ejemplos"):
+        bajas.append({"dato": "Agrega un ejemplo práctico que no está en las fuentes", "fuente": "", "revisar": ""})
+    return altas, bajas
 
 
-def _resolver_plan(cfg, valor, dia, turno):
-    valor = str(valor or "").strip()
-    series = cfg["series"]
-    if valor in series and valor != "capitulos":
-        return valor
-    if valor == "capitulos":
-        try:
-            from . import capitulos  # llega con las series por capítulos
-            clave = capitulos.serie_de_hoy(cfg)
-            if clave:
-                return clave
-        except ImportError:
-            pass
-        respaldo = cfg.get("capitulos_respaldo", "monotributo")
-        return respaldo if respaldo in series else cfg["plan_semanal"].get(dia)
-    mejor = valor.startswith("mejor:")
-    opciones = [x.strip() for x in valor.split(":", 1)[-1].split("|") if x.strip() in series]
-    if not opciones:
-        util.log(f"Grilla: «{valor}» no es una serie conocida; uso la del día por defecto.")
-        return next(iter(series))
-    if len(opciones) == 1:
-        return opciones[0]
-    puntos = puntaje_series()
-    if mejor:
-        con_datos = [o for o in opciones if o in puntos]
-        if len(con_datos) == len(opciones):
-            elegida = max(opciones, key=lambda o: puntos[o])
-            util.log(f"Grilla: sale la mejor de {opciones}: {elegida} ({int(puntos[elegida])} puntos)")
-            return elegida
-        return opciones[_semana() % len(opciones)]
-    # competencia: alternan durante la prueba y después queda la ganadora (se anota en estado.json)
-    llave = f"{turno}-{dia}"
-    estado = util.leer_json("data/estado.json", {}) or {}
-    ganadas = estado.get("competencias_resueltas") or {}
-    if ganadas.get(llave, {}).get("plan") == valor and ganadas[llave].get("ganadora") in series:
-        return ganadas[llave]["ganadora"]
-    prueba = (cfg.get("competencias") or {}).get(llave) or {}
-    hasta = prueba.get("hasta", "")
-    hoy = util.ahora().strftime("%Y-%m-%d")
-    if hasta and hoy > hasta and all(o in puntos for o in opciones):
-        ganadora = max(opciones, key=lambda o: puntos[o])
-        ganadas[llave] = {"plan": valor, "ganadora": ganadora, "fecha": hoy,
-                          "puntos": {o: int(puntos[o]) for o in opciones}}
-        estado["competencias_resueltas"] = ganadas
-        util.guardar_json("data/estado.json", estado)
-        util.log(f"Grilla: terminó la competencia {opciones}; queda {ganadora}.")
-        return ganadora
-    return opciones[_semana() % len(opciones)]
-
-
-def _series_con_carrusel(cfg):
-    """Series que en Instagram salen SIEMPRE también como carrusel (config: "carrusel_series")."""
-    return cfg.get("carrusel_series", ["monotributo"])
-
-
-def _temas():
-    return (util.leer_json("temas.json", {}) or {}).get("temas", [])
-
-
-def _tema_pedido(turno):
-    """Un tema puntual que pediste (temas.json) y todavía no salió. Va en lugar del tema del día."""
-    if (os.getenv("SERIE") or "").strip():
-        return None  # si elegiste una serie a mano, manda esa
-    hechos = set((util.leer_json("data/estado.json", {}) or {}).get("temas_hechos", []))
-    hoy = util.ahora().strftime("%Y-%m-%d")
-    for t in _temas():
-        if not t.get("id") or t["id"] in hechos or str(t.get("turno", 1)) != str(turno):
-            continue
-        if t.get("desde", "") > hoy or (t.get("hasta") and t["hasta"] < hoy):
-            continue
-        return t
-    return None
-
-
-def _tema_por_id(tema_id):
-    t = next((t for t in _temas() if tema_id and t.get("id") == tema_id), None)
-    if t or not tema_id:
-        return t
-    try:  # también puede ser un capítulo de una serie (series/*.json)
-        from . import capitulos
-        return capitulos.tema_por_id(tema_id)
-    except Exception:  # noqa
+def _motivo(altas):
+    """Texto claro para el administrador: cuántos datos chequear y qué mirar en cada uno."""
+    if not altas:
         return None
+    lineas = [f"🔴 {len(altas)} {'dato' if len(altas) == 1 else 'datos'} para chequear antes de publicar"]
+    for i, a in enumerate(altas, 1):
+        txt = f"{i}) {a['revisar'] or a['dato']}"
+        if a["revisar"] and a["dato"]:
+            txt += f" — La nota dice: {a['dato']}"
+        if a["fuente"]:
+            txt += f" — Las fuentes: {a['fuente']}"
+        lineas.append(txt)
+    return "\n".join(lineas)[:1500]
 
 
-def _serie_con_tema(serie, tema):
-    s = dict(serie)
-    s["prompt"] = (f'TEMA OBLIGATORIO DE HOY (lo pidió el dueño de la cuenta): {tema["titulo"]}.\n'
-                   + tema.get("prompt", "").strip() + "\n"
-                   "- Usá SOLO los datos del MATERIAL DE REFERENCIA, que están chequeados a mano. No agregues montos, "
-                   "fechas, porcentajes ni requisitos que no estén ahí.")
-    cierre = (tema.get("cierre") or {}).get("voz")
-    if cierre:  # el cierre lo pone la fábrica: que el guion no lo anticipe ni lo repita
-        s["prompt"] += ("\n- La última escena ya está escrita y la pone la fábrica: «" + cierre.strip() + "». Escribí el resto "
-                        "para que termine justo antes de eso: no anticipes ni repitas esa idea ni sus palabras en la "
-                        "escena anterior.")
-    if tema.get("palabras_max"):
-        s["palabras_max"] = tema["palabras_max"]
-    return s
+class Fabrica:
+    def __init__(self, db=None):
+        self.cfg = util.config()
+        self.activo = self.cfg.get("modo") == "activo"
+        # vuelta rápida (cada 30 min): solo fuentes oficiales y el sumario del Boletín de Tributum; nada de guías ni escalas
+        self.rapido = os.environ.get("RC_RAPIDO") == "1"
+        self.db = db
+        self.confiables = set(self.cfg.get("fuentes_confiables") or CONFIABLES)
+        self.publicadas, self.revision, self.descartes, self.esperando = [], [], [], []
+        self.convenios_act, self.convenios_rev = [], []
+        self.guias = []
+        self.guias_info = ""
+        self.vencimientos_info, self.vencimientos_cambio = [], False
+        self.observaciones, self.alertas, self.datos_obs = [], [], []
+        self.convenios = self.cargar_convenios()
 
+    # ---------- memoria ----------
+    def notas_recientes(self):
+        if not self.db:
+            return []
+        desde = (util.ahora() - timedelta(days=30)).date().isoformat()
+        return self.db.select("notas", {"select": "slug,titulo,tema,fecha,estado", "fecha": f"gte.{desde}",
+                                        "order": "fecha.desc", "limit": "200"})
 
-def _carrusel_tema(tema):
-    """Placas fijas del tema (escritas y chequeadas a mano). Se respetan los % tal cual."""
-    from . import escritor
-    placas = []
-    for x in tema.get("carrusel") or []:
-        titulo = " ".join(str(x.get("titulo") or "").split())
-        if titulo:
-            placas.append({"titulo": escritor._siglas(titulo, True),
-                           "cuerpo": escritor._siglas("\n".join(" ".join(ln.split()) for ln in
-                                                                str(x.get("cuerpo") or "").split("\n") if ln.strip())),
-                           "emoji": escritor._emoji(x.get("emoji"), "💡")})
-    return placas[:10] if len(placas) >= 3 else []
-
-
-_DIAS = {1: "lunes", 2: "martes", 3: "miércoles", 4: "jueves", 5: "viernes", 6: "sábado", 7: "domingo"}
-
-
-def _num(x, decimales):
-    t = f"{x:,.{decimales}f}"
-    return t.replace(",", "X").replace(".", ",").replace("X", ".")
-
-
-def _cotizacion(d):
-    """(precio, cierre anterior) de una cotización: Yahoo y, para monedas, AwesomeAPI de respaldo. None si no hay."""
-    if d.get("yahoo"):
+    def fuentes_conocidas(self):
+        if not self.db:
+            return set()
         try:
-            from urllib.parse import quote
-            r = util.pedir("GET", "https://query1.finance.yahoo.com/v8/finance/chart/" + quote(d["yahoo"], safe=""),
-                           intentos=2, timeout=30, params={"range": "1d", "interval": "5m"},
-                           headers={"User-Agent": "Mozilla/5.0"})
-            if r is not None and r.status_code == 200:
-                meta = r.json()["chart"]["result"][0]["meta"]
-                precio, previo = meta.get("regularMarketPrice"), meta.get("chartPreviousClose") or meta.get("previousClose")
-                if precio and previo:
-                    return float(precio), float(previo)
-        except Exception as e:  # noqa
-            util.log("No pude leer", d["yahoo"], "de Yahoo:", util.ocultar(e))
-    if d.get("awesome"):
-        try:
-            r = util.pedir("GET", f'https://economia.awesomeapi.com.br/json/last/{d["awesome"]}', intentos=2, timeout=30)
-            if r is not None and r.status_code == 200:
-                x = next(iter(r.json().values()))
-                precio = float(x["bid"])
-                return precio, precio - float(x["varBid"])
-        except Exception as e:  # noqa
-            util.log("No pude leer", d["awesome"], "de AwesomeAPI:", util.ocultar(e))
-    return None
-
-
-def _datos_vivos(tema):
-    """Cotizaciones del momento en que se arma el video, para contar «cómo estamos ahora» (vacío si no hay)."""
-    lineas, leidas = [], {}
-    signo = lambda v: ("+" if v >= 0 else "−") + _num(abs(v), 1) + "%"  # noqa
-    for d in tema.get("datos_vivos") or []:
-        res = _cotizacion(d)
-        if not res:
-            continue
-        leidas[d.get("yahoo") or d.get("awesome")] = res
-        precio, previo = res
-        if d.get("referencia"):  # comparar contra un valor fijo (por ejemplo, el cierre antes de la elección)
-            previo = float(d["referencia"])
-        dec, unidad, contra = int(d.get("decimales", 2)), d.get("unidad", ""), d.get("contra", "el cierre anterior")
-        if d.get("moneda"):  # una moneda contra el dólar: se cuenta cuánto perdió o ganó la moneda, no el dólar
-            var = (previo / precio - 1) * 100
-            lineas.append(f'- {d["nombre"]}: {"perdió" if var < 0 else "ganó"} {_num(abs(var), 1)}% de su valor contra '
-                          f'el dólar desde {contra}. Hoy 1 dólar cuesta {_num(precio, dec)} {unidad} (antes, '
-                          f'{_num(previo, dec)}).')
-            for pr in d.get("precios") or []:  # ejemplos de gasto pasados a dólares, hechos acá (no por la IA)
-                monto = float(pr["monto"])
-                lineas.append(f'  · {pr["que"]}: {_num(monto, 0)} {unidad} = {_num(monto / precio, 0)} dólares hoy; '
-                              f'antes eran {_num(monto / previo, 0)} dólares.')
-            continue
-        var = (precio / previo - 1) * 100
-        linea = (f'- {d["nombre"]}: {_num(precio, dec)} {unidad} ({signo(var)} contra {contra}, que fue de '
-                 f'{_num(previo, dec)} {unidad})')
-        fx = leidas.get(d.get("en_dolares_con"))
-        if fx:  # cuánto cayó medido en dólares (lo que ve un inversor de afuera)
-            linea += f'; medido en dólares: {signo(((precio / previo) * (fx[1] / fx[0]) - 1) * 100)}'
-        lineas.append(linea)
-    if not lineas:
-        return ""
-    t = util.ahora()
-    return (f"DATOS ACTUALIZADOS del {_DIAS[t.isoweekday()]} {t:%d/%m} a las {t:%H:%M} (hora de Argentina). Son los más "
-            "nuevos: usalos para contar cómo está todo ahora, diciendo el día y el momento (por ejemplo «el lunes a la "
-            "tarde»), y lo de la apertura solo como contexto.\n" + "\n".join(lineas))
-
-
-def _aplicar_cierre(contenido, tema):
-    """Si el tema trae un cierre fijo (por ejemplo una pregunta para que la gente comente), va en la última escena."""
-    cierre = (tema or {}).get("cierre") or {}
-    if not cierre.get("voz") or not contenido.get("escenas"):
-        return contenido
-    from . import escritor
-    escenas = [dict(e) for e in contenido["escenas"]]
-    escenas[-1]["texto_voz"] = escritor._limpiar(cierre["voz"], voz=True)
-    escenas[-1]["texto_pantalla"] = escritor._siglas(escritor._limpiar(cierre.get("pantalla") or cierre["voz"]))
-    if cierre.get("emoji"):
-        escenas[-1]["emoji"] = cierre["emoji"]
-    return dict(contenido, escenas=escenas,
-                palabras=sum(len(e["texto_voz"].split()) for e in escenas))
-
-
-def _fuente_tema(tema):
-    datos = tema["datos"]
-    vivo = _datos_vivos(tema)
-    if vivo:
-        util.log("Datos del momento:", vivo.split("\n", 1)[-1])
-        datos = vivo + "\n\n" + datos
-    elif tema.get("datos_vivos"):
-        util.avisar("No pude leer las cotizaciones del momento", "El guion usa solo los datos cargados en temas.json.")
-    return {"id": "tema:" + tema["id"], "tipo": "noticia", "canal": tema.get("fuente", "normativa oficial"),
-            "titulo": tema["titulo"], "publicado": tema.get("fecha_datos", ""), "transcripcion": datos}
-
-
-def _marcar_tema(p, resultados):
-    """El tema pedido ya salió en alguna red: no se repite."""
-    if not p.get("tema_id") or not any(r.get("ok") for r in resultados.values()):
-        return
-    estado = util.leer_json("data/estado.json", {}) or {}
-    hechos = estado.get("temas_hechos", [])
-    if p["tema_id"] not in hechos:
-        estado["temas_hechos"] = hechos + [p["tema_id"]]
-        util.guardar_json("data/estado.json", estado)
-
-
-def _base_paginas():
-    repo = os.getenv("GITHUB_REPOSITORY", "")
-    if "/" not in repo:
-        return None
-    duenio, nombre = repo.split("/", 1)
-    return f"https://{duenio.lower()}.github.io/{nombre}/"
-
-
-def _dias_pagina():
-    """Cuántos días quedan los videos en la página (config.json → dias_en_pagina)."""
-    try:
-        return max(1, int(util.config().get("dias_en_pagina", 7)))
-    except (TypeError, ValueError):
-        return 7
-
-
-def _traer_anteriores(actual):
-    """La página de GitHub se reemplaza entera en cada corrida. Traigo los videos de los últimos días (dias_en_pagina)
-    para que los links de los mails (y el video para TikTok) sigan andando."""
-    base = _base_paginas()
-    desde = (util.ahora() - util.timedelta(days=_dias_pagina())).strftime("%Y-%m-%d")
-    quedan = [x for x in util.leer_json("data/sitio.json", []) or []
-              if x.get("fecha", "") >= desde and x.get("carpeta") != actual]
-    if not base:
-        return quedan
-    for x in quedan:
-        for rel in x.get("archivos", []):
-            try:
-                r = util.pedir("GET", base + rel, intentos=2, timeout=120)
-                if r is not None and r.status_code == 200:
-                    destino = SITIO / rel
-                    destino.parent.mkdir(parents=True, exist_ok=True)
-                    destino.write_bytes(r.content)
-            except Exception as e:  # noqa
-                util.log("No pude traer", rel, util.ocultar(e))
-    return quedan
-
-
-def _serie(cfg, clave_serie):
-    serie = dict(cfg["series"][clave_serie])
-    propio = util.RAIZ / "prompts" / "series" / f"{clave_serie}.md"
-    if propio.exists():  # instrucciones de la serie mejoradas, sin tocar config.json
-        serie["prompt"] = propio.read_text(encoding="utf-8").strip()
-    extra = (cfg.get("_prompts_extra") or {}).get(clave_serie) or []
-    if extra:  # ajustes que salieron de las sugerencias de mejora
-        serie["prompt"] += "\nAjustes según lo que viene funcionando:\n" + "\n".join(f"- {x}" for x in extra)
-    return serie
-
-
-# Estilo de los carteles si la IA no eligió uno: historias → revista, plata y noticias → oscuro.
-ESTILO_POR_SERIE = {"historias": "revista", "inventos": "revista", "laplata": "revista", "argentino_que": "revista",
-                    "paso_de_verdad": "revista", "mito": "revista", "libro": "revista", "autor": "revista"}
-
-
-def estilo_visual(cfg, clave_serie, contenido):
-    """Estilo de los carteles animados del video. Impuestos siempre en cuaderno; el resto lo elige la IA
-    según el tema (revista, oscuro o cuaderno) y, si no eligió, va por serie."""
-    if clave_serie in cfg.get("graficos_cuaderno", ["monotributo"]):
-        return "cuaderno"
-    elegido = (contenido or {}).get("estilo_visual")
-    if elegido in ("revista", "oscuro", "cuaderno"):
-        return elegido
-    return {**ESTILO_POR_SERIE, **cfg.get("estilo_por_serie", {})}.get(clave_serie, "oscuro")
-
-
-def _producir(cfg, clave_serie, serie, contenido, fuentes, fuentes_detalle, firma_base, fecha, turno, nombre_carpeta,
-              evitar=(), version=1, nota_url=""):
-    """Arma placas, video y portada en out/sitio/<nombre_carpeta> y devuelve la publicación."""
-    from . import carrusel, montaje, portal
-    carpeta = SITIO / nombre_carpeta
-    if carpeta.exists():
-        shutil.rmtree(carpeta)
-    carpeta.mkdir(parents=True)
-    placas = carrusel.generar(contenido, serie["nombre"], cfg["usuario"], carpeta)
-    estilo = estilo_visual(cfg, clave_serie, contenido)
-    montaje.generar(contenido, serie["nombre"], cfg["usuario"], carpeta, evitar=evitar, estilo_graficos=estilo)
-    shutil.rmtree(carpeta / "_trabajo", ignore_errors=True)
-    (carpeta / "spec.json").unlink(missing_ok=True)
-    meta_video = util.leer_json(str((carpeta / "meta.json").relative_to(util.RAIZ)), {}) or {}
-    if meta_video.get("clips_ids"):
-        montaje.anotar_clips(meta_video["clips_ids"])
-    try:
-        from . import faltantes
-        faltantes.anotar({"fecha": fecha, "turno": turno, "serie": clave_serie, "titulo": contenido.get("titulo")},
-                         meta_video, contenido)
-    except Exception as ex:  # noqa
-        util.log("No pude anotar lo que faltó:", util.ocultar(ex))
-    (carpeta / "meta.json").unlink(missing_ok=True)
-    (SITIO / "index.html").write_text("<meta charset='utf-8'><p>Fábrica de Shorts</p>", encoding="utf-8")
-    firma = firma_base
-    if meta_video.get("clips_stock"):
-        firma = firma + f'\nVideos de stock: {meta_video.get("banco")}.'
-    tags = " ".join(contenido["hashtags"])
-    descripcion = contenido["descripcion"]
-    desc_yt = descripcion
-    if carrusel.es_contable(contenido, serie["nombre"]):
-        # Videos contables: la línea del blog va siempre primero (por código, no depende de la IA)
-        descripcion = desc_yt = portal.con_linea_blog(descripcion)
-        if nota_url:  # en YouTube el link se puede tocar: va directo a la nota
-            desc_yt = f'{portal.LINEA_BLOG}\nNota completa: {portal.enlace(nota_url, "youtube")}\n\n' + \
-                      descripcion.replace(portal.LINEA_BLOG, "").strip()
-    return {
-        "fecha": fecha,
-        "serie": clave_serie,
-        "serie_nombre": serie["nombre"],
-        "titulo": contenido["titulo"],
-        "caption": f'{contenido["titulo"]}\n\n{descripcion}\n\n{firma}\n\n{tags}'.strip(),
-        "descripcion_youtube": f'{desc_yt}\n\n{firma}\n\n{tags} #shorts'.strip(),
-        "tags": [t.lstrip("#") for t in contenido["hashtags"]],
-        "guion": " ".join(e["texto_voz"] for e in contenido["escenas"]),
-        "fuentes": fuentes,
-        "fuentes_detalle": fuentes_detalle,
-        "archivos": {"video": f"{nombre_carpeta}/video.mp4", "portada": f"{nombre_carpeta}/thumb.jpg",
-                     "placas": [f"{nombre_carpeta}/{x.name}" for x in placas],
-                     **({"video_ig": f"{nombre_carpeta}/video_ig.mp4"} if (carpeta / "video_ig.mp4").exists() else {})},
-        "contenido": contenido,
-        "video": meta_video,
-        "turno": turno,
-        "carpeta": nombre_carpeta,
-        "base": _carpeta(fecha, turno),
-        "firma_base": firma_base,
-        "version": version,
-        "nota_portal": nota_url or "",
-    }
-
-
-def _anotar_sitio(anteriores, p):
-    a = p["archivos"]
-    util.guardar_json("data/sitio.json", anteriores + [
-        {"fecha": p["fecha"], "carpeta": p["carpeta"], "archivos": [a["video"], a["portada"]] + a["placas"] + ([a["video_ig"]] if a.get("video_ig") else [])}])
-
-
-def generar(simulado=False):
-    cfg = util.config()
-    os.environ.setdefault("TTS_VOICE", cfg.get("voz", "es-AR-TomasNeural"))
-    os.environ.setdefault("TTS_RATE", str(cfg.get("voz_velocidad", "+15%")))
-    os.environ.setdefault("TTS_MAX_PAUSA", str(cfg.get("voz_pausa_maxima", 0.28)))
-    from . import escritor, investigar  # importa después de fijar la voz
-
-    turno = _turno()
-    if not simulado:
-        _sumar_intento(turno)
-    inicio = util.datetime.now(util.ZoneInfo("UTC")).isoformat()
-    clave_serie = _serie_del_dia(cfg, turno)
-    tema = None if simulado else _tema_pedido(turno)
-    if not tema and not simulado and clave_serie == "capitulos":
-        from . import capitulos
-        tema = capitulos.tema_de_hoy(cfg)
-    if tema:
-        clave_serie = tema.get("serie") if tema.get("serie") in cfg["series"] else clave_serie
-        serie = _serie_con_tema(_serie(cfg, clave_serie), tema)
-    else:
-        serie = _serie(cfg, clave_serie)
-        from . import mejoras
-        serie["prompt"] += mejoras.bloque_aprendizajes()
-    fecha = util.ahora().strftime("%Y-%m-%d")
-    util.log("Serie de hoy:", serie["nombre"], f"(turno {turno})")
-
-    historial = util.leer_json("data/historial.json", [])
-    usados = {f for h in historial for f in h.get("fuentes", [])}
-    titulos = [h["titulo"] for h in reversed(historial)]
-
-    fuentes = []
-    clave_yt = util.secreto("YT_API_KEY")
-    if tema:
-        fuentes = [_fuente_tema(tema)]
-        util.log("Tema pedido:", tema["titulo"], "(en lugar del tema del día)")
-    elif serie.get("modo") == "contable" and not simulado:
-        from . import contable, portal
-        referentes = contable.buscar(cfg.get("referentes_contables", {}), clave_yt, usados,
-                                     cfg.get("fuentes_por_video", 2))
-        util.log("Referentes:", [f'{f["canal"]}: {f["titulo"][:90]} ({f.get("tipo")}, {f.get("score")})'
-                                 for f in referentes] or "ninguno")
-        nota, ref = None, None
-        if cfg.get("portal_primero", True):  # una nota ya verificada del portal, si es atractiva
-            datos_portal = portal.traer(cfg)
-            minimo = float(cfg.get("portal_puntaje_minimo", 7))
-            if minimo > 0:
-                nota, ref = portal.elegir(datos_portal, usados, referentes, cfg.get("portal_dias", 7), minimo)
-            else:
-                nota = portal.nota_para_video(datos_portal, usados, cfg.get("portal_dias", 7))
-        if nota:
-            fuentes = [nota] + ([ref] if ref else [])
-            util.log("Tema del portal:", nota["titulo"], nota["score"], nota["url"])
-        else:
-            fuentes = referentes
-            util.log("Sin nota del portal que valga un video: sigo con los referentes")
-    elif clave_yt and not simulado:
-        try:
-            if serie.get("modo") == "virales":
-                lista = serie["busquedas"]
-                semana = util.ahora().isocalendar()[1]
-                rotadas = [lista[(semana * 2 + k) % len(lista)] for k in range(len(lista))]
-                fuentes = investigar.virales_mundo(rotadas, clave_yt, usados, cfg.get("fuentes_por_video", 2))
-            else:
-                fuentes = investigar.fuera_de_serie(serie.get("canales", []), clave_yt, usados,
-                                                    cfg.get("fuentes_por_video", 2))
-            for f in fuentes:
-                f["transcripcion"] = investigar.transcripcion(f["id"])
-            util.log("Fuentes:", [f'{f["canal"]}: {f["titulo"]} (x{f["score"]})' for f in fuentes])
-        except Exception as e:  # noqa
-            util.log("La investigación falló, sigo sin fuentes:", e)
-    else:
-        util.log("Sin YT_API_KEY: la IA elige el tema dentro de la serie")
-
-    guardado = None
-    if tema and tema.get("capitulo"):  # capítulo de serie: se usa el guion revisado 2 días antes, tal cual
-        from . import capitulos
-        guardado = capitulos.contenido_guardado(tema["id"])
-    if guardado:
-        contenido = guardado
-        util.log("Uso el guion revisado del capítulo:", tema["id"])
-    elif simulado:
-        contenido = escritor.validar(json.loads((util.RAIZ / "data" / "ejemplo_contenido.json").read_text(encoding="utf-8")))
-    else:
-        try:
-            contenido = escritor.escribir(serie, fuentes, titulos)
-        except Exception as e:  # noqa  (un error suelto de Gemini no tiene que tirar el video del día)
-            util.avisar("Falló el guion, pruebo de nuevo", util.ocultar(f"{type(e).__name__}: {e}"))
-            contenido = escritor.escribir(serie, fuentes, titulos)
-    nota_repetido = ""
-    if not simulado and not tema:  # los temas que pediste vos no se controlan
-        from . import repetidos
-
-        def _medir(entradas):
-            return _rendimiento(cfg, clave_yt, entradas=entradas)
-
-        def _reescribir(evitar):
-            otra = dict(serie)
-            otra["prompt"] = (serie["prompt"] + "\n\nIMPORTANTE: el tema que salió primero repite una idea ya publicada. "
-                              "Elegí OTRA idea central, bien distinta de estas (ni variantes): "
-                              + "; ".join(evitar[:10]) + ".")
-            return escritor.escribir(otra, [], list(evitar) + titulos)
-
-        nuevo, nota_repetido = repetidos.controlar(contenido, historial, _medir, _reescribir)
-        if nuevo is not contenido:
-            fuentes = []  # el tema nuevo no sale de las fuentes del día: quedan libres para otro video
-            contenido = nuevo
-    if tema and _carrusel_tema(tema):
-        contenido["carrusel"] = _carrusel_tema(tema)
-    if tema:
-        contenido = _aplicar_cierre(contenido, tema)
-    if tema and tema.get("capitulo"):
-        from . import capitulos
-        if not contenido.get("animacion"):
-            contenido = capitulos.animar(contenido, tema)
-        contenido = capitulos.con_destino(contenido, tema)
-
-    nombre_carpeta = _carpeta(fecha, turno)
-    if SALIDA.exists():
-        shutil.rmtree(SALIDA)
-    SITIO.mkdir(parents=True)
-    util.guardar_json("out/inicio.json", {"inicio": inicio})
-    anteriores = [] if simulado else _traer_anteriores(nombre_carpeta)
-    firma = cfg.get("firma", "")
-    if serie.get("modo") == "virales" and fuentes:
-        firma = ("Inspirado en videos virales de " +
-                 ", ".join(f'{f["canal"]} ({f["pais"]})' for f in fuentes) + ".\n" + firma)
-    detalle = [{"canal": f["canal"], "titulo": f["titulo"], "score": f.get("score") or f.get("pais", "")}
-               for f in fuentes]
-    nota_url = next((f["url"] for f in fuentes if f.get("portal")), "")
-    publicacion = _producir(cfg, clave_serie, serie, contenido, [f["id"] for f in fuentes], detalle, firma,
-                            fecha, turno, nombre_carpeta, nota_url=nota_url)
-    if tema:
-        publicacion["tema_id"] = tema["id"]
-    if nota_repetido:
-        publicacion["control_repetidos"] = nota_repetido
-    util.guardar_json("out/publicacion.json", publicacion)
-    if not simulado:
-        _anotar_sitio(anteriores, publicacion)
-    util.log("Listo:", contenido["titulo"])
-
-
-def _guion_capitulo(cfg, tema, cambios=""):
-    """Escribe (o corrige) el guion de un capítulo, lo anima y lo guarda en data/guiones/."""
-    from . import capitulos, escritor
-    serie = _serie_con_tema(_serie(cfg, "capitulos"), tema)
-    previo = capitulos.contenido_guardado(tema["id"])
-    if cambios and previo:
-        contenido = escritor.aplicar_cambios(serie, previo, cambios)
-    else:
-        contenido = escritor.escribir(serie, [_fuente_tema(tema)], [])
-    contenido = _aplicar_cierre(contenido, tema)
-    contenido = capitulos.animar(dict(contenido, animacion=None), tema)
-    capitulos.guardar_guion(tema, contenido, "corregido" if cambios else "para revisar")
-    return contenido
-
-
-def preparar_capitulo():
-    """Lunes: arma el guion del capítulo del miércoles y te lo manda con asunto URGENTE para revisarlo con tiempo."""
-    from . import capitulos
-    cfg = util.config()
-    tema = capitulos.tema_de_hoy(cfg)
-    if not tema:
-        util.log("No hay capítulos pendientes.")
-        return
-    contenido = capitulos.contenido_guardado(tema["id"])
-    if contenido:
-        util.log("El capítulo ya tiene guion guardado: te lo mando para revisar.")
-    else:
-        contenido = _guion_capitulo(cfg, tema)
-    capitulos.mail_revision(tema, contenido)
-
-
-def corregir_capitulo():
-    """Aplica los cambios que escribiste (workflow «Corregir guion») al guion del próximo capítulo."""
-    from . import capitulos
-    cfg = util.config()
-    cambios = (os.getenv("CAMBIOS") or "").strip()
-    tema = capitulos.tema_de_hoy(cfg)
-    if not tema or not cambios:
-        util.log("No hay capítulo pendiente o no escribiste cambios.")
-        return
-    contenido = _guion_capitulo(cfg, tema, cambios)
-    capitulos.mail_revision(tema, contenido, " (corregido)")
-
-
-def rehacer():
-    """Rehace el video con los cambios que pediste (el pedido lo dejó «esperar» en out/pedido.json)."""
-    from . import escritor
-    cfg = util.config()
-    os.environ.setdefault("TTS_VOICE", cfg.get("voz", "es-AR-TomasNeural"))
-    os.environ.setdefault("TTS_RATE", str(cfg.get("voz_velocidad", "+15%")))
-    p = util.leer_json("out/publicacion.json")
-    pedido = util.leer_json("out/pedido.json", {}) or {}
-    cambios = (pedido.get("cambios") or "").strip()
-    serie = _serie(cfg, p["serie"])
-    tema = _tema_por_id(p.get("tema_id"))
-    if tema:
-        serie = _serie_con_tema(serie, tema)
-    version = int(p.get("version", 1)) + 1
-    util.log(f"Rehago el video (versión {version}) con tus cambios:", cambios)
-    try:
-        pedido_ia = cambios
-        vivo = _datos_vivos(tema) if tema else ""
-        if cambios and vivo:  # al rehacerlo, los números del mercado se actualizan a la hora del cambio
-            pedido_ia += "\n\nAdemás, si el guion da números del mercado, actualizalos con estos:\n" + vivo
-        contenido = escritor.aplicar_cambios(serie, p["contenido"], pedido_ia) if cambios else p["contenido"]
-    except Exception as e:  # noqa
-        util.avisar("No pude aplicar los cambios al guion", f"Sigo con el guion anterior. Motivo: {util.ocultar(e)}")
-        contenido = p["contenido"]
-    if tema and _carrusel_tema(tema) and "carrusel" not in cambios.lower() and "placa" not in cambios.lower():
-        contenido = dict(contenido, carrusel=_carrusel_tema(tema))  # las placas fijas no se tocan
-    if tema and not any(x in cambios.lower() for x in ("cierre", "final", "pregunta", "termin")):
-        contenido = _aplicar_cierre(contenido, tema)  # el cierre fijo se mantiene salvo que pidas cambiarlo
-    if tema and tema.get("capitulo"):
-        from . import capitulos
-        contenido = capitulos.animar(contenido, tema)
-    otros_clips = any(x in cambios.lower() for x in ("clip", "imagen", "imágen", "fondo", "toma", "visual", "video de fondo"))
-    evitar = set((p.get("video") or {}).get("clips_ids") or []) if otros_clips else set()
-    nombre = f'{p.get("base") or p["carpeta"]}-v{version}'
-    try:
-        nueva = _producir(cfg, p["serie"], serie, contenido, p.get("fuentes", []), p.get("fuentes_detalle", []),
-                          p.get("firma_base", cfg.get("firma", "")), p["fecha"], p.get("turno", 1), nombre,
-                          evitar=evitar, version=version, nota_url=p.get("nota_portal", ""))
-    except Exception as e:  # noqa
-        # si algo falla, no se pierde el día: sale la versión anterior
-        util.avisar("No pude rehacer el video", f"Sale la versión anterior. Motivo: {util.ocultar(e)}")
-        return
-    if p.get("tema_id"):
-        nueva["tema_id"] = p["tema_id"]
-    nueva["cambios_pedidos"] = (p.get("cambios_pedidos") or []) + [cambios]
-    nueva["pedido_creado"] = pedido.get("creado", "")
-    util.guardar_json("out/publicacion.json", nueva)
-    anteriores = [x for x in (util.leer_json("data/sitio.json", []) or []) if x.get("carpeta") != nombre]
-    _anotar_sitio(anteriores, nueva)
-    util.log("Versión nueva lista:", nueva["titulo"])
-
-
-def publicar(base_url):
-    from . import publicar as pub
-    cfg = util.config()
-    p = util.leer_json("out/publicacion.json")
-    base = base_url.rstrip("/") + "/"
-    decision = (util.leer_json("out/decision.json", {}) or {}).get("decision", "publicar")
-    if decision == "cancelar":
-        historial = util.leer_json("data/historial.json", []) or []
-        historial.append({"fecha": p["fecha"], "turno": p.get("turno", 1), "hora": util.ahora().strftime("%H:%M"),
-                          "serie": p["serie"], "titulo": p["titulo"], "fuentes": p["fuentes"], "resultados": {},
-                          "cancelado": True})
-        util.guardar_json("data/historial.json", historial[-400:])
-        util.avisar("No se publicó", "Pediste que este video no salga hoy.")
-        try:
-            pub.mail(f'No se publicó (lo pediste): {p["titulo"]}',
-                     f'<p>Como pediste, <b>{html.escape(p["titulo"])}</b> no se publicó. Si lo querés subir a mano, '
-                     f'acá está el <a href="{base}{p["archivos"]["video"]}">video</a> (el link dura {_dias_pagina()} días).</p>')
-        except Exception as ex:  # noqa
-            util.log("No pude mandar el mail:", ex)
-        return
-    url = lambda rel: base + rel  # noqa
-    video_local = SITIO / p["archivos"]["video"]
-    hoy_carrusel = util.ahora().isoweekday() in cfg.get("carrusel_dias", []) and p.get("turno", 1) == 1
-    if p.get("serie") in _series_con_carrusel(cfg) and p["archivos"].get("placas"):
-        hoy_carrusel = True  # el contenido contable va siempre también como carrusel (queda para el perfil del estudio)
-    tema = _tema_por_id(p.get("tema_id"))
-    if tema and tema.get("carrusel_ig") and p["archivos"].get("placas"):
-        hoy_carrusel = True  # los temas que pediste van también como carrusel
-    quiere = cfg.get("publicar", {})
-    resultados = {}
-
-    def intentar(nombre, fn):
-        try:
-            resultados[nombre] = {"ok": True, "id": fn()}
-        except Exception as e:  # noqa
-            resultados[nombre] = {"ok": False, "error": str(e)[:300]}
-        util.log(nombre, resultados[nombre])
-
-    if quiere.get("instagram_reel"):
-        intentar("instagram_reel", lambda: pub.instagram_reel(url(p["archivos"].get("video_ig") or p["archivos"]["video"]),
-                                                              url(p["archivos"]["portada"]), p["caption"]))
-    if quiere.get("instagram_carrusel") and hoy_carrusel:
-        intentar("instagram_carrusel", lambda: pub.instagram_carrusel([url(x) for x in p["archivos"]["placas"]],
-                                                                      p["caption"]))
-    if quiere.get("youtube"):
-        intentar("youtube", lambda: pub.youtube(video_local, p["titulo"], p["descripcion_youtube"], p["tags"],
-                                                cfg.get("youtube_privacidad", "public")))
-    if quiere.get("tiktok"):
-        intentar("tiktok", lambda: pub.tiktok(video_local, p["caption"], cfg.get("tiktok_privacidad", "SELF_ONLY")))
-    if quiere.get("facebook"):
-        intentar("facebook", lambda: pub.facebook_reel(video_local, p["caption"], p["titulo"]))
-
-    historial = util.leer_json("data/historial.json", [])
-    historial.append({"fecha": p["fecha"], "turno": p.get("turno", 1), "hora": util.ahora().strftime("%H:%M"),
-                      "serie": p["serie"], "titulo": p["titulo"], "fuentes": p["fuentes"], "resultados": resultados,
-                      "guion": p.get("guion", "")[:400], "tema_id": p.get("tema_id", "")})
-    util.guardar_json("data/historial.json", historial[-400:])
-    _marcar_tema(p, resultados)
-    _registro(p, resultados, base)
-    _mail_diario(p, resultados, base)
-    resumen(base_url, resultados)
-
-    if resultados and not any(r["ok"] for r in resultados.values()):
-        util.log("No se pudo publicar en ninguna red")
-        sys.exit(1)
-
-
-def resumen(base_url, res=None):
-    """Escribe el resumen visible en la pestaña Actions de GitHub (con las placas a la vista)."""
-    destino = os.getenv("GITHUB_STEP_SUMMARY")
-    p = util.leer_json("out/publicacion.json")
-    if not (destino and p):
-        return
-    base = base_url.rstrip("/") + "/"
-    md = [f'## {p["serie_nombre"]}: {p["titulo"]}', ""]
-    for red, r in (res or {}).items():
-        md.append(f'- **{red}**: ' + ("✅ publicado" if r["ok"] else "❌ " + r["error"]))
-    v = p.get("video") or {}
-    if v:
-        md += [f'Voz: {v.get("voz", "?")} · {v.get("duracion", "?")} s · fondos: {v.get("clips_stock", 0)} de '
-               f'{v.get("clips", 0)} clips de {v.get("banco") or "stock"}, {v.get("clips_propios", 0)} propios, '
-               f'{v.get("postales", 0)} postales de Argentina · música: {v.get("musica") or "no"}', ""]
-    md += ["", f'[▶️ Ver el video]({base}{p["archivos"]["video"]}) · [Portada]({base}{p["archivos"]["portada"]})', ""]
-    md += [" ".join(f'<img src="{base}{x}" width="180">' for x in p["archivos"]["placas"]), ""]
-    md += ["**Texto para publicar:**", "", "```", p["caption"], "```", "", "**Guion:** " + p["guion"]]
-    with open(destino, "a", encoding="utf-8") as f:
-        f.write("\n".join(md) + "\n")
-
-
-def _registro(p, res, base):
-    lineas = [f'# {p["fecha"]} · {p["serie_nombre"]}', "", f'**{p["titulo"]}**', ""]
-    for red, r in res.items():
-        lineas.append(f'- {red}: ' + ("publicado (" + str(r["id"]) + ")" if r["ok"] else "ERROR: " + r["error"]))
-    a = p.get("archivos") or {}
-    if base and a.get("video"):
-        links = [f'[Video]({base}{a["video"]})']
-        if a.get("portada"):
-            links.append(f'[Portada]({base}{a["portada"]})')
-        if a.get("placas"):
-            links.append(f'[Carrusel]({base}{a["placas"][0]})')
-        lineas += ["", " · ".join(links) + f" (para bajarlos: duran {_dias_pagina()} días)"]
-    yt = res.get("youtube") or {}
-    if yt.get("ok") and yt.get("id"):
-        lineas += ["", f'Ver en YouTube: https://youtube.com/shorts/{yt["id"]}']
-    lineas += ["", "Basado en: " + ("; ".join(f'{f["canal"]} - {f["titulo"]} (x{f["score"]})'
-                                              for f in p["fuentes_detalle"]) or "tema propio"),
-               "", "## Texto", "", p["caption"], "", "## Guion", "", p["guion"]]
-    ruta = util.RAIZ / "publicaciones" / f'{p.get("base") or p.get("carpeta") or p["fecha"]}.md'
-    ruta.parent.mkdir(exist_ok=True)
-    ruta.write_text("\n".join(lineas) + "\n", encoding="utf-8")
-
-
-def _faltas_mail(p):
-    try:
-        from . import faltantes
-        return faltantes.bloque_mail(p)
-    except Exception as ex:  # noqa
-        util.log("No pude resumir lo que faltó:", util.ocultar(ex))
-        return ""
-
-
-def _mail_diario(p, res, base):
-    from . import publicar as pub
-    e = html.escape
-    filas = "".join(
-        f'<li><b>{e(red)}</b>: {"✅ publicado" if r["ok"] else "❌ " + e(r["error"])}</li>' for red, r in res.items())
-    estado = util.leer_json("data/estado.json", {})
-    aviso = f'<p style="color:#b00">⚠️ {e(estado["ig_aviso"])}</p>' if estado.get("ig_aviso") else ""
-    if res.get("instagram_reel") and not res["instagram_reel"]["ok"]:
-        aviso += ('<p style="color:#b00">⚠️ <b>No salió en Instagram.</b> Bajá el video del link de abajo y subilo '
-                  'a mano como Reel, con la portada y el texto de este mail.</p>')
-    cuerpo = (f'<h2>{e(p["serie_nombre"])}: {e(p["titulo"])}</h2><ul>{filas}</ul>{aviso}'
-              f'<p><a href="{base}{p["archivos"]["video"]}">Video</a> · '
-              f'<a href="{base}{p["archivos"]["portada"]}">Portada</a> · '
-              + (f'<a href="{base}{p["archivos"]["placas"][0]}">Carrusel</a>' if p["archivos"].get("placas") else "")
-              + f' (los links duran {_dias_pagina()} días)</p>'
-              f'<p><b>Texto:</b><br>{e(p["caption"]).replace(chr(10), "<br>")}</p>'
-              f'<p><b>Para TikTok:</b> bajá el video y, antes de publicar, tocá <b>Más opciones</b> y activá '
-              f'<b>«Contenido generado por IA»</b> (la voz es de IA).</p>'
-              + (f'<p><b>Temas repetidos:</b> {e(p["control_repetidos"])}</p>' if p.get("control_repetidos") else "")
-              + _faltas_mail(p) +
-              f'<hr><p style="color:#666">{e(p["guion"])}</p>')
-    try:
-        segundo = " (2º del día)" if p.get("turno", 1) == 2 else ""
-        pub.mail(f'Short del día{segundo}: {p["titulo"]}', cuerpo)
-    except Exception as ex:  # noqa
-        util.log("No pude mandar el mail:", ex)
-
-
-def _rendimiento(cfg, clave_yt, dias=30, entradas=None):
-    """Cómo le fue a cada serie nuestra (YouTube + Instagram + Facebook + lo que cargaste de TikTok).
-    Por defecto, los últimos `dias`; o las publicaciones que le pases en `entradas`."""
-    from . import investigar
-    from . import publicar as pub
-    hist = con_reintentos(util.leer_json("data/historial.json", []) or [])
-    desde = (util.ahora() - util.timedelta(days=dias)).strftime("%Y-%m-%d")
-    recientes = con_reintentos(list(entradas)) if entradas is not None else None
-    recientes = recientes if entradas is not None else [h for h in hist if h.get("fecha", "") >= desde]
-    yt_ids = [h["resultados"]["youtube"]["id"] for h in recientes
-              if h.get("resultados", {}).get("youtube", {}).get("ok")]
-    yt = investigar.estadisticas_youtube(yt_ids, clave_yt) if (clave_yt and yt_ids) else {}
-    tiktok = util.leer_json("data/tiktok_vistas.json", {}) or {}
-    filas = []
-    for h in recientes:
-        res = h.get("resultados", {})
-        fila = {"fecha": h["fecha"], "hora": h.get("hora", ""), "turno": h.get("turno", 1), "serie": h["serie"],
-                "titulo": h["titulo"], "vistas": 0, "guardados": 0, "compartidos": 0, "comentarios": 0, "likes": 0}
-        if res.get("facebook", {}).get("ok"):
-            fila["vistas"] += pub.facebook_metricas(res["facebook"]["id"]).get("vistas", 0)
-        fila["vistas"] += tiktok.get(f'{h["fecha"]}#{h.get("turno", 1)}', 0)
-        if res.get("youtube", {}).get("ok"):
-            m = yt.get(res["youtube"]["id"], {})
-            fila["vistas"] += m.get("vistas", 0)
-            fila["likes"] += m.get("likes", 0)
-            fila["comentarios"] += m.get("comentarios", 0)
-        for red in ("instagram_reel", "instagram_carrusel"):
-            if res.get(red, {}).get("ok"):
-                m = pub.instagram_metricas(res[red]["id"])
-                fila["vistas"] += m.get("views", m.get("reach", 0))
-                fila["guardados"] += m.get("saved", 0)
-                fila["compartidos"] += m.get("shares", 0)
-                fila["comentarios"] += m.get("comments", 0)
-                fila["likes"] += m.get("likes", 0)
-        filas.append(fila)
-    por_serie = {}
-    for f in filas:
-        nombre = cfg["series"].get(f["serie"], {}).get("nombre", f["serie"])
-        a = por_serie.setdefault(nombre, {"posts": 0, "vistas": 0, "guardados": 0, "compartidos": 0,
-                                          "comentarios": 0})
-        a["posts"] += 1
-        for k in ("vistas", "guardados", "compartidos", "comentarios"):
-            a[k] += f[k]
-    return filas, por_serie
-
-
-# ---------------------------------------------------------------- horarios
-# GitHub no respeta el reloj: en la práctica dispara cada 2 o 3 horas y con atraso. Por eso la fábrica
-# arranca con el primer aviso que llega dentro de las 5 horas previas al horario, arma el video y
-# espera hasta el minuto exacto para publicar.
-ANTICIPO_MAX = 300  # minutos antes del horario en que ya puede arrancar (el trabajo de GitHub dura hasta 6 h)
-TARDE_MAX = 180     # si el aviso llega tarde, publica igual hasta 3 horas después del horario
-INTENTOS_MAX = 2    # si falla, lo reintenta una vez más ese día (no más, para no llenarte de avisos)
-
-
-def _clave_intento(fecha, turno):
-    return fecha if turno == 1 else f"{fecha}#{turno}"
-
-
-def _intentos(fecha, turno=1):
-    return int((util.leer_json("data/estado.json", {}).get("intentos") or {}).get(_clave_intento(fecha, turno), 0))
-
-
-def _sumar_intento(turno=1):
-    """Anota que el reloj arrancó a fabricar este turno hoy (se guarda aunque la corrida falle)."""
-    if os.getenv("GITHUB_EVENT_NAME") != "schedule":
-        return
-    estado = util.leer_json("data/estado.json", {})
-    hoy = util.ahora().strftime("%Y-%m-%d")
-    intentos = {k: v for k, v in (estado.get("intentos") or {}).items() if k[:10] >= hoy}  # solo los de hoy
-    clave = _clave_intento(hoy, turno)
-    intentos[clave] = intentos.get(clave, 0) + 1
-    estado["intentos"] = intentos
-    util.guardar_json("data/estado.json", estado)
-
-
-def _objetivo(cfg, momento=None, turno=1):
-    momento = momento or util.ahora()
-    h = _horarios(cfg, turno).get(str(momento.isoweekday()))
-    if not h:
-        return None
-    hh, mm = (int(x) for x in str(h).split(":")[:2])
-    return momento.replace(hour=hh, minute=mm, second=0, microsecond=0)
-
-
-def _ya_salio(hoy, turno):
-    return any(h.get("fecha") == hoy and int(h.get("turno", 1) or 1) == turno
-               for h in util.leer_json("data/historial.json", []) or [])
-
-
-def _toca_turno(cfg, ahora, turno):
-    """(sí/no, motivo, horario objetivo) para un turno a esta hora."""
-    objetivo = _objetivo(cfg, ahora, turno)
-    hoy = ahora.strftime("%Y-%m-%d")
-    if objetivo is None:
-        return False, "hoy no tiene horario", None
-    if _ya_salio(hoy, turno):
-        return False, "hoy ya se publicó", objetivo
-    from . import revision
-    if revision.cancelado(hoy, turno):
-        return False, "pediste que hoy no salga", objetivo
-    if _intentos(hoy, turno) >= INTENTOS_MAX:
-        return False, f"hoy ya se intentó {INTENTOS_MAX} veces y falló; mañana sigue normal", objetivo
-    faltan = (objetivo - ahora).total_seconds() / 60
-    if 0 < faltan <= ANTICIPO_MAX:
-        return True, (f"faltan {faltan:.0f} minutos para las {objetivo:%H:%M}: lo armo ahora y espero "
-                      f"hasta esa hora para publicar"), objetivo
-    if -TARDE_MAX <= faltan <= 0:
-        return True, (f"ya pasaron {-faltan:.0f} minutos de las {objetivo:%H:%M} y no salió "
-                      f"(el aviso de GitHub llegó tarde o falló): publico apenas esté listo"), objetivo
-    return False, f"faltan {faltan:.0f} minutos para las {objetivo:%H:%M}", objetivo
-
-
-def toca():
-    """Lo usa el reloj de GitHub: ¿hay que fabricar y publicar ahora? ¿Qué turno?
-    Si tocan los dos, va primero el de horario más temprano (el otro arranca con el aviso siguiente)."""
-    cfg = util.config()
-    try:
-        turno = 2 if int(os.getenv("TURNO_MANUAL") or 1) == 2 else 1
-    except ValueError:
-        turno = 1
-    si, motivos = True, ["ejecución manual"]
-    if os.getenv("GITHUB_EVENT_NAME") == "schedule":
-        ahora = util.ahora()
-        si, motivos, candidatos = False, [], []
-        for t in _turnos(cfg):
-            ok, motivo, objetivo = _toca_turno(cfg, ahora, t)
-            motivos.append(f"turno {t}: {motivo}")
-            if ok:
-                candidatos.append((objetivo, t))
-        if candidatos:
-            si, turno = True, min(candidatos)[1]
-            motivos.append(f"→ arranca el turno {turno}")
-    util.log("¿Toca publicar?", "sí" if si else "no", "·", " | ".join(motivos))
-    salida = os.getenv("GITHUB_OUTPUT")
-    if salida:
-        with open(salida, "a", encoding="utf-8") as f:
-            f.write(f"si={'true' if si else 'false'}\nturno={turno}\n")
-
-
-def esperar(ultima=False):
-    """Espera la hora de publicar mirando cada minuto si mandaste un pedido desde «Revisar video».
-    Deja la decisión en out/decision.json y en la salida del paso: publicar, cancelar o cambios."""
-    import time
-    from . import revision
-    cfg = util.config()
-    turno = _turno()
-    p = util.leer_json("out/publicacion.json", {}) or {}
-    desde = max((util.leer_json("out/inicio.json", {}) or {}).get("inicio", ""), p.get("pedido_creado", ""))
-    objetivo = _objetivo(cfg, turno=turno)
-    decision, pedido = "publicar", {}
-    if objetivo and (objetivo - util.ahora()).total_seconds() > 0:
-        util.log(f"Video listo. Espero hasta las {objetivo:%H:%M} y mientras miro si pedís cambios.")
-        util.avisar("Esperando la hora de publicar",
-                    f"El video ya está listo y se mandó por mail para que lo revises. Esta corrida queda en marcha "
-                    f"(amarilla) hasta las {objetivo:%H:%M} y ahí publica. Es normal.")
-    while True:
-        for x in revision.nuevos(revision.leer_remotos(), p.get("fecha", ""), turno, desde):
-            desde = x.get("creado", desde)
-            if x.get("accion") == "cambios" and ultima:
-                util.avisar("Ya no se aceptan más cambios", "Este video ya se rehízo dos veces: sale esta versión.")
-                continue
-            decision, pedido = x.get("accion", "publicar"), x
-            break
-        if pedido:
-            break
-        if not objetivo or (objetivo - util.ahora()).total_seconds() <= 0:
-            break
-        time.sleep(min(60, max(1, (objetivo - util.ahora()).total_seconds())))
-    util.log("Decisión:", decision, pedido.get("cambios", ""))
-    util.guardar_json("out/decision.json", {"decision": decision, "pedido": pedido})
-    util.guardar_json("out/pedido.json", pedido)
-    salida = os.getenv("GITHUB_OUTPUT")
-    if salida:
-        with open(salida, "a", encoding="utf-8") as f:
-            f.write(f"decision={decision}\n")
-
-
-def online(base_url):
-    """Espera a que el video nuevo se pueda ver en la página (Instagram lo baja de ahí)."""
-    import time
-    p = util.leer_json("out/publicacion.json")
-    url = base_url.rstrip("/") + "/" + p["archivos"]["video"]
-    for _ in range(36):
-        try:
-            r = util.pedir("HEAD", url, intentos=1, timeout=30)
-            if r is not None and r.status_code == 200:
-                util.log("Online:", url)
-                return
+            return {f["fuente"] for f in self.db.select("radar", {"select": "fuente", "limit": "5000"})}
+        except gemini.SinTiempo:
+            raise
         except Exception:  # noqa
-            pass
-        time.sleep(10)
-    raise RuntimeError("Los archivos no aparecieron online: " + url)
+            return set()
 
+    def radar_previo(self):
+        if not self.db:
+            return {}
+        desde = (util.ahora() - timedelta(days=self.cfg.get("dias_espera_segunda_fuente", 5))).isoformat()
+        filas = self.db.select("radar", {"select": "*", "visto": f"gte.{desde}", "limit": "1000"})
+        return {f["url"]: f for f in filas}
 
-def listo(base_url):
-    """Te manda el video apenas está listo, con la hora a la que sale y cómo pedir cambios."""
-    from . import publicar as pub
-    from . import revision
-    e = html.escape
-    cfg = util.config()
-    p = util.leer_json("out/publicacion.json")
-    base = base_url.rstrip("/") + "/"
-    objetivo = _objetivo(cfg, turno=_turno())
-    cuando = (f"hoy a las {objetivo:%H:%M}" if objetivo and objetivo > util.ahora()
-              else "en unos minutos (ya es la hora)")
-    v = p.get("version", 1)
-    version = f" · versión {v} con tus cambios" if v > 1 else ""
-    link = revision.link_formulario()
-    tema = _tema_por_id(p.get("tema_id"))
-    pedido = (f'<p>📌 Es el tema que pediste: <b>{e(tema["titulo"])}</b>. Revisá bien los datos: si algo no '
-              f'cierra, pedí el cambio.</p>') if tema else ""
-    placas = p["archivos"].get("placas") or []
-    if placas and ((tema and tema.get("carrusel_ig")) or p.get("serie") in _series_con_carrusel(cfg)):
-        pedido += ('<p><b>En Instagram sale también como carrusel:</b> '
-                   + " · ".join(f'<a href="{base}{x}">{i}</a>' for i, x in enumerate(placas, 1)) + '</p>')
-    cuerpo = (f'<h2>{e(p["serie_nombre"])}: {e(p["titulo"])}</h2>{pedido}'
-              f'<p><b>Sale {cuando}</b> en Instagram, YouTube y Facebook{version}. '
-              f'Si no hacés nada, se publica solo.</p>'
-              f'<p><a href="{base}{p["archivos"]["video"]}">▶️ Ver el video</a> · '
-              f'<a href="{base}{p["archivos"]["portada"]}">Portada</a></p>'
-              f'<p><b>¿Querés cambiar algo?</b> Entrá a <a href="{link}">Revisar video</a> → <b>Run workflow</b>, '
-              f'elegí qué hacer (pedir cambios, publicar ya o no publicar hoy), escribí qué cambiar y tocá '
-              f'<b>Run workflow</b>. En unos 10 minutos te llega la versión nueva.</p>'
-              f'<p><b>Texto:</b><br>{e(p["caption"]).replace(chr(10), "<br>")}</p>'
-              f'<hr><p style="color:#666"><b>Guion:</b> {e(p["guion"])}</p>'
-              f'<p style="color:#666">Al subirlo a TikTok, activá «Contenido generado por IA» en Más opciones.</p>')
-    try:
-        segundo = " (2º del día)" if p.get("turno", 1) == 2 else ""
-        pub.mail(f'Listo para revisar{segundo}: {p["titulo"]}', cuerpo)
-    except Exception as ex:  # noqa
-        util.log("No pude mandar el mail:", ex)
-
-
-def revisar():
-    """Lo usa el formulario «Revisar video»: anota tu pedido para la corrida que está esperando."""
-    from . import revision
-    destino = os.getenv("GITHUB_STEP_SUMMARY")
-    try:
-        x = revision.registrar(os.getenv("ACCION", ""), os.getenv("TURNO_PEDIDO", ""), os.getenv("CAMBIOS", ""))
-        texto = {"cambios": "Listo: la fábrica rehace el video con tus cambios y te manda la versión nueva por mail "
-                            "en unos 10 minutos. Si para entonces ya pasó la hora, se publica apenas esté.",
-                 "publicar": "Listo: se publica en el próximo minuto.",
-                 "cancelar": "Listo: hoy no se publica. Te llega un mail con el link por si lo querés subir a mano."}
-        msg = texto[x["accion"]]
-    except ValueError as e:
-        msg = f"❌ {e}"
-        if destino:
-            open(destino, "a", encoding="utf-8").write(f"## Revisar video\n\n{msg}\n")
-        util.log(msg)
-        sys.exit(1)
-    util.log(msg)
-    if destino:
-        open(destino, "a", encoding="utf-8").write(f"## Revisar video\n\n{msg}\n")
-
-
-def _franjas(propias):
-    horas = {}
-    for f in propias:
-        if f.get("hora"):
-            x = horas.setdefault(f["hora"][:2] + " h", {"posts": 0, "vistas": 0})
-            x["posts"] += 1
-            x["vistas"] += f["vistas"]
-    return horas
-
-
-def _para_mejoras(cfg, por_serie_max=None, edad_min=None):
-    """Lo que se usa para sugerir cambios: los últimos 10 videos de cada serie que tengan 2 días o más
-    (así ya juntaron vistas), y los de los últimos 120 días para ver si los cambios funcionaron."""
-    n = int(por_serie_max or cfg.get("mejoras_videos_por_serie", 10))
-    edad = int(edad_min if edad_min is not None else cfg.get("mejoras_dias_minimos", 2))
-    hasta = (util.ahora() - util.timedelta(days=edad)).strftime("%Y-%m-%d")
-    desde = (util.ahora() - util.timedelta(days=120)).strftime("%Y-%m-%d")
-    hist = [h for h in con_reintentos(util.leer_json("data/historial.json", []) or [])
-            if desde <= h.get("fecha", "") <= hasta and not h.get("cancelado")
-            and any((r or {}).get("ok") for r in (h.get("resultados") or {}).values())]
-    elegidas, cuenta = [], {}
-    for h in sorted(hist, key=lambda x: (x["fecha"], x.get("hora", "")), reverse=True):
-        if cuenta.get(h["serie"], 0) < n:
-            cuenta[h["serie"]] = cuenta.get(h["serie"], 0) + 1
-            elegidas.append(h)
-    return _rendimiento(cfg, util.secreto("YT_API_KEY"), entradas=list(reversed(elegidas)))
-
-
-def _proponer_hoy(analisis=None, cfg=None, rendimiento=None):
-    """Arma sugerencias de mejora con los números de hoy (las usa el reporte y la corrida diaria de mejoras)."""
-    from . import mejoras
-    cfg = cfg or util.config()
-    propias, por_serie = _para_mejoras(cfg)
-    analisis = mejoras.guardar_aprendizajes(propias, analisis)
-    return mejoras.proponer(cfg, por_serie, propias, _franjas(propias), analisis)
-
-
-def cargar_tiktok():
-    """Formulario «Cargar vistas de TikTok»."""
-    from . import mejoras
-    destino = os.getenv("GITHUB_STEP_SUMMARY")
-    try:
-        n = mejoras.cargar_tiktok(os.getenv("VISTAS", ""))
-        msg = f"Listo: cargué las vistas de TikTok de {n} videos."
-    except ValueError as e:
-        msg = f"❌ {e}"
-    util.log(msg)
-    if destino:
-        open(destino, "a", encoding="utf-8").write(f"## Vistas de TikTok\n\n{msg}\n")
-    if msg.startswith("❌"):
-        sys.exit(1)
-
-
-def sugerencia():
-    """Tu respuesta a una sugerencia de mejora (formulario «Responder sugerencia»)."""
-    from . import mejoras
-    destino = os.getenv("GITHUB_STEP_SUMMARY")
-    try:
-        p = mejoras.responder(os.getenv("RESPUESTA", ""), os.getenv("CAMBIOS", ""), os.getenv("NUMERO", ""))
-        msg = f'Listo: #{p["id"]} {p["titulo"]} quedó {p["estado"]}.'
-    except ValueError as e:
-        msg = f"❌ {e}"
-        util.log(msg)
-        if destino:
-            open(destino, "a", encoding="utf-8").write(f"## Responder sugerencia\n\n{msg}\n")
-        sys.exit(1)
-    util.log(msg)
-    if destino:
-        open(destino, "a", encoding="utf-8").write(f"## Responder sugerencia\n\n{msg}\n")
-
-
-def reporte():
-    from . import escritor, investigar
-    from . import publicar as pub
-    cfg = util.config()
-    clave = util.secreto("YT_API_KEY")
-    if not clave:
-        util.log("Sin YT_API_KEY no hay reporte")
-        return
-    cache = util.leer_json("data/canales.json", {})
-    vistos, filas = set(), []
-    ref = cfg.get("referentes_contables", {})
-    for s in list(cfg["series"].values()) + [{"canales": ref.get("youtube", [])}]:
-        for b in s.get("canales", []):
-            if b.lower() in vistos:
-                continue
-            vistos.add(b.lower())
-            m = investigar.metricas_canal(b, clave, cache)
-            if m:
-                filas.append(m)
-    util.guardar_json("data/canales.json", cache)
-    propias, por_serie = _rendimiento(cfg, clave)
-    nuestro = "\n".join(
-        f'- {serie}: {a["posts"]} publicaciones, {a["vistas"] // max(a["posts"], 1)} vistas promedio, '
-        f'{a["guardados"]} guardados, {a["compartidos"]} compartidos, {a["comentarios"]} comentarios'
-        for serie, a in sorted(por_serie.items(), key=lambda x: -x[1]["vistas"] / max(x[1]["posts"], 1)))
-    mejores = sorted(propias, key=lambda f: -f["vistas"])[:3]
-    peores = sorted(propias, key=lambda f: f["vistas"])[:3]
-    resumen = "\n\n".join(
-        f'CANAL {f["canal"]} | {f["videos_por_semana"]} videos/semana | vistas típicas {f["mediana"]} | '
-        f'{f["pct_shorts"]}% Shorts\n' + "\n".join(
-            f'  - "{t["titulo"]}" ({t["vistas"]} vistas, {t["veces"]} veces lo normal)' for t in f["top"])
-        for f in filas)
-    try:
-        from . import contable
-        ig = contable.resumen_instagram(ref.get("instagram", []))
-        if ig:
-            resumen += "\n\n" + ig
-    except Exception as ex:  # noqa
-        util.log("No pude leer el Instagram de los referentes:", util.ocultar(ex))
-    sistema = ("Sos analista de contenido de una cuenta argentina sin cara de Shorts, Reels y TikTok sobre plata, "
-               "economía, libros de dinero e impuestos. Respondé en español rioplatense natural.")
-    pedido = ("Con estas métricas de canales de referencia, devolvé un JSON con: "
-              '{"patrones": ["..."], "formatos_que_rinden": ["..."], "estructuras_virales": ["..."], '
-              '"ideas": [{"serie": "...", "titulo": "...", "miniatura": "..."}]} '
-              "con 5 patrones, 5 formatos, 5 estructuras y 10 ideas originales adaptadas a Argentina para nuestras "
-              "series (" + ", ".join(s["nombre"] for s in cfg["series"].values()) + "). "
-              'Además sumá "series_reforzar": ["..."] y "series_cambiar": [{"serie": "...", "por_que": "...", '
-              '"propuesta": "..."}] mirando NUESTRO RENDIMIENTO (si todavía hay pocos datos, decilo).\n\n'
-              "NUESTRO RENDIMIENTO (últimos 30 días, por serie):\n" + (nuestro or "(todavía sin datos)") +
-              "\n\nCOMPETENCIA:\n" + resumen)
-    from . import faltantes
-    faltas_txt = faltantes.para_ia(7)
-    if faltas_txt:
-        pedido += ("\n\nLO QUE LE FALTÓ A NUESTROS VIDEOS ESTA SEMANA (escenas donde lo que se veía no pegaba del todo "
-                   "con lo que se decía):\n" + faltas_txt + "\n\nCon eso, sumá al JSON \"pedidos_material\": hasta 6 "
-                   "pedidos concretos y fáciles de conseguir, ordenados por cuánto mejorarían los próximos videos: "
-                   '[{"que": "clip" o "foto" o "dibujito", "pedido": "qué conseguir, dicho simple (ej. Grabá 5 '
-                   'segundos de un posnet cobrando, en vertical)", "nombre_archivo": "posnet-cobro.mp4" (solo para '
-                   'clip o foto), "por_que": "para qué videos sirve"}]. Agrupá lo que se repite; nada con caras de '
-                   'personas.')
-    try:
-        a = escritor.gemini(sistema, pedido, temperatura=0.7)
-    except Exception as ex:  # noqa
-        a = {"patrones": [f"No se pudo analizar: {ex}"]}
-    fecha = util.ahora().strftime("%Y-%m-%d")
-    md = [f"# Reporte de competencia · {fecha}", "", "| Canal | Videos/semana | Vistas típicas | % Shorts |",
-          "|---|---|---|---|"]
-    md += [f'| {f["canal"]} | {f["videos_por_semana"]} | {f["mediana"]:,} | {f["pct_shorts"]}% |' for f in filas]
-    for titulo, clave_a in [("Patrones", "patrones"), ("Formatos que rinden", "formatos_que_rinden"),
-                            ("Estructuras virales", "estructuras_virales")]:
-        md += ["", f"## {titulo}", ""] + [f"- {x}" for x in a.get(clave_a, [])]
-    md += ["", "## Cómo nos fue (últimos 30 días)", ""]
-    try:  # lo usan las competencias de la grilla ("a|b" y "mejor:a|b")
-        por_nombre = {v.get("nombre", k): k for k, v in cfg["series"].items()}
-        util.guardar_json(RENDIMIENTO, {"fecha": fecha, "series": {por_nombre.get(k, k): a for k, a in por_serie.items()}})
-    except Exception as ex:  # noqa
-        util.log("No pude guardar el rendimiento por serie:", ex)
-    if por_serie:
-        md += ["| Serie | Publicaciones | Vistas promedio | Guardados | Compartidos | Comentarios |",
-               "|---|---|---|---|---|---|"]
-        md += [f'| {k} | {a["posts"]} | {a["vistas"] // max(a["posts"], 1):,} | {a["guardados"]} | '
-               f'{a["compartidos"]} | {a["comentarios"]} |'
-               for k, a in sorted(por_serie.items(), key=lambda x: -x[1]["vistas"] / max(x[1]["posts"], 1))]
-        md += ["", "Lo que mejor anduvo: " + "; ".join(f'{f["titulo"]} ({f["vistas"]:,})' for f in mejores),
-               "", "Lo que peor anduvo: " + "; ".join(f'{f["titulo"]} ({f["vistas"]:,})' for f in peores)]
-    else:
-        md += ["Todavía no hay publicaciones para medir."]
-    horas = _franjas(propias)
-    if horas:
-        md += ["", "## Por horario de publicación", "", "| Franja | Publicaciones | Vistas promedio |", "|---|---|---|"]
-        md += [f'| {k} | {v["posts"]} | {v["vistas"] // max(v["posts"], 1):,} |' for k, v in
-               sorted(horas.items(), key=lambda x: -x[1]["vistas"] / max(x[1]["posts"], 1))]
-    md += ["", "## Qué reforzar y qué cambiar", ""]
-    md += [f"- Reforzar: {x}" for x in a.get("series_reforzar", [])]
-    md += [f'- Cambiar **{x.get("serie", "")}**: {x.get("por_que", "")} → {x.get("propuesta", "")}'
-           for x in a.get("series_cambiar", []) if isinstance(x, dict)]
-    try:
-        nuevas = _proponer_hoy(a, cfg, (propias, por_serie))
-    except Exception as ex:  # noqa
-        util.log("No pude armar las sugerencias:", util.ocultar(ex))
-        nuevas = []
-    if nuevas:
-        from . import mejoras
-        md += ["", "## Sugerencias de cambio (te llega una por día por mail; si no respondés, se aplica sola)", ""]
-        md += [f'- #{p["id"]} {p["titulo"]}: {mejoras.describir(cfg, p)}' for p in nuevas]
-    md += ["", "## Lo que le falta a la fábrica (cómo ayudarla)", ""]
-    pedidos = [x for x in a.get("pedidos_material", []) if isinstance(x, dict) and x.get("pedido")]
-    if pedidos:
-        for x in pedidos:
-            arch = f' → subilo como `assets/clips/{x["nombre_archivo"]}`' if x.get("nombre_archivo") and x.get("que") != "dibujito" else ""
-            md.append(f'- **{str(x.get("que", "")).capitalize()}**: {x["pedido"]}{arch}'
-                      + (f' ({x["por_que"]})' if x.get("por_que") else ""))
-    else:
-        md += [f"- {x}" for x in faltantes.resumen_simple(7)] or ["- Esta semana no faltó nada importante."]
-    if pedidos or faltantes.ultimos(7):
-        md += ["", "Clips y fotos: con el celu en vertical, 5-10 segundos, sin caras. Se suben en el repo dentro de "
-               "`assets/clips/` (Add file → Upload files), con un nombre que diga qué se ve. Los dibujitos se los "
-               "pedís a Claude y te pasa el archivo para subir."]
-    md += ["", "## Ideas para las próximas semanas", ""]
-    md += [f'- **{i.get("serie", "")}**: {i.get("titulo", "")} · miniatura: "{i.get("miniatura", "")}"'
-           for i in a.get("ideas", [])]
-    md += ["", "## Lo que más rindió en cada canal", "", resumen]
-    ruta = util.RAIZ / "reportes" / f"{fecha}.md"
-    ruta.parent.mkdir(exist_ok=True)
-    ruta.write_text("\n".join(md) + "\n", encoding="utf-8")
-    try:
-        pub.mail(f"Reporte semanal de competencia · {fecha}",
-                 "<pre style='font-family:Arial;white-space:pre-wrap'>" + html.escape("\n".join(md)) + "</pre>")
-    except Exception as ex:  # noqa
-        util.log("No pude mandar el mail:", ex)
-
-
-# ---------------------------------------------------------------- reintentar lo que no salió
-REINTENTABLES = ("instagram_reel", "instagram_carrusel", "facebook")
-REINTENTOS = "data/reintentos.json"  # aparte del historial, para no chocar con la publicación del día
-
-
-def con_reintentos(historial):
-    """El historial con lo que salió después en un reintento (pisa el error de ese día)."""
-    reint = util.leer_json(REINTENTOS, {}) or {}
-    for h in historial:
-        extra = reint.get(f'{h.get("fecha")}#{h.get("turno", 1)}')
-        if extra:
-            h["resultados"] = {**(h.get("resultados") or {}), **extra}
-    return historial
-
-
-def _texto_publicado(base_nombre):
-    """El texto (caption) que se usó, sacado del registro de publicaciones/."""
-    ruta = util.RAIZ / "publicaciones" / f"{base_nombre}.md"
-    if not ruta.exists():
-        return None
-    md = ruta.read_text(encoding="utf-8")
-    if "## Texto" not in md:
-        return None
-    return md.split("## Texto", 1)[1].split("\n## Guion", 1)[0].strip()
-
-
-def reintentar(cuales=""):
-    """Vuelve a subir, solo en las redes donde falló, los videos que siguen en la página (dias_en_pagina).
-    No arma nada nuevo ni toca las redes donde ya salió. `cuales`: vacío = todos los que fallaron; o fechas
-    tipo 2026-10-27 o 2026-10-27-t2 separadas por coma."""
-    from . import publicar as pub
-    cfg = util.config()
-    quiere = cfg.get("publicar", {})
-    base = _base_paginas()
-    if not base:
-        util.log("No sé la dirección de la página (falta GITHUB_REPOSITORY)")
-        sys.exit(1)
-    elegidos = {x.strip() for x in (cuales or "").split(",") if x.strip()}
-    desde = (util.ahora() - util.timedelta(days=_dias_pagina())).strftime("%Y-%m-%d")
-    historial = con_reintentos(util.leer_json("data/historial.json", []) or [])
-    sitio = util.leer_json("data/sitio.json", []) or []
-    reint = util.leer_json(REINTENTOS, {}) or {}
-    informe, alguno = [], False
-    for h in historial:
-        if h.get("cancelado") or h.get("fecha", "") < desde:
-            continue
-        nombre = _carpeta(h["fecha"], h.get("turno", 1))
-        if elegidos and nombre not in elegidos and h["fecha"] not in elegidos:
-            continue
-        res = h.setdefault("resultados", {})
-        faltan = [r for r in REINTENTABLES if r in res and not res[r].get("ok") and quiere.get(r)]
-        if not faltan:
-            continue
-        carpetas = [x for x in sitio if x.get("carpeta") == nombre or str(x.get("carpeta", "")).startswith(nombre + "-v")]
-        texto = _texto_publicado(nombre)
-        if not carpetas or not texto:
-            informe.append((h["titulo"], {r: {"ok": False, "error": "ya no está el video o el texto (pasaron más de "
-                                                                     f"{_dias_pagina()} días)"} for r in faltan}))
-            continue
-        archivos = carpetas[-1]["archivos"]
-        video_rel, portada_rel, placas = archivos[0], archivos[1], archivos[2:]
-        local = SALIDA / "reintento" / f"{nombre}.mp4"
-        local.parent.mkdir(parents=True, exist_ok=True)
-        r = util.pedir("GET", base + video_rel, intentos=3, timeout=180)
-        if r is None or r.status_code != 200:
-            informe.append((h["titulo"], {x: {"ok": False, "error": "no pude bajar el video de la página"} for x in faltan}))
-            continue
-        local.write_bytes(r.content)
-        util.log(f"Reintento {nombre} ({h['titulo']}) en:", ", ".join(faltan))
-        nuevos = {}
-        for red in faltan:
+    def cargar_convenios(self):
+        base = {}
+        for ruta in glob.glob(str(util.RAIZ / "convenios" / "*.json")):
+            c = json.load(open(ruta, encoding="utf-8"))
+            base[c["slug"]] = c
+        if self.db:
             try:
-                if red == "instagram_reel":
-                    rid = pub.instagram_reel(base + video_rel, base + portada_rel, texto)
-                elif red == "instagram_carrusel":
-                    if not placas:
-                        raise RuntimeError("no hay placas guardadas")
-                    rid = pub.instagram_carrusel([base + x for x in placas], texto)
-                else:
-                    rid = pub.facebook_reel(local, texto, h["titulo"])
-                nuevos[red] = {"ok": True, "id": rid, "reintento": util.ahora().strftime("%Y-%m-%d %H:%M")}
-                alguno = True
+                for c in self.db.select("convenios", {"select": "*"}):
+                    base[c["slug"]] = c
+            except gemini.SinTiempo:
+                raise
             except Exception as e:  # noqa
-                nuevos[red] = {"ok": False, "error": str(e)[:300]}
-            util.log(red, nuevos[red])
-        clave_r = f'{h["fecha"]}#{h.get("turno", 1)}'
-        reint[clave_r] = {**reint.get(clave_r, {}), **nuevos}
-        informe.append((h["titulo"], nuevos))
-    util.guardar_json(REINTENTOS, reint)
-    if not informe:
-        util.log("No hay nada pendiente: todo lo de los últimos días ya salió (o no está en la página).")
-        return
-    e = html.escape
-    cuerpo = "".join(
-        f"<h3>{e(t)}</h3><ul>" + "".join(
-            f'<li><b>{e(red)}</b>: {"✅ publicado" if r["ok"] else "❌ " + e(r["error"])}</li>' for red, r in rr.items())
-        + "</ul>" for t, rr in informe)
-    try:
-        pub.mail("Reintento de publicación", cuerpo)
-    except Exception as ex:  # noqa
-        util.log("No pude mandar el mail:", ex)
-    if not alguno:
-        sys.exit(1)
+                util.log("No pude leer convenios:", util.ocultar(str(e)))
+        return base
+
+    def sembrar(self):
+        """Sube a Supabase las notas iniciales del repo (carpeta notas/) para poder editarlas desde la web."""
+        filas = []
+        for ruta in glob.glob(str(util.RAIZ / "notas" / "*.json")):
+            n = json.load(open(ruta, encoding="utf-8"))
+            filas.append({"slug": n["slug"], "fecha": n["fecha"], "seccion": n["seccion"], "antetitulo": n["antetitulo"],
+                          "titulo": n["titulo"], "dato": n.get("dato"), "encorto": n["encorto"], "cuerpo": n["cuerpo"],
+                          "fuente": n.get("fuente", ""), "fuentes": [], "verificada": bool(n.get("verificada")),
+                          "estado": "publicada", "tema": n["titulo"]})
+        if filas and self.db and self.activo:
+            self.db.insertar_si_no_existe("notas", filas, "slug")
+        if self.db and self.activo:
+            convs = []
+            for ruta in glob.glob(str(util.RAIZ / "convenios" / "*.json")):
+                c = json.load(open(ruta, encoding="utf-8"))
+                convs.append({k: c[k] for k in ("slug", "nombre", "cct", "partes", "descripcion")})
+            if convs:
+                try:
+                    self.db.insertar_si_no_existe("convenios", convs, "slug")
+                except gemini.SinTiempo:
+                    raise
+                except Exception as e:  # noqa
+                    util.avisar("No pude guardar los convenios (¿falta correr esquema.sql en Supabase?)", str(e))
+
+    # ---------- pasos ----------
+    def leer_fuentes(self):
+        items = []
+        lista = list(self.cfg.get("fuentes", []))
+        ya = {f.get("nombre") for f in lista}
+        lista += [f for f in FUENTES_EXTRA if f["nombre"] not in ya]  # se suman solas, sin tocar config.json
+        for ruta in sorted((util.RAIZ / "jurisdicciones").glob("*.json")):  # fuentes de provincias y municipios
+            try:
+                lista += [f for f in json.loads(ruta.read_text(encoding="utf-8")).get("fuentes") or [] if f.get("nombre") not in ya]
+            except Exception as e:  # noqa
+                util.avisar(f"No pude leer {ruta.name}", str(e))
+        lista = [f for f in lista if "boletinoficial.gob.ar" not in f.get("url", "") or self.cfg.get("leer_boletin")]
+        if self.rapido:
+            lista = [f for f in lista if f.get("tipo") == "oficial" or f.get("nombre") == "Tributum"]  # no responde a GitHub; Tributum trae el sumario
+        for f in lista:
+            try:
+                nuevos = fuentes.leer(f)
+                util.log(f"{f['nombre']}: {len(nuevos)} novedades")
+                items += nuevos
+            except gemini.SinTiempo:
+                raise
+            except Exception as e:  # noqa
+                util.avisar(f"No pude leer {f['nombre']}", str(e))
+        return items
+
+    def agrupar(self, items, recientes):
+        lista = [{"id": i, "fuente": it["fuente"], "tipo": it["tipo"], "titulo": it["titulo"],
+                  "resumen": (it.get("texto") or "")[:500]} for i, it in enumerate(items)]
+        pedido = ("NOVEDADES:\n" + json.dumps(lista, ensure_ascii=False) +
+                  "\n\nCONVENIOS:\n" + json.dumps([{"slug": c["slug"], "nombre": c["nombre"], "cct": c["cct"]} for c in self.convenios.values()], ensure_ascii=False) +
+                  "\n\nNOTAS YA PUBLICADAS POR RAMACONTABLE (últimos 30 días):\n" +
+                  json.dumps([{k: n.get(k) for k in ("slug", "titulo", "tema", "fecha")} for n in recientes if n.get("estado") != "borrada"],
+                             ensure_ascii=False))
+        return gemini.gemini(_prompt("agrupar.md"), pedido, temperatura=0.2).get("grupos", [])
+
+    def redactar(self, grupo, items, recientes):
+        textos = []
+        for it in items:
+            if len(it.get("texto") or "") < 1500:
+                completo, _ = fuentes.detalle(it["url"])
+                if len(completo) > len(it.get("texto") or ""):
+                    it["texto"] = completo
+            textos.append(f"--- FUENTE: {it['fuente']} ({'oficial' if it['tipo'] == 'oficial' else 'portal'})\n"
+                          f"Título: {it['titulo']}\nTexto: {(it.get('texto') or '')[:6000]}")
+        anterior = ""
+        if grupo.get("actualiza"):
+            prev = next((n for n in recientes if n["slug"] == grupo["actualiza"]), None)
+            if prev:
+                anterior = f"\n\nESTA NOTA ACTUALIZA la nota anterior «{prev['titulo']}» (slug {prev['slug']})."
+        pedido = f"TEMA: {grupo.get('tema')}\nSECCIÓN: {grupo.get('seccion')}{anterior}\n\nFUENTES:\n" + "\n\n".join(textos)
+        nota = gemini.gemini(_prompt("redactar.md"), pedido, temperatura=0.4)
+        control = gemini.gemini(_prompt("verificar.md"),
+                                "NOTA:\n" + json.dumps(nota, ensure_ascii=False) + "\n\nFUENTES:\n" + "\n\n".join(textos),
+                                temperatura=0.1)
+        self._textos = textos
+        return nota, control
+
+    def actualizar_convenio(self, grupo, nota_slug, textos=None, adjunto=None, doc=None):
+        c = self.convenios.get(grupo.get("convenio"))
+        if not c:
+            return
+        textos = textos if textos is not None else self._textos
+        actual = {k: c.get(k) for k in ("nombre", "cct", "escala", "novedades", "calculo", "nr", "recibo", "preguntas", "fuente")}
+        pedido = "PÁGINA ACTUAL DEL CONVENIO:\n" + json.dumps(actual, ensure_ascii=False) + "\n\nFUENTES DEL NUEVO ACUERDO:\n" + "\n\n".join(textos)
+        control_txt = "\n\nFUENTES:\n" + "\n\n".join(textos)
+        if adjunto:  # PDF oficial: va como archivo para que Gemini lea la tabla tal cual
+            pedido = [{"text": pedido + "\n(La fuente principal es el PDF oficial adjunto.)"}, adjunto]
+        nuevo = gemini.gemini(_prompt("convenio.md"), pedido, temperatura=0.3)
+        verif = "NOTA:\n" + json.dumps(nuevo, ensure_ascii=False) + control_txt
+        control = gemini.gemini(_prompt("verificar.md"), [{"text": verif + "\n(Las fuentes incluyen el PDF oficial adjunto.)"}, adjunto] if adjunto else verif, temperatura=0.1)
+        esc = nuevo.get("escala") if isinstance(nuevo.get("escala"), dict) else None
+        if esc:
+            tabla = esc.get("tabla") if isinstance(esc.get("tabla"), list) else []
+            esc = {"periodo": str(esc.get("periodo") or "")[:80], "vigencia": str(esc.get("vigencia") or "")[:120],
+                   "tabla": [[str(x)[:80] for x in f][:10] for f in tabla[:80] if isinstance(f, list)], "aclaraciones": str(esc.get("aclaraciones") or "")[:800],
+                   "doc": doc}
+        datos = {"escala": esc or c.get("escala"), "novedades": _bloques_ok(nuevo.get("novedades")), "calculo": _bloques_ok(nuevo.get("calculo")) or c.get("calculo") or [],
+                 "nr": _bloques_ok(nuevo.get("nr")) or c.get("nr") or [], "recibo": _bloques_ok(nuevo.get("recibo")) or c.get("recibo") or [],
+                 "preguntas": [{"p": str(q.get("p"))[:200], "r": str(q.get("r"))[:500]} for q in (nuevo.get("preguntas") or []) if isinstance(q, dict) and q.get("p") and q.get("r")][:6],
+                 "fuente": str(nuevo.get("fuente") or c.get("fuente") or "")[:300]}
+        hist = list(c.get("historial") or [])
+        per = str(nuevo.get("periodo_historial") or (esc or {}).get("periodo") or grupo.get("tema"))[:80]
+        if not any(h.get("periodo") == per for h in hist):
+            ap = nuevo.get("aumento_pct")
+            hist.append({"periodo": per, "fecha": util.ahora().date().isoformat(), "nota": nota_slug,
+                         "aumento_pct": float(ap) if isinstance(ap, (int, float)) and 0 < ap < 100 else None})
+        altas, bajas = _clasificar(control, nuevo.get("dudas"))
+        ok = not altas
+        if ok and bajas:
+            self.observaciones.append((f"Escala {c['nombre']}", "; ".join(b["dato"] for b in bajas)[:400]))
+        motivo = _motivo(altas) or ""
+        registro = {"slug": c["slug"], "nombre": c["nombre"], "periodo": per, "motivo": motivo, "datos": datos}
+        (self.convenios_act if ok else self.convenios_rev).append(registro)
+        if self.activo and self.db:
+            if ok:
+                self.db.update("convenios", {"slug": f"eq.{c['slug']}"}, dict(datos, historial=hist, propuesta=None, motivo_propuesta=None))
+            else:
+                self.db.update("convenios", {"slug": f"eq.{c['slug']}"}, {"propuesta": dict(datos, historial=hist), "motivo_propuesta": motivo})
+
+    def revisar_escalas_oficiales(self):
+        """Lee la página o el PDF oficial de cada sindicato y actualiza la escala si hay un documento nuevo."""
+        locales = {}
+        for ruta in glob.glob(str(util.RAIZ / "convenios" / "*.json")):
+            c = json.load(open(ruta, encoding="utf-8"))
+            if c.get("oficial") or c.get("buscar_portal"):
+                locales[c["slug"]] = c
+        orden = sorted((s for s in locales if s in self.convenios), key=lambda s: str(self.convenios[s].get("actualizado") or ""))
+        hechos = 0
+        for slug in orden:
+            if hechos >= int(self.cfg.get("escalas_por_vuelta", 3)):
+                break
+            c, loc = self.convenios[slug], locales[slug]
+            url = tipo = contenido = None
+            if loc.get("oficial"):
+                try:
+                    url, tipo, contenido = fuentes.documento_oficial(loc["oficial"], loc.get("buscar_doc") or ())
+                except gemini.SinTiempo:
+                    raise
+                except Exception as e:  # noqa
+                    util.avisar(f"No pude leer la escala oficial de {c['nombre']}", str(e))
+            if not url and loc.get("buscar_portal"):
+                # sin fuente oficial (o no se pudo leer): las notas de escalas de Ignacio Online y Contadores en Red
+                notas = [n for n in fuentes.buscar_portales(loc["buscar_portal"], 2) if "escala" in _slug(n["titulo"])]
+                if notas:
+                    url, tipo = notas[0]["url"], "portal"
+                    contenido = "\n\n".join(f"--- FUENTE: {n['fuente']} (portal)\nTítulo: {n['titulo']}\n{n['texto']}" for n in notas[:3])
+            if not url:
+                if util.ahora().hour == 9:  # una vez por día alcanza (antes salía en cada vuelta)
+                    util.avisar(f"Escala de {c['nombre']}", "no encontré documento oficial ni notas de escala en los portales")
+                continue
+            ya = {(c.get("escala") or {}).get("doc"), ((c.get("propuesta") or {}).get("escala") or {}).get("doc")}
+            if url in ya:
+                util.log(f"{c['nombre']}: sin escala nueva ({url})")
+                continue
+            hechos += 1
+            util.log(f"{c['nombre']}: documento nuevo {url}")
+            if tipo == "pdf":
+                import base64
+                adjunto = {"inline_data": {"mime_type": "application/pdf", "data": base64.b64encode(contenido).decode()}}
+                textos = [f"--- FUENTE OFICIAL (PDF del sindicato): {url}"]
+            elif tipo == "portal":
+                adjunto, textos = None, [contenido]
+            else:
+                adjunto, textos = None, [f"--- FUENTE OFICIAL (página del sindicato): {url}\n{contenido}"]
+            try:
+                self.actualizar_convenio({"convenio": slug, "tema": c["nombre"]}, None, textos, adjunto, url)
+            except gemini.SinTiempo:
+                raise
+            except Exception as e:  # noqa
+                util.avisar(f"No pude actualizar la escala de {c['nombre']}", str(e))
+
+    # ---------- vencimientos y feriados ----------
+    MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
+
+    def actualizar_vencimientos(self):
+        """Una vez por día: arma los vencimientos y feriados del mes actual y del siguiente con lo que publicaron
+        los portales. Solo se publica lo que confirman al menos `minimo_fuentes` fuentes distintas y no es estimado."""
+        if not self.db:
+            return
+        try:
+            cfg = json.loads((util.RAIZ / "vencimientos" / "fuentes.json").read_text(encoding="utf-8"))
+            previos = {r["mes"]: r for r in self.db.select("vencimientos", {"select": "mes,actualizado"})}
+        except gemini.SinTiempo:
+            raise
+        except Exception as e:  # noqa
+            util.avisar("No pude leer la agenda de vencimientos (¿falta correr esquema.sql?)", str(e))
+            return
+        hoy = util.ahora().date()
+        minimo = int(cfg.get("minimo_fuentes", 2))
+        for k in (0, 1):
+            anio, mes = hoy.year + (hoy.month - 1 + k) // 12, (hoy.month - 1 + k) % 12 + 1
+            clave = f"{anio}-{mes:02d}"
+            if str((previos.get(clave) or {}).get("actualizado") or "")[:10] == hoy.isoformat():
+                continue
+            nombre_mes = self.MESES[mes - 1]
+            textos, vistos = [], set()
+            for plantilla in cfg.get("paginas", []):
+                url = plantilla.format(mes=nombre_mes, anio=anio, mm=f"{mes:02d}")
+                texto, _ = fuentes.detalle(url, largo=15000)
+                if len(texto) > 300:
+                    nombre = url.split("/")[2].replace("www.", "")
+                    textos.append(f"--- FUENTE: {nombre}\n{texto}")
+                    vistos.add(nombre)
+            for consulta in cfg.get("buscar", []):
+                for it in fuentes.buscar_portales(consulta.format(mes=nombre_mes, anio=anio), 2, cfg.get("wordpress")):
+                    if nombre_mes in _slug(it["titulo"]) or nombre_mes in _slug(it["texto"][:600]):
+                        textos.append(f"--- FUENTE: {it['fuente']}\nTítulo: {it['titulo']}\n{it['texto'][:6000]}")
+                        vistos.add(it["fuente"])
+            oficiales = tuple(cfg.get("oficiales") or ())  # organismos (ej.: Comisión Arbitral): su fecha alcanza sola
+            if len(vistos) < minimo and CONFIABLE not in vistos and "lanacion.com.ar" not in vistos and not vistos & set(oficiales):
+                util.avisar(f"Vencimientos de {nombre_mes}", f"solo encontré {len(vistos)} fuente(s); queda la agenda anterior")
+                continue
+            try:
+                r = gemini.gemini(_prompt("vencimientos.md"), f"MES: {nombre_mes} {anio}\n\nFUENTES:\n" + "\n\n".join(textos), temperatura=0.1)
+            except gemini.SinTiempo:
+                raise
+            except Exception as e:  # noqa
+                util.avisar(f"No pude armar los vencimientos de {nombre_mes}", str(e))
+                continue
+            def confirmados(lista, campos, confiables=(CONFIABLE,)):
+                salida = []
+                for x in lista if isinstance(lista, list) else []:
+                    if not isinstance(x, dict) or not re.match(r"^\d{4}-\d{2}-\d{2}$", str(x.get("fecha", ""))):
+                        continue
+                    n = len({str(f) for f in (x.get("fuentes") or [])})
+                    de_ignacio = any(c in [str(f) for f in (x.get("fuentes") or [])] for c in confiables)
+                    if (n >= minimo or de_ignacio) and not x.get("estimado") and str(x["fecha"]).startswith(clave):
+                        salida.append({c: str(x.get(c) or "")[:160] for c in campos} | {"fuentes": n})
+                return sorted(salida, key=lambda x: x["fecha"])
+            venc = confirmados(r.get("vencimientos"), ("fecha", "concepto", "detalle"), (CONFIABLE,) + oficiales)
+            # feriados: La Nación alcanza sola (pedido de Ramiro); los vencimientos siguen pidiendo 2 fuentes o Ignacio
+            fer = confirmados(r.get("feriados"), ("fecha", "nombre", "tipo", "norma"), (CONFIABLE, "lanacion.com.ar"))
+            util.log(f"Vencimientos {clave}: {len(venc)} confirmados, {len(fer)} feriados ({len(vistos)} fuentes)")
+            self.vencimientos_info.append(f"{nombre_mes} {anio}: {len(venc)} vencimientos y {len(fer)} feriados confirmados por {minimo}+ fuentes ({', '.join(sorted(vistos))})")
+            if self.activo and venc:
+                self.db.upsert("vencimientos", [{"mes": clave, "items": venc, "feriados": fer, "fuentes": sorted(vistos),
+                                                 "actualizado": util.ahora().isoformat()}], "mes")
+                self.vencimientos_cambio = True
+
+    def armar_fila(self, grupo, items, nota, control, usados):
+        base = _slug_sin_anio_falso(_slug(nota.get("slug") or nota.get("titulo")), nota)
+        slug, k = base, 2
+        while slug in usados:
+            slug, k = f"{base}-{k}", k + 1
+        usados.add(slug)
+        # Solo frena la nota lo grave (montos, fechas, normas, alcance...). Lo menor se publica y queda anotado.
+        # Vale también para lo que viene de Ignacio: si el problema grave lo agregó la redacción, hay que mirarlo.
+        altas, bajas = _clasificar(control, nota.get("dudas"))
+        ok = not altas
+        if ok and bajas:
+            self.observaciones.append((nota.get("titulo", ""), "; ".join(b["dato"] for b in bajas)[:400]))
+        oficial = any(it["tipo"] == "oficial" for it in items)
+        return {
+            "slug": slug, "fecha": util.ahora().date().isoformat(), "seccion": grupo.get("seccion") if grupo.get("seccion") in ("sueldos", "impuestos", "profesion") else "profesion",
+            "antetitulo": str(nota.get("antetitulo", ""))[:120], "titulo": str(nota.get("titulo", ""))[:160],
+            "dato": (str(nota["dato"])[:40] if nota.get("dato") else None), "encorto": str(nota.get("encorto", ""))[:600],
+            "clave": (str(nota["clave"])[:80] if nota.get("clave") else None),
+            "cuerpo": _bloques_ok(nota.get("cuerpo")), "fuente": str(nota.get("fuente", ""))[:300],
+            "fuentes": [{"nombre": it["fuente"], "url": it["url"], "titulo": it["titulo"]} for it in items],
+            "verificada": oficial and ok, "estado": "publicada" if ok else "revision", "tema": grupo.get("tema"),
+            "actualiza": grupo.get("actualiza"),
+            "convenio": grupo.get("convenio") if grupo.get("convenio") in self.convenios else None,
+            "seo_titulo": str(nota.get("seo_titulo") or "")[:70] or None,
+            "descripcion_seo": str(nota.get("descripcion_seo") or "")[:170] or None,
+            "preguntas": [{"p": str(q.get("p", ""))[:200], "r": str(q.get("r", ""))[:500]} for q in (nota.get("preguntas") or [])
+                          if isinstance(q, dict) and q.get("p") and q.get("r")][:5], "motivo_revision": _motivo(altas) if not ok else None,
+        }
+
+    def correr(self):
+        util.log("Modo:", "ACTIVO (publica)" if self.activo else "ENSAYO (no publica nada)")
+        if self.activo:
+            self.sembrar()
+        recientes = self.notas_recientes()
+        previos = self.radar_previo()
+        nuevos = [it for it in self.leer_fuentes() if it["url"] not in previos]
+        # las páginas sin fecha (ARBA, portadas HTML) muestran notas viejas: se descartan las que ya pasaron por el radar alguna vez
+        sin_fecha = [it["url"] for it in nuevos if not it.get("fecha")]
+        if sin_fecha and self.db:
+            vistas = set()
+            for i in range(0, len(sin_fecha), 40):
+                lote = ",".join('"' + u.replace('"', '') + '"' for u in sin_fecha[i:i + 40])
+                try:
+                    vistas |= {f["url"] for f in self.db.select("radar", {"select": "url", "url": f"in.({lote})"})}
+                except gemini.SinTiempo:
+                    raise
+                except Exception:  # noqa
+                    pass
+            if vistas:
+                util.log(f"{len(vistas)} notas sin fecha ya vistas antes: no se vuelven a procesar")
+                nuevos = [it for it in nuevos if it["url"] not in vistas]
+        conocidas = {f["fuente"] for f in previos.values()} | self.fuentes_conocidas()
+        base = [it for it in nuevos if it["fuente"] not in conocidas and not it.get("fecha")]
+        if base:
+            util.log(f"{len(base)} notas viejas sin fecha de fuentes nuevas: quedan como vistas, no se publican")
+            if self.activo and self.db:
+                self.db.upsert("radar", [{"url": it["url"], "fuente": it["fuente"], "tipo": it["tipo"], "titulo": it["titulo"][:300],
+                                          "usado": True, "tema": "ya existente al empezar"} for it in base], "url")
+            nuevos = [it for it in nuevos if it not in base]
+        # novedades vistas en vueltas anteriores que siguen esperando una segunda fuente
+        esperando = [{"titulo": f["titulo"], "url": f["url"], "fecha": f.get("fecha"), "texto": f.get("texto") or "",
+                      "fuente": f["fuente"], "tipo": f["tipo"]} for f in previos.values() if not f.get("usado")]
+        if self.rapido:
+            esperando = [f for f in esperando if f.get("tipo") == "oficial"]
+        items = nuevos + esperando
+        util.log(f"{len(nuevos)} novedades nuevas y {len(esperando)} esperando segunda fuente")
+        if self.activo and self.db and nuevos:
+            self.db.upsert("radar", [{"url": it["url"], "fuente": it["fuente"], "tipo": it["tipo"], "titulo": it["titulo"][:300],
+                                      "texto": (it.get("texto") or "")[:4000], "fecha": it.get("fecha")} for it in nuevos], "url")
+        if not items:
+            self.tareas_finales()
+            return
+        try:
+            grupos = self.agrupar(items, recientes)
+        except gemini.SinTiempo:
+            raise
+        except Exception as e:  # noqa  (las novedades quedan en el radar y se procesan en la próxima vuelta)
+            util.avisar("No pude agrupar las novedades (quedan para la próxima vuelta)", str(e))
+            grupos = []
+        usados_slug = {n["slug"] for n in recientes}
+        hechas = 0
+        for g in grupos:
+            miembros = [items[i] for i in g.get("items", []) if isinstance(i, int) and 0 <= i < len(items)]
+            if not miembros:
+                continue
+            urls = [m["url"] for m in miembros]
+            if not g.get("profesion") or g.get("repetido"):
+                self.descartes.append((g.get("tema"), "no es de la profesión" if not g.get("profesion") else "ya publicado"))
+                self.marcar(urls, g.get("tema"), None)
+                continue
+            oficial = any(m["tipo"] == "oficial" for m in miembros)
+            portales = {m["fuente"] for m in miembros if m["tipo"] != "oficial"}
+            if not oficial and not portales:
+                continue
+            # Las notas propias de un medio (investigaciones, encuestas, opinión) no se replican:
+            # solo novedades normativas u oficiales, o temas que ya publicaron varios portales.
+            # (pedido de Ramiro: con un solo blog no se replican; si la sacan dos o más blogs distintos se arma pero queda en revisión)
+            propia_varios = False
+            if g.get("clase") == "propia" and not oficial:
+                if len(portales) >= 2:
+                    propia_varios = True
+                else:
+                    self.descartes.append((g.get("tema"), "nota propia de un blog (no sale de una norma, actualización ni novedad oficial): no se replica"))
+                    self.marcar(urls, g.get("tema"), None)
+                    continue
+            # Regla de fuentes: se publica si hay fuente oficial, si lo trae Ignacio Online, si lo publicaron
+            # al menos 2 portales, o si la nota del portal cita la fuente oficial y la podemos leer para chequear.
+            # Los blogs de "apoyo" (generalistas) nunca arrancan una nota solos: solo confirman un tema
+            # que ya trae una fuente oficial o un blog contable principal.
+            principales = {m["fuente"] for m in miembros if m["tipo"] == "portal"}
+            if not oficial and not principales:
+                # blogs de apoyo solos: alcanza si coinciden dos distintos, o si uno cita la fuente oficial y se puede chequear
+                apoyos = {m["fuente"] for m in miembros if m["tipo"] == "apoyo"}
+                if len(apoyos) >= 2:
+                    self.observaciones.append((g.get("tema") or "", f"Lo confirman dos blogs de apoyo ({', '.join(sorted(apoyos))})"))
+                else:
+                    citada = None
+                    for m in [x for x in miembros if x["tipo"] == "apoyo"][:2]:
+                        try:
+                            citada = fuentes.fuente_oficial_citada(m["url"])
+                        except Exception:  # noqa
+                            citada = None
+                        if citada and not citada.get("pdf"):
+                            break
+                        citada = None
+                    if not citada:
+                        self.esperando.append((g.get("tema"), f"solo en un blog de apoyo ({', '.join(sorted(portales))}) y sin fuente oficial para chequear: espera otro blog o la fuente oficial"))
+                        continue
+                    miembros = miembros + [citada]
+                    oficial = True
+                    self.observaciones.append((g.get("tema") or "", f"Un blog de apoyo; se chequeó con la fuente oficial que cita: {citada['url']}"))
+            de_confianza = portales & self.confiables
+            if not oficial and de_confianza:
+                # un blog de confianza alcanza; si cita la fuente oficial y se puede leer, se suma para chequear los datos
+                try:
+                    m0 = next(x for x in miembros if x["fuente"] in de_confianza)
+                    citada = fuentes.fuente_oficial_citada(m0["url"])
+                except Exception:  # noqa
+                    citada = None
+                if citada and not citada.get("pdf"):
+                    miembros = miembros + [citada]
+                    oficial = True
+            if not oficial and not de_confianza and len(portales) < int(self.cfg.get("portales_minimos", 2)):
+                citada = None
+                for m in [x for x in miembros if x["tipo"] == "portal"][:2]:
+                    try:
+                        citada = fuentes.fuente_oficial_citada(m["url"])
+                    except Exception:  # noqa
+                        citada = None
+                    if citada and not citada.get("pdf"):
+                        break
+                    citada = None
+                if not citada:
+                    self.esperando.append((g.get("tema"), f"solo en {', '.join(sorted(portales))} y sin fuente oficial para chequear: espera un segundo portal"))
+                    continue
+                miembros = miembros + [citada]
+                oficial = True
+                self.observaciones.append((g.get("tema") or "", f"Un solo portal; se chequeó con la fuente oficial que cita: {citada['url']}"))
+            if hechas >= self.cfg.get("max_notas_por_vuelta", 6):
+                self.esperando.append((g.get("tema"), "queda para la próxima vuelta"))
+                continue
+            try:
+                nota, control = self.redactar(g, miembros, recientes)
+                fila = self.armar_fila(g, miembros, nota, control, usados_slug)
+                if propia_varios:
+                    puntos = [f"Es una nota propia de {', '.join(sorted(portales))} (no sale de una norma ni de una novedad oficial). "
+                              "La armamos porque la publicaron dos o más blogs: decidí si la publicamos"]
+                    previo = fila.get("motivo_revision") or ""
+                    if previo.startswith("🔴"):
+                        puntos += [re.sub(r"^\d+\)\s*", "", x) for x in previo.split("\n")[1:] if x.strip()]
+                    fila["estado"], fila["verificada"] = "revision", False
+                    fila["motivo_revision"] = (f"🔴 {len(puntos)} {'dato' if len(puntos) == 1 else 'datos'} para chequear antes de publicar\n"
+                                               + "\n".join(f"{i}) {t}" for i, t in enumerate(puntos, 1)))[:1500]
+            except gemini.SinTiempo:
+                self.esperando.append((g.get("tema"), "sin tiempo en esta vuelta: queda para la próxima"))
+                continue
+            except Exception as e:  # noqa
+                util.avisar(f"No pude escribir «{g.get('tema')}»", str(e))
+                continue
+            hechas += 1
+            (self.publicadas if fila["estado"] == "publicada" else self.revision).append(fila)
+            try:
+                self.datos_por_nota(fila, miembros)
+            except gemini.SinTiempo:
+                pass
+            if self.activo and self.db:
+                self.db.upsert("notas", [fila], "slug")
+                self.marcar(urls, g.get("tema"), fila["slug"])
+                for mi in miembros:
+                    if mi["fuente"] in self.confiables:
+                        base_txt, _ = fuentes.detalle(mi["url"], largo=6000)
+                        if base_txt:
+                            self.db.update("radar", {"url": f"eq.{mi['url']}"}, {"texto": base_txt[:6000]})
+            if g.get("escala") and fila.get("convenio"):
+                try:
+                    self.actualizar_convenio(g, fila["slug"] if fila["estado"] == "publicada" else None)
+                except gemini.SinTiempo:
+                    raise
+                except Exception as e:  # noqa
+                    util.avisar(f"No pude actualizar el convenio {fila['convenio']}", str(e))
+        self.tareas_finales()
+
+    def tareas_finales(self):
+        if self.rapido:  # la vuelta rápida solo publica novedades; el resto lo hace la vuelta completa
+            return self.cierre()
+        """Guías, escalas, vencimientos y vigilancia, en ese orden. Si se acaba el tiempo, lo que falta queda
+        para la próxima vuelta y la vuelta cierra igual (publica la web, manda el mail y deja el resumen)."""
+        try:
+            # la vigilancia va primero: no usa Gemini y si un blog de confianza borró o corrigió algo, nuestra nota sale ya
+            for nombre, tarea in [("vigilancia de los blogs de confianza", self.vigilar_ignacio), ("datos al día", self.actualizar_respuestas), ("guías", self.escribir_guias),
+                                  ("escalas oficiales", self.revisar_escalas_oficiales), ("vencimientos", self.actualizar_vencimientos)]:
+                try:
+                    gemini._queda()
+                    tarea()
+                except gemini.SinTiempo:
+                    self.observaciones.append(("⏱️ Sin tiempo", f"{nombre} y lo que sigue quedan para la próxima vuelta"))
+                    util.log(f"Sin tiempo: {nombre} y lo que sigue quedan para la próxima vuelta")
+                    break
+                except gemini.SinTiempo:
+                    raise
+                except Exception as e:  # noqa
+                    util.avisar(f"Falló el paso de {nombre} (sigue el resto)", str(e))
+        finally:
+            self.cierre()
+
+    # ---------- datos del día (páginas respuesta) ----------
+    def _temas_y_previos(self):
+        if not hasattr(self, "_resp_cache"):
+            temas = json.load(open(util.RAIZ / "respuestas" / "temas.json", encoding="utf-8"))
+            previos = {r["slug"]: r for r in self.db.select("respuestas", {"select": "*"})} if self.db else {}
+            for f in (util.RAIZ / "respuestas" / "inicial").glob("*.json"):  # punto de partida si todavía no hay dato guardado
+                r = json.load(open(f, encoding="utf-8"))
+                previos.setdefault(r["slug"], r)
+            try:
+                ipc = json.load(open(util.RAIZ / "respuestas" / "ipc.json", encoding="utf-8")).get("fechas", [])
+            except Exception:  # noqa
+                ipc = []
+            self._resp_cache = (temas, previos, ipc)
+            self.pedidos_datos = 0
+        return self._resp_cache
+
+    @staticmethod
+    def _dia(v):
+        try:
+            return util.ahora().date().fromisoformat(str(v)[:10])
+        except Exception:  # noqa
+            return None
+
+    def _toca(self, t, prev, ipc):
+        """Motivo para rechequear hoy un dato (o None). Ciclo: semanal en espera; ventana diaria solo
+        alrededor de la fecha esperada y mientras no haya cambiado; rechequeo único al día siguiente de un cambio."""
+        hoy = util.ahora().date()
+        rev, camb = self._dia(prev.get("revisado")), self._dia(prev.get("cambiado"))
+        if not prev:
+            return "primera carga"
+        if rev == hoy:
+            return None
+        if camb and rev and (hoy - camb).days in (1, 2) and rev <= camb:
+            return "rechequeo después del cambio"
+        c = t.get("ciclo") or {}
+        tipo = c.get("tipo")
+        if tipo == "movilidad":
+            fechas = [self._dia(x) for x in ipc]
+            for m in (hoy.replace(day=1) - timedelta(days=1), hoy):  # mes sin fecha oficial cargada: se estima el 13
+                if not any(x and (x.year, x.month) == (m.year, m.month) for x in fechas):
+                    fechas.append(m.replace(day=13))
+            for d in [x for x in fechas if x]:
+                if 4 <= (hoy - d).days <= 7 and (not camb or camb < d):
+                    return "fecha esperada (después del IPC del INDEC)"
+                if (hoy - d).days == 8 and (not camb or camb < d):
+                    self.alertas.append(f"Dato «{t['titulo']}»: pasó la fecha esperada (IPC del {d:%d/%m}) y todavía no se confirmó el cambio")
+        for v in c.get("ventanas") or []:
+            ini, fin = v.split("/")
+            i = hoy.replace(month=int(ini[:2]), day=int(ini[3:]))
+            f = hoy.replace(month=int(fin[:2]), day=int(fin[3:]))
+            if i > f:  # ventana que cruza el año (ej.: 26/12 al 10/02)
+                i = i.replace(year=hoy.year - 1) if hoy <= f else i
+                f = f if hoy <= f else f.replace(year=hoy.year + 1)
+            if i <= hoy <= f and (not camb or camb < i) and (not rev or (hoy - rev).days >= 2):
+                return "ventana de actualización"
+        if c.get("diario_desde") and self._dia(c["diario_desde"]) and self._dia(c["diario_desde"]) <= hoy \
+                and (not camb or camb < self._dia(c["diario_desde"])) and (not rev or (hoy - rev).days >= 2):
+            return "se espera un acuerdo nuevo"
+        if not rev or (hoy - rev).days >= 7 * int(c.get("semanas", 1)):
+            return "chequeo semanal"
+        return None
+
+    def _chequear(self, t, prev, textos, usadas, motivo):
+        hoy = util.ahora().date().isoformat()
+        pedido = (f"FECHA DE HOY: {hoy}\nTEMA: {t['titulo']}\nPREGUNTA: {t['pregunta']}\nQUÉ HAY QUE INFORMAR: {t['pide']}\n"
+                  f"FORMATO ESTRUCTURADO: {t.get('estructura') or 'null'}\n\n"
+                  f"DATO ANTERIOR: {json.dumps(prev.get('datos') or {}, ensure_ascii=False)}\n\nFUENTES:\n" + "\n\n".join(textos))
+        self.pedidos_datos += 1
+        r = gemini.gemini(_prompt("respuesta.md"), pedido, temperatura=0.1)
+        nombres = {u["nombre"] for u in usadas}
+        confirman = [c for c in (r.get("confirman") or []) if c in nombres]
+        fuerte = any(c.startswith("Fuente oficial") or c == CONFIABLE for c in confirman) or len(set(confirman)) >= 2
+        if not r.get("ok") or r.get("dudas") or not fuerte or not r.get("valor"):
+            self.datos_obs.append((t["titulo"], f"Sin confirmar ({motivo}); queda el anterior: "
+                                       + "; ".join(map(str, r.get("dudas") or ["no lo confirmaron 2 fuentes"]))[:300]))
+            return False
+        ahora = util.ahora().isoformat()
+        cambio = not prev or (prev.get("datos") or {}).get("valor") != r.get("valor")
+        hist = list(prev.get("historial") or [])
+        if cambio:
+            hist = ([{"fecha": hoy, "valor": r["valor"], "norma": r.get("norma")}] + hist)[:24]
+        fila = {"slug": t["slug"], "titulo": t["titulo"], "datos": r,
+                "fuentes": [u for u in usadas if u["nombre"] in confirman][:6], "revisado": ahora,
+                "cambiado": ahora if cambio else (prev.get("cambiado") or ahora), "historial": hist}
+        if self.activo:
+            self.db.upsert("respuestas", [fila], "slug")
+            self.vencimientos_cambio = True
+        self._resp_cache[1][t["slug"]] = fila
+        self.vencimientos_info.append(f"Dato del día «{t['titulo']}» ({motivo}): {'CAMBIÓ a ' if cambio else 'sin cambios, '}{r['valor']} (confirman: {', '.join(confirman)})")
+        return True
+
+    def datos_por_nota(self, fila, miembros):
+        """La nota nueva sobre un tema actualiza su dato del día con las mismas fuentes (1 pedido, solo ese día)."""
+        if not self.db or fila.get("estado") != "publicada":
+            return
+        try:
+            temas, previos, _ = self._temas_y_previos()
+        except Exception:  # noqa
+            return
+        texto = (fila.get("titulo", "") + " " + fila.get("encorto", "")).lower()
+        hoy = util.ahora().date()
+        for t in temas:
+            if not any(c.lower() in texto for c in t.get("claves", [])):
+                continue
+            prev = previos.get(t["slug"]) or {}
+            camb = self._dia(prev.get("cambiado"))
+            if self._dia(prev.get("revisado")) == hoy or (camb and (hoy - camb).days < 5):
+                continue  # ya se revisó hoy o el ciclo ya cerró con un cambio reciente
+            textos = [f"[{m['fuente']}] {m['titulo']} {m['url']}\n{(m.get('texto') or '')[:6000]}" for m in miembros]
+            usadas = [{"nombre": ("Fuente oficial (" + m["url"].split("/")[2].replace("www.", "") + ")") if m["tipo"] == "oficial" else m["fuente"],
+                       "url": m["url"], "titulo": m["titulo"]} for m in miembros]
+            textos = [x.replace(f"[{m['fuente']}]", f"[{u['nombre']}]", 1) for x, m, u in zip(textos, miembros, usadas)]
+            try:
+                self._chequear(t, prev, textos, usadas, "nota nueva: " + fila.get("titulo", "")[:80])
+            except gemini.SinTiempo:
+                raise
+            except Exception as e:  # noqa
+                util.avisar(f"No pude actualizar el dato «{t['titulo']}» con la nota", str(e))
+
+    def actualizar_respuestas(self):
+        """Chequeos programados de los datos del día, solo en días hábiles de 9 a 20 y como mucho 2 por vuelta."""
+        if not self.db:
+            return
+        try:
+            temas, previos, ipc = self._temas_y_previos()
+        except gemini.SinTiempo:
+            raise
+        except Exception as e:  # noqa
+            util.avisar("No pude leer los datos del día (¿falta correr esquema.sql en Supabase?)", str(e))
+            return
+        ahora = util.ahora()
+        primera = any(t["slug"] not in previos for t in temas)
+        if not primera and (ahora.weekday() >= 5 or not 9 <= ahora.hour < 20):
+            return
+        hechos = 0
+        for t in temas:
+            if hechos >= int(self.cfg.get("respuestas_por_vuelta", 2)):
+                break
+            prev = previos.get(t["slug"]) or {}
+            motivo = self._toca(t, prev, ipc)
+            if not motivo:
+                continue
+            textos, usadas = [], []
+            for u in t.get("oficial") or []:
+                try:
+                    tx, _ = fuentes.detalle(u, largo=8000)
+                except gemini.SinTiempo:
+                    raise
+                except Exception:  # noqa
+                    tx = ""
+                if len(tx) > 200:
+                    nombre = "Fuente oficial (" + u.split("/")[2].replace("www.", "") + ")"
+                    textos.append(f"[{nombre}] {u}\n{tx}"); usadas.append({"nombre": nombre, "url": u, "oficial": True})
+            for it in fuentes.buscar_portales(t["busqueda"], por_portal=2):
+                textos.append(f"[{it['fuente']}] {it['titulo']} {it['url']}\n{it['texto'][:5000]}")
+                usadas.append({"nombre": it["fuente"], "url": it["url"], "titulo": it["titulo"]})
+            hechos += 1
+            if not textos:
+                self.datos_obs.append((t["titulo"], f"No encontré fuentes para rechequear ({motivo})"))
+                continue
+            try:
+                self._chequear(t, prev, textos, usadas, motivo)
+            except gemini.SinTiempo:
+                raise
+            except Exception as e:  # noqa
+                util.avisar(f"No pude rechequear «{t['titulo']}»", str(e))
+
+    def cierre(self):
+        if self.activo:
+            if self.publicadas or self.convenios_act or self.vencimientos_cambio:
+                self.republicar_web()
+            mail.avisar(self.publicadas + self.revision, self.cfg.get("sitio_url", ""), self.cfg.get("mail_aviso"), self.convenios_act, self.convenios_rev,
+                        self.alertas, self.observaciones)
+        self.informe()
+
+    # ---------- guías ----------
+    def escribir_guias(self):
+        """Escribe de a poco las guías del catálogo que todavía no existen (máximo guias_por_dia)."""
+        try:
+            catalogo = json.loads((util.RAIZ / "guias" / "catalogo.json").read_text(encoding="utf-8"))
+        except gemini.SinTiempo:
+            raise
+        except Exception:  # noqa
+            return
+        por_dia = int(self.cfg.get("guias_por_dia", 2))
+        existentes, hoy = set(), util.ahora().date().isoformat()
+        if self.db:
+            try:
+                filas = self.db.select("notas", {"select": "slug,fecha,actualizado", "tipo": "eq.guia", "limit": "1000"})
+            except gemini.SinTiempo:
+                raise
+            except Exception as e:  # noqa
+                util.avisar("No pude leer las guías (¿falta correr esquema.sql en Supabase?)", str(e))
+                return
+            # "rehacer" en el catálogo: la guía se vuelve a escribir si es anterior a esa fecha (misma dirección)
+            rehacer = {"guia-" + g["slug"]: g["rehacer"] for g in catalogo if g.get("rehacer")}
+            self.guias_a_rehacer = {f["slug"] for f in filas} & set(rehacer)
+            existentes = {f["slug"] for f in filas
+                          if not (f["slug"] in rehacer and str(f.get("actualizado") or f.get("fecha") or "")[:10] < rehacer[f["slug"]])}
+            por_dia -= sum(1 for f in filas if str(f["fecha"]) == hoy)
+        pendientes = [g for g in catalogo if "guia-" + g["slug"] not in existentes]
+        self.guias_info = (f"{len(existentes)} escritas (publicadas o para revisar), {len(pendientes)} pendientes; "
+                           f"cupo que queda hoy: {max(0, por_dia)} (guias_por_dia en config.json)")
+        util.log("Guías:", self.guias_info)
+        for g in pendientes[:max(0, min(por_dia, int(self.cfg.get("guias_por_vuelta", 3))))]:
+            try:
+                self.escribir_guia(g)
+            except gemini.SinTiempo:
+                raise
+            except Exception as e:  # noqa
+                util.avisar(f"No pude escribir la guía «{g['titulo']}»", str(e))
+
+    def escribir_guia(self, g):
+        items = fuentes.buscar_portales(g["buscar"])
+        claves = [_slug(c).replace("-", " ") for c in g.get("claves") or []]
+        trata = lambda txt: any(re.search(rf"(?<![a-z0-9]){re.escape(c)}(?![a-z0-9])", _slug(txt).replace("-", " ")) for c in claves)
+        if claves:
+            # la búsqueda de los portales trae notas de otros temas (ej. "iva" aparece dentro de "operativa"):
+            # solo quedan las que hablan del tema en el título o lo nombran varias veces en el texto
+            items = [it for it in items if trata(it["titulo"]) or sum(1 for _ in re.finditer(
+                rf"(?<![a-z0-9]){re.escape(claves[0])}(?![a-z0-9])", _slug(it["texto"]).replace("-", " "))) >= 3]
+        textos = []
+        for ref in g.get("oficial") or []:
+            t = fuentes.texto_oficial(ref)
+            if t:
+                textos.append(f"--- FUENTE OFICIAL: {ref['url']}\n{t}")
+        textos += [f"--- FUENTE: {it['fuente']} (portal)\nTítulo: {it['titulo']}\nTexto: {it['texto']}" for it in items]
+        if not textos:
+            util.avisar("Guía sin fuentes", f"«{g['titulo']}»: los portales no devolvieron material; queda para otra vuelta.")
+            return
+        pedido = f"TEMA DE LA GUÍA: {g['titulo']}\nSECCIÓN: {g['seccion']}\n\nFUENTES:\n" + "\n\n".join(textos)
+        nota = gemini.gemini(_prompt("guia.md"), pedido, temperatura=0.4)
+        if str(nota.get("titulo", "")).strip().upper() == "SIN MATERIAL":
+            util.avisar("Guía sin material del tema", f"«{g['titulo']}»: las fuentes de hoy no hablan del tema; queda para otra vuelta.")
+            return
+        control = gemini.gemini(_prompt("verificar.md"), "NOTA:\n" + json.dumps(nota, ensure_ascii=False) + "\n\nFUENTES:\n" + "\n\n".join(textos), temperatura=0.1)
+        nota["slug"] = "guia-" + g["slug"]
+        oficiales = [{"nombre": "Norma oficial", "url": r["url"], "titulo": g["titulo"]} for r in g.get("oficial") or []]
+        fila = self.armar_fila({"seccion": g["seccion"], "tema": "guía: " + g["titulo"]}, items + [dict(x, tipo="oficial", fuente=x["nombre"]) for x in oficiales], nota, control, set())
+        fila["slug"], fila["tipo"] = "guia-" + g["slug"], "guia"
+        if claves and not trata(f"{nota.get('titulo', '')} {nota.get('encorto', '')}"):
+            fila["estado"], fila["verificada"] = "revision", False
+            fila["motivo_revision"] = (f"🔴 1 dato para chequear antes de publicar\n1) La guía salió sobre otro tema: se pidió «{g['titulo']}» "
+                                       f"y el texto no lo trata. Borrala o reescribila — no publicar así.")
+        fila["fuentes"] = [{"nombre": it["fuente"], "url": it["url"], "titulo": it["titulo"]} for it in items] + oficiales
+        if fila["slug"] in getattr(self, "guias_a_rehacer", set()) and fila["estado"] != "publicada":
+            # reescritura de una guía que ya está publicada: si la nueva no pasó el control, queda la anterior (no se pierde la página)
+            util.avisar("Guía para rehacer: la versión nueva no pasó el control", f"«{g['titulo']}»: sigue la anterior; se reintenta en otra vuelta. "
+                        + str(fila.get("motivo_revision") or "")[:600])
+            return
+        self.guias.append(fila)
+        (self.publicadas if fila["estado"] == "publicada" else self.revision).append(fila)
+        if self.activo and self.db:
+            self.db.upsert("notas", [fila], "slug")
+
+    def vigilar_ignacio(self):
+        """Revisa las notas de los blogs de confianza que usamos en los últimos días. Si la borraron o cambiaron algún
+        número, nuestra nota sale de la portada y queda en revisión con el motivo claro; si solo cambió la redacción, avisa."""
+        if not self.db:
+            return
+        import difflib
+        desde = (util.ahora() - timedelta(days=int(self.cfg.get("dias_vigilancia", 4)))).isoformat()
+        lista = ",".join('"' + f.replace('"', "") + '"' for f in sorted(self.confiables))
+        try:
+            filas = self.db.select("radar", {"select": "url,titulo,texto,nota,fuente", "fuente": f"in.({lista})", "usado": "eq.true",
+                                             "nota": "not.is.null", "visto": f"gte.{desde}", "limit": "300"})
+        except gemini.SinTiempo:
+            raise
+        except Exception as e:  # noqa
+            util.log("No pude leer el radar para vigilar los blogs de confianza:", util.ocultar(str(e)))
+            return
+        def a_revision(slug, texto):
+            if not self.activo:
+                return
+            try:
+                self.db.update("notas", {"slug": f"eq.{slug}"}, {"estado": "revision", "motivo_revision": texto[:1500]})
+                self.vencimientos_cambio = True  # fuerza que el sitio se vuelva a armar sin la nota
+            except Exception as e:  # noqa
+                util.log("No pude pasar a revisión", slug, util.ocultar(str(e)))
+        for f in filas:
+            antes = f.get("texto") or ""
+            quien = f.get("fuente") or "El blog"
+            if antes.startswith("__BORRADA__") or len(antes) < 300:
+                continue
+            codigo = fuentes.estado(f["url"])
+            if codigo in (404, 410):
+                self.alertas.append({"titulo": f["titulo"], "nota": f["nota"], "url": f["url"], "que": f"{quien} BORRÓ la publicación (nuestra nota pasó a revisión)"})
+                a_revision(f["nota"], f"🔴 1 dato para chequear antes de publicar\n1) {quien} borró la publicación en la que se basa esta nota: confirmá si la novedad sigue vigente; si no, borrá la nota — {f['url']}")
+                if self.activo:
+                    self.db.update("radar", {"url": f"eq.{f['url']}"}, {"texto": "__BORRADA__" + antes[:5000]})
+                continue
+            ahora, _ = fuentes.detalle(f["url"], largo=6000)
+            if not ahora:
+                continue
+            norm = lambda t: re.sub(r"\s+", " ", t).strip().lower()
+            a_, b_ = norm(antes), norm(ahora)
+            parecido = difflib.SequenceMatcher(None, a_, b_, autojunk=False).ratio()
+            na, nb = set(re.findall(r"\d[\d.,%]*", a_)), set(re.findall(r"\d[\d.,%]*", b_))
+            negacion = a_.count("no remunerativ") != b_.count("no remunerativ")
+            if a_ != b_ and (parecido < float(self.cfg.get("umbral_edicion", 0.99)) or na != nb or negacion):
+                grave = na != nb or negacion
+                self.alertas.append({"titulo": f["titulo"], "nota": f["nota"], "url": f["url"],
+                                     "que": f"{quien} EDITÓ la publicación" + (" (cambió algún número)" if na != nb else "") + (" (cambió remunerativo/no remunerativo)" if negacion else "")
+                                     + f" · coincide {parecido:.1%}" + (" · nuestra nota pasó a revisión" if grave else "")})
+                if grave:
+                    det = []
+                    if na - nb:
+                        det.append("ya no dice: " + ", ".join(sorted(na - nb)[:6]))
+                    if nb - na:
+                        det.append("ahora dice: " + ", ".join(sorted(nb - na)[:6]))
+                    if negacion:
+                        det.append("cambió lo de remunerativo / no remunerativo")
+                    a_revision(f["nota"], f"🔴 1 dato para chequear antes de publicar\n1) {quien} corrigió la publicación en la que se basa esta nota ({'; '.join(det)}): revisá esos datos en nuestra nota — {f['url']}")
+                if self.activo:
+                    self.db.update("radar", {"url": f"eq.{f['url']}"}, {"texto": ahora[:6000]})
+
+    def marcar(self, urls, tema, slug):
+        if self.activo and self.db and urls:
+            for u in urls:
+                self.db.update("radar", {"url": f"eq.{u}"}, {"usado": True, "tema": tema, "nota": slug})
+
+    def republicar_web(self):
+        repo, token = os.getenv("GITHUB_REPOSITORY"), util.secreto("GITHUB_TOKEN")
+        if not repo or not token:
+            return
+        r = util.pedir("POST", f"https://api.github.com/repos/{repo}/actions/workflows/web.yml/dispatches",
+                       headers={"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json"},
+                       json={"ref": os.getenv("GITHUB_REF_NAME", "main")}, intentos=2, timeout=30)
+        util.log("Web: pedido de republicación", getattr(r, "status_code", "?"))
+
+    def informe(self):
+        md = [f"# Fábrica de notas · {'ACTIVO' if self.activo else 'ENSAYO (no se publicó nada)'}\n"]
+        def nota_md(n):
+            cuerpo = []
+            for b in n["cuerpo"]:
+                if "h" in b:
+                    cuerpo.append(f"**{b['h']}**")
+                elif "p" in b:
+                    cuerpo.append(b["p"])
+                elif "tabla" in b:
+                    t = b["tabla"]
+                    cuerpo.append("| " + " | ".join(t[0]) + " |\n|" + "---|" * len(t[0]) + "\n" +
+                                  "\n".join("| " + " | ".join(f) + " |" for f in t[1:]))
+            fuentes_txt = ", ".join(f"[{f['nombre']}]({f['url']})" for f in n["fuentes"])
+            return (f"### {n['titulo']}\n*{n['antetitulo']}* · sección {n['seccion']}"
+                    + (f" · actualiza `{n['actualiza']}`" if n.get("actualiza") else "") + "\n\n"
+                    f"> **En corto:** {n['encorto']}\n\n" + "\n\n".join(cuerpo) +
+                    f"\n\n*Fuente:* {n['fuente']} · *Leído en:* {fuentes_txt}\n"
+                    + (f"\n**Motivo de revisión:** {n['motivo_revision']}\n" if n.get("motivo_revision") else "") + "\n---\n")
+        md.append(f"## ✅ Se publicarían solas ({len(self.publicadas)})\n" if not self.activo else f"## ✅ Publicadas ({len(self.publicadas)})\n")
+        md += [nota_md(n) for n in self.publicadas] or ["Ninguna.\n"]
+        md.append(f"## 🟡 Para revisar ({len(self.revision)})\n")
+        md += [nota_md(n) for n in self.revision] or ["Ninguna.\n"]
+        md.append(f"## 📊 Convenios actualizados ({len(self.convenios_act)})\n" + "".join(f"- {c['nombre']}: {c['periodo']}\n" for c in self.convenios_act))
+        md.append(f"## 🟡 Convenios para revisar ({len(self.convenios_rev)})\n" + "".join(f"- {c['nombre']}: {c['periodo']} — {c['motivo']}\n" for c in self.convenios_rev))
+        for c in self.convenios_act + self.convenios_rev:
+            t = (c["datos"].get("escala") or {}).get("tabla") or []
+            if t:
+                md.append(f"**Escala {c['nombre']} {c['periodo']}**\n\n| " + " | ".join(t[0]) + " |\n|" + "---|" * len(t[0]) + "\n" + "\n".join("| " + " | ".join(f) + " |" for f in t[1:]) + "\n")
+        md.append(f"## 🚨 Blogs de confianza que editaron o borraron ({len(self.alertas)})\n" + "".join(f"- {a['que']}: [{a['titulo']}]({a['url']}) → nuestra nota `{a['nota']}`\n" for a in self.alertas))
+        md.append(f"## 📊 Datos del día sin confirmar ({len(self.datos_obs)})\n" + ("".join(f"- {t}: {o}\n" for t, o in self.datos_obs) or "Ninguno.\n"))
+        md.append(f"## 📝 Publicadas con observaciones menores, no hace falta revisar ({len(self.observaciones)})\n" + "".join(f"- {t}: {o}\n" for t, o in self.observaciones))
+        md.append(f"**Pedidos a Gemini en esta vuelta:** {gemini.PEDIDOS[0]} (datos del día: {getattr(self, 'pedidos_datos', 0)})\n")
+        md.append("## 📅 Vencimientos y datos del día\n" + ("\n".join(f"- {x}" for x in self.vencimientos_info) or "Sin cambios (ya actualizados hoy).") + "\n")
+        md.append(f"## 📘 Guías\n{self.guias_info or 'Sin datos.'}\n")
+        md.append(f"## ⏳ Esperando segunda fuente ({len(self.esperando)})\n" + "".join(f"- {t} ({d})\n" for t, d in self.esperando))
+        md.append(f"## 🚫 Descartadas ({len(self.descartes)})\n" + "".join(f"- {t}: {d}\n" for t, d in self.descartes))
+        util.resumen("\n".join(md))
+
+
+def main():
+    db = None
+    if util.secreto("SUPABASE_URL") and util.secreto("SUPABASE_SECRET_KEY"):
+        from .db import DB
+        db = DB()
+    Fabrica(db).correr()
 
 
 if __name__ == "__main__":
-    ap = argparse.ArgumentParser()
-    ap.add_argument("accion", choices=["generar", "publicar", "resumen", "reporte", "toca", "esperar", "probar",
-                                       "rehacer", "listo", "revisar", "online", "mejoras", "sugerencia", "tiktok",
-                                       "reintentar", "preparar_capitulo", "corregir_capitulo"])
-    ap.add_argument("--ultima", action="store_true")
-    ap.add_argument("--base-url", default="")
-    ap.add_argument("--simulado", action="store_true")
-    a = ap.parse_args()
-    try:
-        if a.accion == "toca":
-            toca()
-        elif a.accion == "preparar_capitulo":
-            preparar_capitulo()
-        elif a.accion == "corregir_capitulo":
-            corregir_capitulo()
-        elif a.accion == "mejoras":
-            from . import mejoras
-            mejoras.diario(regenerar=_proponer_hoy, medir=lambda: _para_mejoras(util.config())[0])
-        elif a.accion == "tiktok":
-            cargar_tiktok()
-        elif a.accion == "reintentar":
-            reintentar(os.getenv("CUALES", ""))
-        elif a.accion == "sugerencia":
-            sugerencia()
-        elif a.accion == "esperar":
-            esperar(a.ultima)
-        elif a.accion == "rehacer":
-            rehacer()
-        elif a.accion == "listo":
-            listo(a.base_url)
-        elif a.accion == "online":
-            online(a.base_url)
-        elif a.accion == "revisar":
-            revisar()
-        elif a.accion == "generar":
-            generar(a.simulado)
-        elif a.accion == "publicar":
-            publicar(a.base_url)
-        elif a.accion == "resumen":
-            resumen(a.base_url)
-        elif a.accion == "probar":
-            from . import probar
-            probar.probar()
-        else:
-            reporte()
-    except Exception as error:  # noqa
-        import traceback
-        print(util.ocultar(traceback.format_exc()), flush=True)
-        util.avisar_error(a.accion, error)
-        sys.exit(1)
+    main()
