@@ -361,3 +361,10 @@ table.feriados tr.prox-f td{background:var(--bronce-suave);font-weight:600}
 /* título principal de la portada: lo leen Google y los lectores de pantalla, no se ve */
 .oculto{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .pie .secs a{margin:0 .15em}
+/* Monotributo en "Cuándo cambia cada dato" */
+#monotributo{scroll-margin-top:110px}
+.mono-sem{display:grid;grid-template-columns:1fr 1fr;gap:.8em;margin:.8em 0}
+.mono-sem>div{background:#fff;border:1px solid #e3ded2;border-radius:8px;padding:.7em .9em}
+.mono-sem p{margin:.4em 0}
+@media (max-width:640px){.mono-sem{grid-template-columns:1fr}}
+.mono-tabla td,.mono-tabla th{white-space:nowrap;font-size:.92em;padding:.45em .6em}

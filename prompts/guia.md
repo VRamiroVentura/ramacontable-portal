@@ -37,7 +37,9 @@ Reglas para tablas y datos que cambian:
 - Nunca presentes como vigentes valores estimados o proyectados.
 
 Títulos para buscadores:
-- Incluí en el título y en el slug el número de la norma tal como se busca (ej.: "RG 5920", "Res. 304/2026", "Decreto 1103/2026") y el mes y año cuando aplica.
+- Incluí en el título el número de la norma tal como se busca (ej.: "RG 5920", "Ley 27.430").
+- Una guía es permanente: NO pongas mes en el título ni en el seo_titulo (nada de "agosto 2026"); como mucho el año, y solo si el tema depende del año.
+- La guía tiene que tratar EXACTAMENTE el TEMA DE LA GUÍA pedido. Si las fuentes hablan de otra cosa, no las uses; si no queda material sobre el tema, devolvé "titulo": "SIN MATERIAL".
 - Usá las palabras con que lo busca un contador: "tope de aportes" (no solo "base imponible"), "paritarias" y "escala salarial" junto al nombre del gremio (ej.: "UTHGRA").
 
 Reglas de redacción para guías de liquidación:

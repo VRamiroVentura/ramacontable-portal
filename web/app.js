@@ -444,7 +444,7 @@
 
   // ---------- notas: versión al día y herramientas del administrador ----------
   let esAdmin = false;
-  const SECC = { sueldos: 'Sueldos', impuestos: 'Impuestos', profesion: 'Profesión', economia: 'Economía' };
+  const SECC = { sueldos: 'Sueldos', impuestos: 'Impuestos', profesion: 'Profesión' };
   const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
   const fechaLarga = iso => { const [a, m, d] = String(iso).slice(0, 10).split('-').map(Number); return `${d} de ${MESES[m - 1]} de ${a}`; };
   function bloquesAHtml(cuerpo) {

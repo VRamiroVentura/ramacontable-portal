@@ -16,13 +16,11 @@ TITULO_SECCION = {   # título para Google de cada sección (el menú sigue dici
     "sueldos": "Novedades de sueldos: paritarias, escalas y aguinaldo",
     "impuestos": "Novedades de impuestos: ARCA, monotributo y Ganancias",
     "profesion": "Novedades de la profesión contable",
-    "economia": "Novedades económicas para contadores",
 }
 SECCIONES = {
     "sueldos": "Sueldos",
     "impuestos": "Impuestos",
     "profesion": "Profesión",
-    "economia": "Economía",
 }
 REDES = {
     "Instagram": "https://www.instagram.com/ramacontable",
@@ -273,6 +271,9 @@ def cargar_notas():
             if s not in todas and not no_publicada(s):
                 todas[s] = n
         notas = list(todas.values())
+    for n in notas:
+        if n.get("seccion") not in SECCIONES:   # el portal no tiene sección Economía: lo que quede así va a Profesión
+            n["seccion"] = "profesion"
     notas.sort(key=lambda n: (str(n["fecha"]), n["slug"]), reverse=True)
     return notas
 
@@ -1178,6 +1179,33 @@ def proximo_cambio(t):
     return "Sin fecha fija"
 
 
+def bloque_monotributo_calendario():
+    """Montos y recategorización del Monotributo juntos (los videos mandan acá con #monotributo).
+    Fechas: valores desde el 1/2 y el 1/8 (tabla oficial de ARCA); recategorización hasta el 5/2 y el 5/8 (RG 4309, art. 20, según RG 5546/2024)."""
+    hoy = datetime.date.today()
+    recat = next(d for d in (datetime.date(hoy.year, 2, 5), datetime.date(hoy.year, 8, 5), datetime.date(hoy.year + 1, 2, 5)) if d >= hoy)
+    montos = next(d for d in (datetime.date(hoy.year, 2, 1), datetime.date(hoy.year, 8, 1), datetime.date(hoy.year + 1, 2, 1)) if d > hoy)
+    semestre = "julio a diciembre" if recat.month == 2 else "enero a junio"
+    d = ajustar_tramo((RESP.get("monotributo-categorias-vigentes") or {}).get("datos") or {})
+    tabla = d.get("tabla") or []
+    vig = d.get("norma") or ""
+    t_html = ""
+    if len(tabla) > 1:
+        t_html = (f'<h3>Valores de hoy</h3><p class="ayuda">{e(vig)}.</p><div class="tabla mono-tabla"><table><thead><tr>'
+                  + "".join(f"<th>{e(c)}</th>" for c in tabla[0]) + "</tr></thead><tbody>"
+                  + "".join("<tr>" + "".join(f"<td>{e(c)}</td>" for c in f) + "</tr>" for f in tabla[1:]) + "</tbody></table></div>"
+                  + '<p><a class="btn" href="monotributo-categorias-vigentes.html">Ver categorías, topes y cuotas completas →</a> '
+                    '<a href="monotributo-categoria.html">¿Qué categoría me toca? Calculadora</a></p>')
+    return f"""<section id="monotributo" class="resp-caja mono-cal"><h2>Monotributo: montos y recategorización</h2>
+<p>Los montos se actualizan <b>dos veces por año</b> y la recategorización también. Van juntos:</p>
+<div class="mono-sem"><div><b>1.er semestre</b><p>💲 Montos nuevos desde el <b>1 de febrero</b></p><p>📋 Recategorización hasta el <b>5 de febrero</b> (por lo facturado de julio a diciembre)</p></div>
+<div><b>2.º semestre</b><p>💲 Montos nuevos desde el <b>1 de agosto</b></p><p>📋 Recategorización hasta el <b>5 de agosto</b> (por lo facturado de enero a junio)</p></div></div>
+<p><b>Próxima recategorización:</b> hasta el {recat.day} de {MESES[recat.month - 1]} de {recat.year} (por {semestre}). <b>Próximos montos:</b> desde el 1 de {MESES[montos.month - 1]} de {montos.year}.</p>
+<p>ARCA suele habilitar el trámite a mediados de enero y de julio, cuando publica los montos nuevos. Se hace en la web de ARCA o en la app ARCA Móvil, mirando lo facturado en los últimos 12 meses. Es obligatoria salvo que sigas en la misma categoría o tengas menos de 6 meses de actividad. La categoría nueva se paga desde febrero o agosto.</p>
+{t_html}
+<p class="ayuda">Fuentes: tabla oficial de categorías de ARCA y RG 4309 (art. 20, texto según RG 5546/2024).</p></section>"""
+
+
 def pagina_calendario_datos(notas):
     filas = "".join(f'<tr><td><a href="{t["slug"]}.html">{e(t["titulo"])}</a></td><td>{e(t.get("cuando", ""))}</td><td>{e(proximo_cambio(t))}</td></tr>' for t in TEMAS_RESP)
     filas += ('<tr><td><a href="dolar-hoy.html">Dólar (oficial, MEP, CCL, tarjeta)</a></td><td>Días hábiles de 10 a 17</td><td>Se actualiza cada hora</td></tr>'
@@ -1185,20 +1213,23 @@ def pagina_calendario_datos(notas):
               '<tr><td><a href="valor-uva-hoy.html">UVA, CER, ICL y tasas</a></td><td>El BCRA los publica todos los días</td><td>Todos los días</td></tr>')
     ipc = "".join(f"<li>{fecha_corta(x)}</li>" for x in _ipc_fechas() if x >= datetime.date.today().isoformat())
     qs = [{"p": "¿Cuándo aumentan las jubilaciones?", "r": "Todos los meses, por la inflación de dos meses antes (Decreto 274/2024). El INDEC publica la inflación a mitad de mes y ANSES confirma los nuevos haberes en los días siguientes."},
-          {"p": "¿Cuándo se actualiza el Monotributo?", "r": "Dos veces por año. Los montos nuevos se conocen alrededor de mediados de enero y de julio, y la recategorización vence en febrero y agosto."},
+          {"p": "¿Cuándo se actualiza el Monotributo?", "r": "Dos veces por año: los montos nuevos rigen desde el 1 de febrero y el 1 de agosto. ARCA los publica a mediados de enero y de julio."},
+          {"p": "¿Cuándo es la recategorización del Monotributo?", "r": "Dos veces por año: hasta el 5 de febrero (por lo facturado de julio a diciembre) y hasta el 5 de agosto (por lo facturado de enero a junio). Es obligatoria salvo que se siga en la misma categoría o se tengan menos de 6 meses de actividad."},
           {"p": "¿Cuándo cambian las deducciones de Ganancias?", "r": "Dos veces por año: hay tablas para enero a junio y para julio a diciembre."}]
     cuerpo = f"""<div class="grilla"><div class="nota-contenido"><p class="miga"><a href="datos-al-dia.html">Datos del día</a></p>
 <h1>Cuándo cambia cada dato: calendario de actualizaciones</h1>
 <p class="ayuda">Cuándo se actualizan la jubilación, la AUH, el Monotributo, Ganancias, el salario mínimo y los demás datos que usamos todos los días.</p>
+{bloque_monotributo_calendario()}
+<h2>Todos los datos</h2>
 <div class="tabla"><table><thead><tr><th>Dato</th><th>Cuándo cambia</th><th>Próximo cambio</th></tr></thead><tbody>{filas}</tbody></table></div>
 {('<h2>Próximas publicaciones de la inflación (INDEC)</h2><ul>' + ipc + '</ul>') if ipc else ''}
 {preguntas_html({"preguntas": qs})}
-<p class="aviso">Las fechas de ANSES, Monotributo y Ganancias son estimadas según cómo se publicaron en los últimos años. Las del INDEC salen de su calendario oficial.</p>
+<p class="aviso">Las fechas de ANSES y Ganancias son estimadas según cómo se publicaron en los últimos años. Las del Monotributo salen de la normativa de ARCA y las del INDEC, de su calendario oficial.</p>
 </div>{lateral(notas)}</div>"""
     ld = '<script type="application/ld+json">' + json.dumps({"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [
         {"@type": "Question", "name": q["p"], "acceptedAnswer": {"@type": "Answer", "text": q["r"]}} for q in qs]}, ensure_ascii=False) + "</script>"
-    return pagina("Cuándo cambia cada dato: jubilaciones, AUH, Monotributo, Ganancias y salario mínimo | Ramacontable", cuerpo, "datos-al-dia",
-                  "Calendario de actualizaciones: cuándo aumentan las jubilaciones y la AUH, cuándo se actualiza el Monotributo, Ganancias y el salario mínimo.",
+    return pagina("Cuándo cambia cada dato: Monotributo, recategorización, jubilaciones y AUH | Ramacontable", cuerpo, "datos-al-dia",
+                  "Montos del Monotributo desde el 1/2 y el 1/8, recategorización hasta el 5/2 y el 5/8, y cuándo cambian jubilaciones, AUH, Ganancias y salario mínimo.",
                   "cuando-cambia-cada-dato.html", ld, [("Datos del día", "datos-al-dia.html"), ("Cuándo cambia cada dato", "cuando-cambia-cada-dato.html")])
 
 
@@ -1787,7 +1818,6 @@ DESC_SECCION = {
     "sueldos": "Novedades de sueldos, escalas salariales por convenio, sumas no remunerativas, guías y calculadoras para liquidar.",
     "impuestos": "Novedades impositivas de ARCA y rentas provinciales: Ganancias, IVA, Monotributo, Bienes Personales, Ingresos Brutos y más.",
     "profesion": "Novedades para el ejercicio de la profesión contable: consejos profesionales, normas contables, sociedades y trámites.",
-    "economia": "Novedades económicas que impactan en el trabajo del contador.",
 }
 
 

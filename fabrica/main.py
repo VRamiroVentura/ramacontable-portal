@@ -803,13 +803,17 @@ class Fabrica:
         existentes, hoy = set(), util.ahora().date().isoformat()
         if self.db:
             try:
-                filas = self.db.select("notas", {"select": "slug,fecha", "tipo": "eq.guia", "limit": "1000"})
+                filas = self.db.select("notas", {"select": "slug,fecha,actualizado", "tipo": "eq.guia", "limit": "1000"})
             except gemini.SinTiempo:
                 raise
             except Exception as e:  # noqa
                 util.avisar("No pude leer las guías (¿falta correr esquema.sql en Supabase?)", str(e))
                 return
-            existentes = {f["slug"] for f in filas}
+            # "rehacer" en el catálogo: la guía se vuelve a escribir si es anterior a esa fecha (misma dirección)
+            rehacer = {"guia-" + g["slug"]: g["rehacer"] for g in catalogo if g.get("rehacer")}
+            self.guias_a_rehacer = {f["slug"] for f in filas} & set(rehacer)
+            existentes = {f["slug"] for f in filas
+                          if not (f["slug"] in rehacer and str(f.get("actualizado") or f.get("fecha") or "")[:10] < rehacer[f["slug"]])}
             por_dia -= sum(1 for f in filas if str(f["fecha"]) == hoy)
         pendientes = [g for g in catalogo if "guia-" + g["slug"] not in existentes]
         self.guias_info = (f"{len(existentes)} escritas (publicadas o para revisar), {len(pendientes)} pendientes; "
@@ -825,6 +829,13 @@ class Fabrica:
 
     def escribir_guia(self, g):
         items = fuentes.buscar_portales(g["buscar"])
+        claves = [_slug(c).replace("-", " ") for c in g.get("claves") or []]
+        trata = lambda txt: any(re.search(rf"(?<![a-z0-9]){re.escape(c)}(?![a-z0-9])", _slug(txt).replace("-", " ")) for c in claves)
+        if claves:
+            # la búsqueda de los portales trae notas de otros temas (ej. "iva" aparece dentro de "operativa"):
+            # solo quedan las que hablan del tema en el título o lo nombran varias veces en el texto
+            items = [it for it in items if trata(it["titulo"]) or sum(1 for _ in re.finditer(
+                rf"(?<![a-z0-9]){re.escape(claves[0])}(?![a-z0-9])", _slug(it["texto"]).replace("-", " "))) >= 3]
         textos = []
         for ref in g.get("oficial") or []:
             t = fuentes.texto_oficial(ref)
@@ -836,12 +847,24 @@ class Fabrica:
             return
         pedido = f"TEMA DE LA GUÍA: {g['titulo']}\nSECCIÓN: {g['seccion']}\n\nFUENTES:\n" + "\n\n".join(textos)
         nota = gemini.gemini(_prompt("guia.md"), pedido, temperatura=0.4)
+        if str(nota.get("titulo", "")).strip().upper() == "SIN MATERIAL":
+            util.avisar("Guía sin material del tema", f"«{g['titulo']}»: las fuentes de hoy no hablan del tema; queda para otra vuelta.")
+            return
         control = gemini.gemini(_prompt("verificar.md"), "NOTA:\n" + json.dumps(nota, ensure_ascii=False) + "\n\nFUENTES:\n" + "\n\n".join(textos), temperatura=0.1)
         nota["slug"] = "guia-" + g["slug"]
         oficiales = [{"nombre": "Norma oficial", "url": r["url"], "titulo": g["titulo"]} for r in g.get("oficial") or []]
         fila = self.armar_fila({"seccion": g["seccion"], "tema": "guía: " + g["titulo"]}, items + [dict(x, tipo="oficial", fuente=x["nombre"]) for x in oficiales], nota, control, set())
         fila["slug"], fila["tipo"] = "guia-" + g["slug"], "guia"
+        if claves and not trata(f"{nota.get('titulo', '')} {nota.get('encorto', '')}"):
+            fila["estado"], fila["verificada"] = "revision", False
+            fila["motivo_revision"] = (f"🔴 1 dato para chequear antes de publicar\n1) La guía salió sobre otro tema: se pidió «{g['titulo']}» "
+                                       f"y el texto no lo trata. Borrala o reescribila — no publicar así.")
         fila["fuentes"] = [{"nombre": it["fuente"], "url": it["url"], "titulo": it["titulo"]} for it in items] + oficiales
+        if fila["slug"] in getattr(self, "guias_a_rehacer", set()) and fila["estado"] != "publicada":
+            # reescritura de una guía que ya está publicada: si la nueva no pasó el control, queda la anterior (no se pierde la página)
+            util.avisar("Guía para rehacer: la versión nueva no pasó el control", f"«{g['titulo']}»: sigue la anterior; se reintenta en otra vuelta. "
+                        + str(fila.get("motivo_revision") or "")[:600])
+            return
         self.guias.append(fila)
         (self.publicadas if fila["estado"] == "publicada" else self.revision).append(fila)
         if self.activo and self.db:

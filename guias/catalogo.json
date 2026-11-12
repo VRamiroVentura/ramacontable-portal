@@ -172,8 +172,14 @@
   "slug": "iva",
   "titulo": "IVA: liquidación mensual y Libro IVA Digital",
   "seccion": "impuestos",
-  "buscar": "iva libro iva digital",
-  "oficial": []
+  "buscar": "libro iva digital",
+  "oficial": [],
+  "rehacer": "2026-11-12",
+  "claves": [
+   "IVA",
+   "impuesto al valor agregado",
+   "Libro IVA Digital"
+  ]
  },
  {
   "slug": "monotributo",
@@ -236,9 +242,15 @@
   "slug": "certificacion-ingresos",
   "titulo": "Certificación de ingresos: requisitos y modelo",
   "seccion": "profesion",
-  "buscar": "certificacion de ingresos",
+  "buscar": "certificacion de ingresos contador",
   "oficial": [],
-  "grupo": "contables"
+  "grupo": "contables",
+  "rehacer": "2026-11-12",
+  "claves": [
+   "certificación de ingresos",
+   "certificacion de ingresos",
+   "certificado de ingresos"
+  ]
  },
  {
   "slug": "constitucion-sas",
@@ -269,14 +281,25 @@
   "titulo": "Cómo liquidar un sueldo de Comercio (CCT 130/75) paso a paso",
   "seccion": "sueldos",
   "buscar": "liquidar sueldo comercio 130/75 paso a paso",
-  "oficial": []
+  "oficial": [],
+  "rehacer": "2026-11-12",
+  "claves": [
+   "Comercio",
+   "130/75"
+  ]
  },
  {
   "slug": "liquidar-sueldo-uocra",
   "titulo": "Cómo liquidar un sueldo de UOCRA (construcción) paso a paso",
   "seccion": "sueldos",
   "buscar": "liquidacion sueldo uocra quincena",
-  "oficial": []
+  "oficial": [],
+  "rehacer": "2026-11-12",
+  "claves": [
+   "UOCRA",
+   "construcción",
+   "76/75"
+  ]
  },
  {
   "slug": "liquidar-sueldo-uom",

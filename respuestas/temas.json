@@ -131,7 +131,7 @@
    ]
   },
   "estructura": "estructurado: {\"categorias\": [{\"categoria\": \"A\", \"ingresos_max\": numero, \"cuota_servicios\": numero, \"cuota_bienes\": numero}]}, una fila por categoría A a K, todos números",
-  "cuando": "Dos veces por año: los montos nuevos se conocen alrededor de mediados de enero y de julio, y la recategorización vence en febrero y agosto",
+  "cuando": "Dos veces por año: montos nuevos desde el 1 de febrero y el 1 de agosto; recategorización hasta el 5 de febrero y el 5 de agosto",
   "titulo_corto": "Cuotas del Monotributo"
  },
  {
