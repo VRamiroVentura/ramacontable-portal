@@ -408,6 +408,7 @@ def pagina_guias(guias, notas, catalogo):
         items += "".join(f'<li class="prox"><b>{e(c["titulo"])}</b><span>Próximamente</span></li>' for c in prox)
         bloques += f'<section class="rama-guias" id="{k}"><h2>{e(titulo)}</h2><ul class="lista-guias">{items}</ul></section>'
     otras = '<p class="ayuda">¿Buscás novedades de la profesión? <a href="profesion.html">Ver notas de Profesión →</a></p>'
+    otras = "".join(f'<div class="dato-vigente ef-aviso"><b>¿No sos contador?</b> <a href="{g["ruta"]}.html">{e(g["titulo"])} →</a></div>' for g in EXPLICADO) + otras
     cuerpo = f'<div class="grilla"><section><h1 class="titsec">Guías prácticas</h1><p class="ayuda">Guías completas de sueldos, impuestos y temas contables, basadas en la norma oficial y actualizadas cuando cambia algo. Debajo de cada una, la comunidad suma sus explicaciones y casos prácticos.</p>{bloques}{otras}</section>{lateral(notas)}</div>'
     return pagina("Guías prácticas de sueldos, impuestos y contabilidad | Ramacontable", cuerpo, "guias",
                   "Guías prácticas para contadores y liquidadores: vacaciones, liquidación final, Ganancias, IVA, Monotributo, Ingresos Brutos y más.", "guias.html", migas=[("Guías", "guias.html")])
@@ -427,7 +428,8 @@ def pagina_impuesto(imp, notas, guias, catalogo):
     if not relacionadas_i and not any(por_slug.get("guia-" + s_) for s_ in guias_slugs) and not (slug == "ingresos-brutos" and JURIS):
         PAGINAS_FINAS.add(f"impuesto-{slug}")  # sin guías ni novedades todavía: no se indexa hasta que tenga contenido
     cuerpo = (f'<div class="grilla"><section><p class="miga"><a href="impuestos.html">Impuestos</a></p><h1 class="titsec">{e(nombre)}</h1>'
-              f'<section class="rama-guias"><h2>Guías de {e(nombre)}</h2><ul class="lista-guias">{items}</ul></section>'
+              + "".join(f'<div class="dato-vigente ef-aviso"><b>¿No sos contador?</b> <a href="{g["ruta"]}.html">{e(g["titulo"])} →</a></div>' for g in EXPLICADO if slug == "monotributo")
+              + f'<section class="rama-guias"><h2>Guías de {e(nombre)}</h2><ul class="lista-guias">{items}</ul></section>'
               + ('<div class="conv-chips"><b>Por provincia:</b> ' + " ".join(f'<a href="{j["ruta"]}.html">{e(j["titulo_corto"])}</a>' for j in JURIS)
                  + ' <a class="mas-chip" href="provincias-y-municipios.html">Todas →</a></div>' if slug == "ingresos-brutos" and JURIS else "")
               +               f'<section class="rama-guias"><h2>Novedades de {e(nombre)}</h2>{lista}</section></section>{lateral(notas)}</div>')
@@ -546,7 +548,7 @@ def pagina(titulo, cuerpo, actual="", descripcion="", ruta="", extra_head="", mi
 <footer class="pie"><div class="wrap">
 <a class="logo" href="index.html">{LOGO_SVG}<span>ramacontable</span></a>
 <p>Novedades de la profesión contable explicadas claro.</p>
-<p class="secs">{" · ".join(f'<a href="{k}.html">{v}</a>' for k, v in SECCIONES.items())} · <a href="guias.html">Guías</a> · <a href="calculadoras.html">Calculadoras</a> · <a href="datos-al-dia.html">Datos del día</a></p>
+<p class="secs">{" · ".join(f'<a href="{k}.html">{v}</a>' for k, v in SECCIONES.items())} · <a href="guias.html">Guías</a>{"".join(f' · <a href="{g["ruta"]}.html">Monotributo explicado fácil</a>' for g in EXPLICADO)} · <a href="calculadoras.html">Calculadoras</a> · <a href="datos-al-dia.html">Datos del día</a></p>
 <div class="redes">{redes}</div>
 <p><a href="mailto:{MAIL}">{MAIL}</a></p>
 <p class="legal">Información de carácter general. Se recomienda verificar siempre en las fuentes oficiales. Cada profesional es responsable de su aplicación. · <a href="terminos.html">Términos y privacidad</a> · © {anio} Ramacontable</p>
@@ -696,7 +698,7 @@ def sitemaps(notas, convenios=()):
     fijas = ["aguinaldo", "convenios", "guias", "calculadoras", "feriados", "sueldo-comercio", "sueldo-casas-particulares", "actualizacion", "dias-habiles",
              "plazo-fijo", "prestamos", "vacaciones", "liquidacion-final", "horas-extras", "iva", "conversor-dolar", "monotributo-categoria", "intereses-arca",
              "actualizacion-alquiler", "embargo-sueldo", "cuando-cambia-cada-dato", "glosario", "comparador-escalas", "agenda-vencimientos",
-             "retencion-ganancias"] + JURIS_URLS + PARITARIAS_URLS + FERIADOS_URLS + [f"impuesto-{i[0]}" for i in IMPUESTOS]
+             "retencion-ganancias"] + [g["ruta"] for g in EXPLICADO] + JURIS_URLS + PARITARIAS_URLS + FERIADOS_URLS + [f"impuesto-{i[0]}" for i in IMPUESTOS]
     urls = [f"<url><loc>{base}</loc><lastmod>{hoy}</lastmod></url>"] + [
         f"<url><loc>{base}{k}.html</loc><lastmod>{hoy}</lastmod></url>" for k in diarias if k not in PAGINAS_FINAS] + [
         f"<url><loc>{base}{k}.html</loc></url>" for k in fijas if k not in PAGINAS_FINAS] + [
@@ -1203,7 +1205,121 @@ def bloque_monotributo_calendario():
 <p><b>Próxima recategorización:</b> hasta el {recat.day} de {MESES[recat.month - 1]} de {recat.year} (por {semestre}). <b>Próximos montos:</b> desde el 1 de {MESES[montos.month - 1]} de {montos.year}.</p>
 <p>ARCA suele habilitar el trámite a mediados de enero y de julio, cuando publica los montos nuevos. Se hace en la web de ARCA o en la app ARCA Móvil, mirando lo facturado en los últimos 12 meses. Es obligatoria salvo que sigas en la misma categoría o tengas menos de 6 meses de actividad. La categoría nueva se paga desde febrero o agosto.</p>
 {t_html}
-<p class="ayuda">Fuentes: tabla oficial de categorías de ARCA y RG 4309 (art. 20, texto según RG 5546/2024).</p></section>"""
+<p class="ayuda">Fuentes: tabla oficial de categorías de ARCA y RG 4309 (art. 20, texto según RG 5546/2024).</p>
+{"".join(f'<p>¿No sos contador? <a href="{g["ruta"]}.html">{e(g["titulo"])} →</a></p>' for g in EXPLICADO)}</section>"""
+
+
+HISTORIAL_SHORTS = "https://raw.githubusercontent.com/VRamiroVentura/shorts-fabrica/main/data/historial.json"
+
+
+def videos_capitulos():
+    """{tema_id: id de YouTube} con los capítulos que la fábrica de shorts ya publicó. Si no se puede leer, {} (la página sale sin videos)."""
+    import ssl
+    try:
+        req = urllib.request.Request(HISTORIAL_SHORTS, headers={"User-Agent": "ramacontable-build"})
+        try:
+            hist = json.load(urllib.request.urlopen(req, timeout=30, context=ssl.create_default_context()))
+        except ssl.SSLError:
+            import certifi
+            hist = json.load(urllib.request.urlopen(req, timeout=30, context=ssl.create_default_context(cafile=certifi.where())))
+    except Exception as ex:
+        print("Aviso: no pude leer el historial de la fábrica de shorts (las guías salen sin videos):", ex)
+        return {}
+    out = {}
+    for h in hist if isinstance(hist, list) else []:
+        yt = ((h or {}).get("resultados") or {}).get("youtube") or {}
+        if h.get("tema_id") and yt.get("ok") and re.fullmatch(r"[A-Za-z0-9_-]{6,20}", str(yt.get("id") or "")):
+            out[h["tema_id"]] = yt["id"]
+    return out
+
+
+def _valores_mono():
+    """Topes y cuotas de hoy del Monotributo, tomados del dato vigente del portal (se actualiza solo)."""
+    d = ajustar_tramo((RESP.get("monotributo-categorias-vigentes") or {}).get("datos") or {})
+    cats = ((d.get("estructurado") or {}).get("categorias")) or []
+    if not cats:
+        return {}, ""
+    pesos = lambda x: "$ " + f"{x:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    a, k = cats[0], cats[-1]
+    v = {"tope_A": ("Tope anual de la categoría A (la más baja)", pesos(a["ingresos_max"])),
+         "tope_K": (f"Tope anual de la categoría {k['categoria']} (la más alta)", pesos(k["ingresos_max"])),
+         "cuota_A": ("Cuota mensual de la categoría A", pesos(a["cuota_servicios"])),
+         "cuota_K_servicios": (f"Cuota mensual de la categoría {k['categoria']} (servicios)", pesos(k["cuota_servicios"])),
+         "cuota_K_bienes": (f"Cuota mensual de la categoría {k['categoria']} (venta de productos)", pesos(k["cuota_bienes"]))}
+    return v, d.get("norma") or ""
+
+
+def pagina_explicado_facil(g, notas, videos):
+    """Guía para gente común (no contadores) armada con datos verificados de las series de videos; los montos salen del dato vigente."""
+    vals, vig = _valores_mono()
+    hoy = datetime.date.today()
+    recat = next(d for d in (datetime.date(hoy.year, 2, 5), datetime.date(hoy.year, 8, 5), datetime.date(hoy.year + 1, 2, 5)) if d >= hoy)
+    indice, cuerpo, grupo_act = "", "", None
+    for i, sec in enumerate(g["secciones"], 1):
+        if sec.get("grupo") and sec["grupo"] != grupo_act:
+            grupo_act = sec["grupo"]
+            indice += f'<li class="ef-grupo">{e(grupo_act)}</li>'
+            cuerpo += f'<h2 class="ef-titgrupo">{e(grupo_act)}</h2>'
+        indice += f'<li><a href="#{sec["id"]}">{e(sec["titulo"])}</a></li>'
+        vid = next((videos[t] for t in sec.get("tema_ids") or [] if t in videos), None)
+        video = (f'<div class="ef-video"><iframe src="https://www.youtube.com/embed/{vid}" title="{e(sec["titulo"])}" loading="lazy" '
+                 'allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>') if vid else ""
+        txt = "".join(f"<p>{e(t)}</p>" for t in sec.get("texto") or [])
+        clave = "".join(f"<li>{e(c)}</li>" for c in sec.get("clave") or [])
+        caja = ""
+        filas = [vals[k] for k in sec.get("valores") or [] if k in vals]
+        if filas:
+            caja = ('<div class="ef-valores"><b>Valores de hoy</b><ul>' + "".join(f"<li>{e(a)}: <b>{e(b)}</b></li>" for a, b in filas)
+                    + f'</ul><small>{e(vig)}. Se actualizan solos cuando ARCA publica los nuevos.</small></div>')
+        if sec.get("recategorizacion"):
+            caja += f'<div class="ef-valores"><b>Próximo vencimiento:</b> hasta el {recat.day} de {MESES[recat.month - 1]} de {recat.year}.</div>'
+        disc = ""
+        if sec.get("discute"):
+            dd = sec["discute"]
+            disc = (f'<section class="ef-discute" id="lo-que-se-discute"><h3>{e(dd["titulo"])}</h3><div class="ef-posturas">'
+                    + "".join(f"<div><b>{e(a)}</b><p>{e(b)}</p></div>" for a, b in dd["posturas"])
+                    + '</div><p><b>Qué revisar en tu cuenta:</b></p><ul class="ef-check">' + "".join(f"<li>{e(x)}</li>" for x in dd["revisar"]) + "</ul></section>")
+        dest = sec.get("destino")
+        boton = f'<p><a class="btn" href="{e(dest[0])}">{e(dest[1])} →</a></p>' if dest and dest[0] != "#lo-que-se-discute" else ""
+        cuerpo += (f'<section class="ef-sec" id="{sec["id"]}"><h2>{e(sec["titulo"])}</h2>{video}{txt}'
+                   + (f'<div class="ef-clave"><b>Lo clave</b><ul>{clave}</ul></div>' if clave else "") + f"{caja}{disc}{boton}</section>")
+    qs = [{"p": p_, "r": r_} for p_, r_ in g.get("preguntas") or []]
+    contenido = f"""<div class="grilla"><article class="nota explicado" data-nota="{e(g["ruta"])}"><div class="nota-contenido">
+<p class="miga"><a href="guias.html">Guías</a> / Explicado fácil</p>
+<p class="ante">Explicado fácil · Para no contadores</p>
+<h1>{e(g["titulo"])}</h1>
+<p class="encorto ef-para"><b>¿Para quién es?</b> {e(g["para_quien"])}</p>
+<nav class="ef-indice"><b>En esta guía</b><ol>{indice}</ol></nav>
+{cuerpo}
+{preguntas_html({"preguntas": qs})}
+<p class="aviso">Información general para orientarte, según lo que publica ARCA. Cada caso puede tener particularidades: ante la duda, consultá con un contador.</p>
+</div>{bloque_aportes({"slug": g["ruta"], "titulo": g["titulo"]}, None)}</article>{lateral(notas)}</div>"""
+    url = sitio_url() + g["ruta"] + ".html"
+    ld = [{"@context": "https://schema.org", "@type": "Article", "headline": g["titulo"][:110], "description": g["descripcion"], "inLanguage": "es-AR",
+           "mainEntityOfPage": url, "dateModified": hoy.isoformat(),
+           "author": {"@type": "Organization", "name": "Redacción Ramacontable", "url": sitio_url()},
+           "publisher": {"@type": "Organization", "name": "Ramacontable", "logo": {"@type": "ImageObject", "url": sitio_url() + "icono-512.png"}}},
+          {"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [
+              {"@type": "Question", "name": q["p"], "acceptedAnswer": {"@type": "Answer", "text": q["r"]}} for q in qs]}]
+    ld += [{"@context": "https://schema.org", "@type": "VideoObject", "name": sec["titulo"], "description": " ".join(sec.get("texto") or [])[:300],
+            "thumbnailUrl": f"https://i.ytimg.com/vi/{videos[t]}/hqdefault.jpg", "embedUrl": f"https://www.youtube.com/embed/{videos[t]}",
+            "uploadDate": hoy.isoformat()} for sec in g["secciones"] for t in (sec.get("tema_ids") or [])[:1] if t in videos]
+    head = "".join(f'<script type="application/ld+json">{json.dumps(x, ensure_ascii=False).replace("</", "<\\/")}</script>' for x in ld)
+    return pagina(f'{g["seo_titulo"]} | Ramacontable', contenido, "guias", g["descripcion"], g["ruta"] + ".html", head,
+                  [("Guías", "guias.html"), ("Explicado fácil", g["ruta"] + ".html")])
+
+
+def cargar_explicado():
+    out = []
+    for ruta in sorted(glob.glob(os.path.join(RAIZ, "explicado", "*.json"))):
+        try:
+            out.append(json.load(open(ruta, encoding="utf-8")))
+        except Exception as ex:
+            print("Aviso: no pude leer", ruta, ex)
+    return out
+
+
+EXPLICADO = []
 
 
 def pagina_calendario_datos(notas):
@@ -2034,6 +2150,8 @@ def pagina_buscar(notas, guias, convenios):
     for b in BCRA_RESP:
         add(b[2], b[0] + ".html", b[3], "Dato")
     add("Dólar hoy: oficial, MEP, CCL, tarjeta, cripto y blue", "dolar-hoy.html", "Todas las cotizaciones del día", "Dato")
+    for g in EXPLICADO:
+        add(g["titulo"], g["ruta"] + ".html", g["descripcion"], "Guía")
     for a, t in [("aguinaldo", "Calculadora de aguinaldo (SAC)"), ("sueldo-comercio", "Calculadora de sueldo de Comercio"), ("sueldo-casas-particulares", "Calculadora de sueldo de casas particulares"),
                  ("liquidacion-final", "Calculadora de liquidación final e indemnización"), ("vacaciones", "Calculadora de vacaciones"), ("horas-extras", "Calculadora de horas extras"),
                  ("retencion-ganancias", "Calculadora de retención de Ganancias"), ("monotributo-categoria", "Calculadora de categoría del Monotributo"), ("embargo-sueldo", "Calculadora de embargo de sueldo"),
@@ -2153,6 +2271,7 @@ def main():
     VENC = cargar_vencimientos()
     cargar_respuestas()
     cargar_jurisdicciones()
+    EXPLICADO[:] = cargar_explicado()
     notas = cargar_notas()
     with open(os.path.join(SALIDA, "config.js"), "w", encoding="utf-8") as f:
         f.write("window.RC_CONFIG=" + json.dumps({
@@ -2252,6 +2371,10 @@ def main():
         escribir(url + ".html", h)
         QUE_CAMBIA_URLS.append(url)
     escribir("cuando-cambia-cada-dato.html", pagina_calendario_datos(notas))
+    if EXPLICADO:
+        vids = videos_capitulos()
+        for g in EXPLICADO:
+            escribir(g["ruta"] + ".html", pagina_explicado_facil(g, notas, vids))
     for j in JURIS:
         escribir(j["ruta"] + ".html", pagina_jurisdiccion(j, notas))
         for pg in j.get("paginas") or []:

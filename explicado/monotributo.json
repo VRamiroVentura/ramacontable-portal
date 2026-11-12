@@ -1,0 +1,207 @@
+{
+ "_ayuda": "Guía «Explicado fácil» del Monotributo, para gente común (no contadores). Solo usa datos verificados de las series de la fábrica de shorts (campos datos y prompt). Los montos NO se escriben acá: cada sección pide los valores de hoy con 'valores' (tope_A, tope_K, cuota_A, cuota_K_servicios, cuota_K_bienes) y el portal los pone solos. 'tema_ids' son los capítulos de video que van en cada sección (se embeben solos cuando la fábrica los publica).",
+ "ruta": "monotributo-explicado-facil",
+ "titulo": "Monotributo explicado fácil: qué es, cuánto pagás y cómo no complicarte",
+ "seo_titulo": "Monotributo explicado fácil: guía y preguntas frecuentes",
+ "descripcion": "Qué es el monotributo, qué incluye la cuota, qué factura hacer, cuándo recategorizarte y los casos especiales: empleados, alquileres, promovido, social y unificado.",
+ "para_quien": "Para profesionales independientes, emprendedores y cualquiera que arranca a facturar por su cuenta. No hace falta saber nada de impuestos: lo contamos con ejemplos.",
+ "secciones": [
+  {
+   "id": "que-es",
+   "titulo": "Qué es el monotributo",
+   "tema_ids": ["mdc-1"],
+   "texto": [
+    "Es una forma simple de estar en regla cuando trabajás por tu cuenta. En vez de pagar varios impuestos por separado, pagás una sola cuota por mes que junta todo: el IVA, Ganancias, tus aportes para la jubilación y la obra social.",
+    "Pensá en Sofía, que es psicóloga y atiende pacientes particulares. Con el monotributo sabe cuánto va a pagar cada mes, tiene obra social y suma años para jubilarse, con mucho menos papeleo que en el régimen general."
+   ],
+   "clave": [
+    "Para entrar hay que cumplir parámetros de facturación por año, superficie del local, energía consumida y alquiler del local. Para un profesional, en la práctica manda cuánto factura por año.",
+    "Hay categorías de la A (la más baja) a la K (la más alta). Servicios y venta de productos comparten el mismo tope de facturación en cada categoría; lo que cambia es la cuota, que desde la categoría C es más baja para quien vende productos.",
+    "Si vendés productos, no podés venderlos más caros que un precio máximo por unidad.",
+    "Los montos se actualizan dos veces por año: en febrero y en agosto."
+   ],
+   "valores": ["tope_A", "tope_K"],
+   "destino": ["monotributo-categorias-vigentes.html", "Ver todas las categorías y topes de hoy"]
+  },
+  {
+   "id": "monotributo-o-responsable-inscripto",
+   "titulo": "¿Monotributista o Responsable Inscripto?",
+   "tema_ids": ["mdc-0"],
+   "texto": [
+    "La diferencia de fondo es simple: el monotributo te cobra según lo que FACTURÁS (una cuota fija según tu categoría) y el Responsable Inscripto paga según lo que GANÁS, y puede descontar el IVA de lo que compra.",
+    "Martín es diseñador, trabaja solo, le factura a particulares y casi no tiene gastos: le conviene el monotributo, porque paga una cuota fija, hace pocos trámites y tiene la obra social incluida.",
+    "Laura es veterinaria, tiene local, compra insumos y equipos caros, vende alimento con poco margen y algunos de sus clientes son empresas. Como Responsable Inscripta descuenta el IVA de sus compras, paga Ganancias sobre lo que de verdad le queda y a las empresas les sirve su factura A. En un caso así puede terminar pagando parecido o menos, pero no es una regla: hay que hacer la cuenta.",
+    "No hay uno mejor que el otro: depende de cuánto facturás, cuánto gastás y a quién le vendés."
+   ],
+   "clave": [
+    "Monotributo: una cuota mensual fija que junta el IVA, Ganancias, los aportes jubilatorios y la obra social. La categoría depende de lo que facturás por año.",
+    "Responsable Inscripto: paga IVA todos los meses, Ganancias una vez por año sobre lo que realmente gana (ingresos menos gastos) y sus aportes jubilatorios aparte, como autónomo. La obra social no está incluida. No tiene tope de facturación, pero tiene más obligaciones.",
+    "Ingresos Brutos es un impuesto provincial y lo pagan los dos (en el monotributo unificado va dentro de la cuota): no es una diferencia entre regímenes.",
+    "El monotributista hace factura C; el Responsable Inscripto hace factura A a otras empresas inscriptas, que pueden descontar ese IVA."
+   ],
+   "valores": ["tope_K"],
+   "destino": ["monotributo-categorias-vigentes.html", "Ver los topes de hoy"]
+  },
+  {
+   "id": "cuota",
+   "titulo": "Lo que pagás todos los meses (y lo que te llevás a cambio)",
+   "tema_ids": ["mdc-2"],
+   "texto": [
+    "Tu cuota no es solo impuesto. Tiene tres partes: el impuesto (que reemplaza al IVA y a Ganancias), tu aporte para la jubilación y la obra social. Para mucha gente la obra social es un beneficio que no sabía que tenía.",
+    "Si además sos empleado, la jubilación y la obra social ya te las cubre tu empleador: en el monotributo solo pagás la parte del impuesto. Y si sos solo monotributista y tenés prepaga, la parte de obra social se paga igual, pero podés mandar ese aporte a tu prepaga."
+   ],
+   "clave": [
+    "La cuota tiene tres componentes: impuesto integrado, aporte jubilatorio y obra social.",
+    "Si también trabajás en relación de dependencia, en el monotributo solo pagás el impuesto (según ARCA).",
+    "Si sos solo monotributista, la obra social es obligatoria aunque tengas prepaga, pero podés derivar ese aporte a tu prepaga. Desde la Resolución 1/2025 del Ministerio de Salud ya no hace falta una obra social intermediaria.",
+    "Darse de alta se hace por internet."
+   ],
+   "valores": ["cuota_A", "cuota_K_servicios", "cuota_K_bienes"],
+   "destino": ["monotributo-categorias-vigentes.html", "Ver las cuotas de hoy de todas las categorías"]
+  },
+  {
+   "id": "factura",
+   "titulo": "¿Qué factura hago y a quién?",
+   "tema_ids": ["mdc-3"],
+   "texto": [
+    "Si sos monotributista, hacés siempre factura C, a todos por igual: a un paciente particular, a una prepaga o a una empresa. Es electrónica y se hace por internet.",
+    "Martín es kinesiólogo: le hace factura C al paciente y también a la obra social. Si tus clientes son empresas que te piden factura A, eso es del régimen general: mirá la parte de Monotributo o Responsable Inscripto."
+   ],
+   "clave": [
+    "El monotributista emite factura C a cualquier cliente.",
+    "La factura A es del Responsable Inscripto cuando le factura a otra empresa inscripta, que puede descontar ese IVA.",
+    "La factura es electrónica y se hace por internet."
+   ],
+   "destino": ["#monotributo-o-responsable-inscripto", "¿Te piden factura A? Leé la diferencia"]
+  },
+  {
+   "id": "recategorizacion",
+   "titulo": "Recategorización: el trámite que, si te olvidás, te sale caro",
+   "tema_ids": ["mdc-4"],
+   "texto": [
+    "Dos veces por año ARCA espera que revises tu categoría. Mirás lo que facturaste en los últimos 12 meses y, si cambió, te pasás a la categoría que corresponde. El botón «Recategorizarme» se habilita en enero y en julio.",
+    "Sofía lleva la cuenta de lo que factura mes a mes y de cuánto le falta para el próximo tope. Así sabe cuándo le va a subir la cuota y no se lleva sorpresas. Si ves que vas a pasar el tope más alto, hacé la cuenta con tu contador."
+   ],
+   "clave": [
+    "Se hace en enero y en julio, mirando lo facturado en los últimos 12 meses. El plazo vence el 5 de febrero y el 5 de agosto.",
+    "Si no te recategorizás, ARCA puede hacerlo de oficio y aplicarte una multa del 50% de las diferencias.",
+    "Si te recategorizás vos a tiempo, no hay multa."
+   ],
+   "recategorizacion": true,
+   "destino": ["cuando-cambia-cada-dato.html#monotributo", "Ver fechas y valores de hoy"]
+  },
+  {
+   "id": "limite",
+   "titulo": "Señales de que estás llegando al límite del monotributo",
+   "tema_ids": ["mdc-5"],
+   "texto": [
+    "Conviene darte cuenta antes de pasarte, no después. Si te pasa alguna de estas cosas, estás cerca del límite: ya estás en las categorías más altas (la I, la J o la K), vendés productos con un precio cercano al máximo permitido o tu facturación crece mes a mes y en poco tiempo vas a pasar el tope.",
+    "Es mejor pasar al régimen general de forma ordenada y con tiempo, que esperar a que te excluyan: si te excluyen, el cambio es de golpe."
+   ],
+   "clave": [
+    "Las categorías más altas son la I, la J y la K.",
+    "Quien vende productos tiene un precio máximo por unidad.",
+    "Si te excluyen del monotributo, pasás al régimen general y no podés volver hasta que pasen al menos tres años."
+   ],
+   "valores": ["tope_K"],
+   "destino": ["monotributo-categorias-vigentes.html", "Ver los topes de hoy"]
+  },
+  {
+   "id": "empleado-y-factura",
+   "grupo": "Casos especiales que casi nadie conoce",
+   "titulo": "¿Sos empleado y además facturás? Puede que estés pagando de más",
+   "tema_ids": ["sdm-1"],
+   "texto": [
+    "Lucas trabaja en relación de dependencia y además hace trabajos por su cuenta. Según ARCA, en el monotributo solo tiene que pagar la parte del impuesto, porque la jubilación y la obra social ya se las paga su empleador.",
+    "Si estuviste pagando la cuota completa, revisá tu cuota."
+   ],
+   "clave": [
+    "Según ARCA, si además trabajás en relación de dependencia, en el monotributo solo pagás el componente impositivo: los aportes jubilatorios y de obra social le corresponden a tu empleador."
+   ],
+   "destino": ["monotributo-categorias-vigentes.html", "Ver las cuotas de hoy"]
+  },
+  {
+   "id": "alquileres",
+   "grupo": "Casos especiales que casi nadie conoce",
+   "titulo": "¿Alquilás un departamento? Podrías no pagar monotributo",
+   "tema_ids": ["sdm-2"],
+   "texto": [
+    "Ana alquila dos departamentos y no tiene otra actividad. Según ARCA, en ese caso no paga ninguna parte de la cuota. Pero hay condiciones, y sin ellas no vale: los contratos tienen que estar registrados en el registro de locaciones (RELI), la exención hay que pedirla (no es automática) y tiene que seguir haciendo factura.",
+    "Ojo: si no pagás la cuota, tampoco tenés obra social por el monotributo."
+   ],
+   "clave": [
+    "Según ARCA, quien está en el monotributo solo por alquilar inmuebles no paga aportes jubilatorios ni obra social.",
+    "Si alquilás hasta 2 inmuebles, es tu única actividad y los contratos están en el RELI, quedás exento del impuesto. La exención se pide en el portal del monotributo, con la opción «Modificación locador de hasta 2 inmuebles».",
+    "Seguís obligado a facturar."
+   ],
+   "discute": {
+    "titulo": "Lo que se discute",
+    "posturas": [
+     ["Lo que dice ARCA", "Si alquilás hasta 2 inmuebles como única actividad, con los contratos en el RELI y la exención pedida, no pagás ninguna parte de la cuota: ni impuesto, ni jubilación, ni obra social."],
+     ["Lo que cuentan algunos contribuyentes", "Hay quienes dicen que, aun cumpliendo todo eso, en la práctica les siguen cobrando aportes. Es un tema discutido."]
+    ],
+    "revisar": [
+     "Que los contratos de alquiler estén registrados en el RELI.",
+     "Que hayas pedido la exención en el portal del monotributo («Modificación locador de hasta 2 inmuebles»): no es automática.",
+     "Que el alquiler de hasta 2 inmuebles sea tu única actividad.",
+     "Si cumplís todo y aun así te figuran aportes en tu cuota, consultalo con un contador o en ARCA antes de pagar o de dejar de pagar."
+    ]
+   },
+   "destino": ["#lo-que-se-discute", "Ir a «Lo que se discute»"]
+  },
+  {
+   "id": "promovido",
+   "grupo": "Casos especiales que casi nadie conoce",
+   "titulo": "El monotributo del 1%: el promovido",
+   "tema_ids": ["sdm-3"],
+   "texto": [
+    "Valentina arranca con poco. Con el monotributo promovido no paga la parte del impuesto, y la jubilación es el 1% de lo que factura por mes durante los primeros 36 meses. Después sube al 2,5%."
+   ],
+   "clave": [
+    "No se paga el componente impositivo; la jubilación es el 1% de lo facturado por mes durante los primeros 36 meses y después el 2,5% (ARCA).",
+    "Para entrar no hay que haber superado, en los 12 meses anteriores, el tope de la categoría A, ni ser empleador, ni estar inscripto en Bienes Personales.",
+    "Desde el 1 de noviembre de 2026 la factura electrónica es obligatoria para los monotributistas promovidos."
+   ],
+   "valores": ["tope_A"]
+  },
+  {
+   "id": "social",
+   "grupo": "Casos especiales que casi nadie conoce",
+   "titulo": "Monotributo social: facturar y tener obra social casi sin pagar",
+   "tema_ids": ["sdm-4"],
+   "texto": [
+    "Jorge tiene un emprendimiento chico. Con el monotributo social, el impuesto y la jubilación están subsidiados al 100% y solo paga la mitad de la obra social.",
+    "Para entrar hay que estar inscripto en el registro de efectores de la economía social. Ese trámite no es de ARCA."
+   ],
+   "clave": [
+    "El 100% del componente impositivo y jubilatorio está subsidiado y solo se paga el 50% del aporte a la obra social (ARCA).",
+    "Requiere estar inscripto en el registro nacional de efectores de la economía social.",
+    "Desde el 1 de noviembre de 2026 la factura electrónica es obligatoria para los monotributistas sociales."
+   ]
+  },
+  {
+   "id": "unificado",
+   "grupo": "Casos especiales que casi nadie conoce",
+   "titulo": "Monotributo unificado: un solo pago en vez de dos",
+   "tema_ids": ["sdm-5"],
+   "texto": [
+    "El unificado junta en un solo pago el monotributo nacional e Ingresos Brutos. Si sos de Provincia de Buenos Aires o de la Ciudad de Buenos Aires y trabajás solo ahí, seguramente ya lo pagás dentro de tu cuota. Si te llega Ingresos Brutos por separado, revisalo."
+   ],
+   "clave": [
+    "Provincia de Buenos Aires adhirió en 2021 y la Ciudad de Buenos Aires desde enero de 2026.",
+    "Para los nuevos monotributistas la adhesión es automática al darse de alta. En Provincia de Buenos Aires, ARBA puede incorporar de oficio a los monotributistas que detecta por cruce de datos (Resolución Normativa 29/2025).",
+    "No pueden estar quienes tributan por Convenio Multilateral (actividad en varias provincias) ni los Responsables Inscriptos."
+   ]
+  }
+ ],
+ "preguntas": [
+  ["¿Qué incluye la cuota del monotributo?", "Tres partes: el impuesto (que reemplaza al IVA y a Ganancias), el aporte jubilatorio y la obra social."],
+  ["¿Qué factura hace un monotributista?", "Siempre factura C, a cualquier cliente: particulares, prepagas, obras sociales o empresas. Es electrónica y se hace por internet."],
+  ["¿Cuándo se actualizan los montos del monotributo?", "Dos veces por año, en febrero y en agosto."],
+  ["¿Cuándo hay que recategorizarse?", "En enero y en julio, mirando lo facturado en los últimos 12 meses. El plazo vence el 5 de febrero y el 5 de agosto. Si no lo hacés, ARCA puede recategorizarte de oficio con una multa del 50% de las diferencias."],
+  ["Si soy empleado y además facturo, ¿pago la cuota completa?", "No. Según ARCA, en el monotributo solo pagás el impuesto: la jubilación y la obra social las cubre tu empleador."],
+  ["Si alquilo un departamento, ¿pago monotributo?", "Según ARCA, si alquilás hasta 2 inmuebles como única actividad, con los contratos en el RELI y pidiendo la exención, no pagás ninguna parte de la cuota, aunque tenés que seguir facturando. Hay contribuyentes que cuentan que igual les cobran aportes: es un tema discutido."],
+  ["¿Qué pasa si me excluyen del monotributo?", "Pasás al régimen general y no podés volver hasta que pasen al menos tres años."],
+  ["¿El monotributo o el Responsable Inscripto: cuál conviene?", "Ninguno es mejor siempre: depende de cuánto facturás, cuánto gastás y a quién le vendés."]
+ ]
+}
