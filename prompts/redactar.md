@@ -40,6 +40,7 @@ Reglas para tablas y datos que cambian:
 
 Títulos para buscadores:
 - Incluí en el título y en el slug el número de la norma tal como se busca (ej.: "RG 5920", "Res. 304/2026", "Decreto 1103/2026") y el mes y año cuando aplica.
+- Si la nota es de topes o bases imponibles de aportes (ANSES), el seo_titulo empieza con "Tope de aportes" o "Tope MOPRE", con mes, año y la base máxima (así lo busca la gente).
 - Usá las palabras con que lo busca un contador: "tope de aportes" (no solo "base imponible"), "paritarias" y "escala salarial" junto al nombre del gremio (ej.: "UTHGRA").
 
 - Si la novedad es de una provincia o un municipio, el título tiene que decir cuál (ej.: "Córdoba: ...", "Santa Fe: ...", "La Plata: ...").

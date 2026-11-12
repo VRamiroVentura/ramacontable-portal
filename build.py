@@ -1382,7 +1382,7 @@ MES_DESDE = "2026-11"  # primer mes con páginas propias (quedan publicadas para
 PAGINAS_MES = [  # (prefijo de la URL, dato del día, título, pregunta)
     ("aumento-jubilados", "jubilacion-minima-y-bono", "Aumento de jubilados {mes}: cuánto cobra la mínima", "¿Cuánto cobra un jubilado con la mínima en {mes}?"),
     ("auh", "asignaciones-familiares-auh", "AUH {mes}: cuánto se cobra por hijo", "¿Cuánto es la AUH en {mes}?"),
-    ("tope-aportes", "tope-aportes-base-maxima", "Tope de aportes y contribuciones {mes}", "¿Cuál es el tope de aportes de {mes}?"),
+    ("tope-aportes", "tope-aportes-base-maxima", "Tope de aportes {mes} (MOPRE)", "¿Cuál es el tope de aportes y contribuciones (MOPRE) de {mes}?"),
     ("salario-minimo", "salario-minimo-vital-y-movil", "Salario mínimo vital y móvil {mes}", "¿Cuánto es el salario mínimo en {mes}?"),
     ("seguro-de-desempleo", "seguro-de-desempleo-montos", "Seguro de desempleo {mes}: montos", "¿Cuánto se cobra de desempleo en {mes}?"),
     ("ffep", "ffep-fondo-enfermedades-profesionales", "FFEP {mes}: importe por trabajador", "¿Cuánto es el FFEP en {mes}?"),
@@ -1452,7 +1452,8 @@ def pagina_mes(pref, slug_dato, tit, preg, mes, notas):
         {"@type": "Question", "name": pregunta, "acceptedAnswer": {"@type": "Answer", "text": f"{valor}. {texto}" if valor else texto}}]}, ensure_ascii=False) + "</script>"
     if not valor:
         PAGINAS_FINAS.add(f"{pref}-{MESES[int(mes[5:]) - 1]}-{mes[:4]}")
-    return pagina(f"{titulo.split(':')[0] + ': ' + valor if valor else titulo} | Ramacontable", cuerpo, "datos-al-dia",
+    v_tit = re.sub(r"^(Máxima|Mínima) ", lambda m: m.group(1).lower() + " ", valor or "")
+    return pagina(f"{titulo.split(':')[0] + ': ' + v_tit if valor else titulo} | Ramacontable", cuerpo, "datos-al-dia",
                   f"{pregunta} {valor or ''} {texto}"[:300], f"{pref}-{MESES[int(mes[5:]) - 1]}-{mes[:4]}.html", ld + ("" if valor else NOI),
                   [("Datos del día", "datos-al-dia.html"), (titulo, f"{pref}-{MESES[int(mes[5:]) - 1]}-{mes[:4]}.html")])
 
@@ -1692,13 +1693,51 @@ def caja_dato_vigente(n):
             f'{e(d.get("valor") or "en verificación")}. <a href="{t["slug"]}.html">Ver la tabla vigente →</a></div>')
 
 
+SEO_NOTAS = {   # slug → (título para Google, descripción). Se eligen mirando las búsquedas reales de Search Console.
+    "anses-bases-imponibles-tope-jubilatorio-noviembre-2026": (
+        "Tope MOPRE noviembre 2026: base máxima $ 4.861.685,38 (ANSES)",
+        "Topes de aportes y contribuciones de noviembre 2026: base imponible máxima $ 4.861.685,38 y mínima $ 149.592,45, según la Resolución 304/2026 de ANSES."),
+    "guia-categorias-comercio": (
+        "Categorías de Comercio (CCT 130/75): qué puesto va en cada una",
+        "Maestranza, administrativos, cajeros, vendedores y auxiliares: qué tareas entran en cada categoría del convenio de Comercio y dónde ver la escala vigente."),
+    "guia-sac-aguinaldo": (
+        "Aguinaldo (SAC) 2026: cómo se calcula, proporcional y fecha de pago",
+        "Cómo se calcula el aguinaldo: 50% de la mejor remuneración del semestre, cálculo proporcional por días trabajados, fechas de pago y calculadora gratis."),
+}
+
+
+GUIA_SAC = [False]   # se prende si la guía del aguinaldo está publicada
+
+
+def caja_guia(n, notas=()):
+    """Accesos y explicaciones cortas que se suman arriba de algunas guías (datos de la Ley de Contrato de Trabajo)."""
+    if n.get("slug") == "guia-sac-aguinaldo":
+        return ('<div class="dato-vigente caja-guia"><b>Cálculo rápido del aguinaldo</b>'
+                '<p><b>¿Qué significa SAC en el recibo?</b> Sueldo Anual Complementario: es el nombre legal del aguinaldo (art. 121 de la Ley de Contrato de Trabajo).</p>'
+                '<p><b>Cuánto es:</b> el 50% de la mejor remuneración mensual devengada en el semestre. Se paga en dos cuotas: hasta el 30 de junio y hasta el 18 de diciembre.</p>'
+                '<p><b>Proporcional:</b> si no trabajó el semestre completo, se cobra en proporción a los días trabajados: '
+                'mejor sueldo ÷ 2 × días trabajados ÷ días del semestre (181 el primero, 182 en años bisiestos, y 184 el segundo).</p>'
+                '<p><b>Ejemplo:</b> mejor sueldo $ 1.200.000 y 92 días trabajados en el segundo semestre → $ 1.200.000 ÷ 2 × 92 ÷ 184 = <b>$ 300.000</b>.</p>'
+                '<p><a class="btn" href="aguinaldo.html">Calcular mi aguinaldo →</a> <a href="planillas/planilla-aguinaldo-varios-empleados.xlsx">Planilla para varios empleados (Excel)</a></p></div>')
+    if n.get("slug") == "guia-categorias-comercio":
+        return ('<div class="dato-vigente caja-guia"><b>Con la categoría ya definida:</b> '
+                '<a href="escala-comercio.html">escala salarial de Comercio vigente</a> · '
+                '<a href="sueldo-comercio.html">calculadora de sueldo de Comercio</a>'
+                + (' · <a href="nota-guia-liquidar-sueldo-comercio.html">cómo liquidar un sueldo de Comercio paso a paso</a>'
+                   if any(x.get("slug") == "guia-liquidar-sueldo-comercio" for x in notas) else "") + '</div>')
+    return ""
+
+
 def pagina_nota(n, notas, aportes=None):
+    if n.get("slug") in SEO_NOTAS:
+        n = dict(n, seo_titulo=SEO_NOTAS[n["slug"]][0], descripcion_seo=SEO_NOTAS[n["slug"]][1])
     verif = ("Elaborada con fuentes oficiales." if n.get("verificada")
              else "Pendiente de verificación con fuente oficial.")
     t_dato = dato_de_nota(n)
     extra_calc = bloque_aguinaldo(n, notas) + ('<div class="dato-vigente"><b>Calculalo:</b> <a href="aguinaldo.html">calculadora de aguinaldo</a> · '
-                  '<a href="tope-aportes-base-maxima.html">tope de aportes vigente</a> · <a href="retencion-ganancias.html">retención de Ganancias</a></div>'
-                  if "aguinaldo" in (n.get("titulo", "") + " " + n.get("slug", "")).lower() else "")
+                  '<a href="tope-aportes-base-maxima.html">tope de aportes vigente</a> · <a href="retencion-ganancias.html">retención de Ganancias</a>'
+                  + ('' if n.get("slug") == "guia-sac-aguinaldo" or not GUIA_SAC[0] else ' · <a href="nota-guia-sac-aguinaldo.html">guía completa del aguinaldo</a>') + '</div>'
+                  if "aguinaldo" in (n.get("titulo", "") + " " + n.get("slug", "")).lower() else "") + caja_guia(n, notas)
     cuerpo = extra_calc + enlazar("".join(
         (f'<p class="dato-vigente">La tabla completa y actualizada está en <a href="{t_dato["slug"]}.html">{e(t_dato["titulo"])}</a>.</p>' if t_dato
          else "") if tabla_dudosa(b) else bloque(b) for b in n["cuerpo"]), f"nota-{n['slug']}.html")
@@ -2096,6 +2135,7 @@ def main():
     ENLACES[:] = _destinos_enlaces(convenios)
     todas = notas
     guias = [n for n in todas if es_guia(n)]
+    GUIA_SAC[0] = any(n.get("slug") == "guia-sac-aguinaldo" for n in guias)
     notas = [n for n in todas if not es_guia(n)]
     try:
         catalogo = json.load(open(os.path.join(RAIZ, "guias", "catalogo.json"), encoding="utf-8"))

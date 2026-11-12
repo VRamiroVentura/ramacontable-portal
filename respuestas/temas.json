@@ -63,7 +63,7 @@
   },
   "estructura": "monto = base máxima (número). estructurado: {\"base_minima\": numero, \"base_maxima\": numero}",
   "cuando": "Todos los meses, junto con la movilidad jubilatoria",
-  "titulo_corto": "Tope de aportes (base máxima)"
+  "titulo_corto": "Tope de aportes hoy (MOPRE)"
  },
  {
   "slug": "ffep-fondo-enfermedades-profesionales",
