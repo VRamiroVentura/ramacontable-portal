@@ -227,7 +227,8 @@ def notas_supabase():
     try:
         req = urllib.request.Request(url + "/rest/v1/notas?select=*&estado=eq.publicada&order=fecha.desc&limit=2000",
                                      headers={"apikey": key, "Authorization": "Bearer " + key})
-        return json.load(urllib.request.urlopen(req, timeout=30))
+        # «ajuste-…»: propuestas de la fábrica para corregir guías fáciles; nunca se muestran como nota
+        return [n for n in json.load(urllib.request.urlopen(req, timeout=30)) if not str(n.get("slug", "")).startswith("ajuste-")]
     except Exception as ex:
         print("Aviso: no se pudieron leer las notas de Supabase:", ex)
         return None
@@ -1413,12 +1414,52 @@ def con_anio(x, salto=None):
     return x
 
 
+_DATO_RE = re.compile(r"\{dato:([a-z0-9-]+):([a-z_]+)(?:\|([^}]*))?\}")
+
+
+def _valor_dato(campo, v):
+    if isinstance(v, (int, float)) and not isinstance(v, bool):
+        if campo.startswith("alicuota"):
+            return (f"{v:g}".replace(".", ",")) + "%"
+        return "$ " + f"{v:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    return str(v)
+
+
+def con_datos(g):
+    """{dato:slug:campo|respaldo} en guías fáciles: muestra el valor que la fábrica mantiene al día en «Datos del día»
+    (respuestas, campo estructurado). Si al dato le falta alguno de los campos que usa la guía, se usan TODOS los respaldos
+    de ese dato, para no mezclar valores de años distintos."""
+    texto = json.dumps({k: v for k, v in g.items() if not k.startswith("_")}, ensure_ascii=False)
+    pedidos = {}
+    for sl, campo, _ in _DATO_RE.findall(texto):
+        pedidos.setdefault(sl, set()).add(campo)
+    usar = {}
+    for sl, campos in pedidos.items():
+        est = (((RESP.get(sl) or {}).get("datos") or {}).get("estructurado")) or {}
+        usar[sl] = est if all(est.get(c) not in (None, "") for c in campos) else {}
+        if not usar[sl]:
+            print(f"Aviso: al dato {sl} le falta algún campo de {sorted(campos)}: la guía usa los valores de respaldo.")
+    def rep(m):
+        sl, campo, resp = m.group(1), m.group(2), m.group(3) or ""
+        v = usar.get(sl, {}).get(campo)
+        return _valor_dato(campo, v) if v not in (None, "") else resp
+    def rec(x):
+        if isinstance(x, str):
+            return _DATO_RE.sub(rep, x)
+        if isinstance(x, list):
+            return [rec(v) for v in x]
+        if isinstance(x, dict):
+            return {k: (v if k.startswith("_") else rec(v)) for k, v in x.items()}
+        return x
+    return rec(g)
+
+
 def cargar_explicado():
     out = []
     for ruta in sorted(glob.glob(os.path.join(RAIZ, "explicado", "*.json"))):
         try:
             g = json.load(open(ruta, encoding="utf-8"))
-            out.append(con_anio(g, g.get("salto_anio")))
+            out.append(con_datos(con_anio(g, g.get("salto_anio"))))
         except Exception as ex:
             print("Aviso: no pude leer", ruta, ex)
     out.sort(key=lambda g: (g.get("orden", 99), g["ruta"]))

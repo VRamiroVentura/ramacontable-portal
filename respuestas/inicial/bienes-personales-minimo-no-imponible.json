@@ -47,7 +47,10 @@
   "estructurado": {
    "minimo_no_imponible": 384728044.57,
    "casa_habitacion": 1346548155.99,
-   "periodo": "2025"
+   "periodo": "2025",
+   "umbral_informativa": 196963134.52,
+   "alicuota_min": 0.5,
+   "alicuota_max": 1
   }
  }
 }

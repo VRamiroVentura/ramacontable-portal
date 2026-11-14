@@ -500,7 +500,9 @@
   async function cambiarEstado(n, estado) {
     const { data, error } = await sb.from('notas').update({ estado }).eq('slug', n.slug).select('*');
     if (error || !data || !data.length) return aviso('No se pudo guardar. ' + (error ? mensajeError(error) : ''));
-    aviso(estado === 'publicada' ? 'Nota publicada. Aparece en la portada en la próxima actualización (hasta 1 hora).' : 'Nota borrada.');
+    const ajuste = String(n.slug).startsWith('ajuste-');
+    aviso(ajuste ? (estado === 'publicada' ? 'Ajuste aprobado: la fábrica lo aplica a la guía en su próxima vuelta (no se publica como nota).' : 'Ajuste borrado: no se va a aplicar.')
+      : estado === 'publicada' ? 'Nota publicada. Aparece en la portada en la próxima actualización (hasta 1 hora).' : 'Nota borrada.');
     cargarNota();
   }
   function confirmarBorrar(n) {

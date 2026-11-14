@@ -248,7 +248,7 @@
   "titulo": "Bienes Personales: mínimo no imponible y alícuotas",
   "seccion": "impuestos",
   "pregunta": "¿Desde qué patrimonio se paga Bienes Personales?",
-  "pide": "Mínimo no imponible de Bienes Personales del período fiscal vigente, exención de casa habitación, escala de alícuotas y norma.",
+  "pide": "Mínimo no imponible de Bienes Personales del período fiscal vigente, exención de casa habitación, escala de alícuotas y norma. También el umbral de ingresos brutos desde el que empleados y jubilados deben presentar la declaración jurada informativa (RG 4003, art. 14).",
   "busqueda": "bienes personales minimo no imponible",
   "claves": [
    "Bienes Personales"
@@ -261,7 +261,7 @@
    ],
    "semanas": 4
   },
-  "estructura": "estructurado: {\"minimo_no_imponible\": numero, \"casa_habitacion\": numero, \"periodo\": \"aaaa\"}",
+  "estructura": "estructurado: {\"minimo_no_imponible\": numero, \"casa_habitacion\": numero, \"umbral_informativa\": numero (ingresos brutos desde los que empleados y jubilados presentan la declaración jurada informativa de Ganancias y Bienes Personales, RG 4003 art. 14), \"alicuota_min\": numero (porcentaje, ej. 0.5), \"alicuota_max\": numero (porcentaje, ej. 1), \"periodo\": \"aaaa\"}",
   "cuando": "Una vez por año, para cada período fiscal",
   "titulo_corto": "Bienes Personales"
  },

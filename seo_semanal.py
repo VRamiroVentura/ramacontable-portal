@@ -92,9 +92,12 @@ def calendario_guias():
         cal = []
     activos = [a for a in cal if _en_ventana(md, a["desde"], a["hasta"])]
     if activos:
-        out.append("GUÍAS PARA ACTUALIZAR O CREAR (calendario)")
+        out.append("GUÍAS FÁCILES EN REVISIÓN O PARA CREAR (calendario)")
         for a in activos:
-            out.append(f"{'✏️' if a['tipo'] == 'actualizar' else '🆕'} {a['guia']} (hasta el {a['hasta'][3:]}/{a['hasta'][:2]}): {a['que']}")
+            if a["tipo"] == "actualizar":
+                out.append(f"✏️ {a['guia']} (hasta el {a['hasta'][3:]}/{a['hasta'][:2]}): la fábrica la revisa sola cada semana; si encuentra un dato viejo te llega el ajuste y se aplica a los 7 días si no lo borrás. Foco: {a['que']}")
+            else:
+                out.append(f"🆕 {a['guia']} (hasta el {a['hasta'][3:]}/{a['hasta'][:2]}): {a['que']}")
         out.append("")
     try:
         cat = json.load(open(os.path.join(RAIZ, "guias", "catalogo.json"), encoding="utf-8"))

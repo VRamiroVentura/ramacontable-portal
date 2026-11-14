@@ -112,8 +112,8 @@ class Fabrica:
         if not self.db:
             return []
         desde = (util.ahora() - timedelta(days=30)).date().isoformat()
-        return self.db.select("notas", {"select": "slug,titulo,tema,fecha,estado", "fecha": f"gte.{desde}",
-                                        "order": "fecha.desc", "limit": "200"})
+        return [n for n in self.db.select("notas", {"select": "slug,titulo,tema,fecha,estado", "fecha": f"gte.{desde}",
+                                                    "order": "fecha.desc", "limit": "200"}) if not str(n["slug"]).startswith("ajuste-")]
 
     def fuentes_conocidas(self):
         if not self.db:
@@ -599,7 +599,7 @@ class Fabrica:
         para la próxima vuelta y la vuelta cierra igual (publica la web, manda el mail y deja el resumen)."""
         try:
             # la vigilancia va primero: no usa Gemini y si un blog de confianza borró o corrigió algo, nuestra nota sale ya
-            for nombre, tarea in [("vigilancia de los blogs de confianza", self.vigilar_ignacio), ("datos al día", self.actualizar_respuestas), ("guías", self.escribir_guias),
+            for nombre, tarea in [("vigilancia de los blogs de confianza", self.vigilar_ignacio), ("datos al día", self.actualizar_respuestas), ("guías", self.escribir_guias), ("ajustes de guías fáciles", self.ajustes_guias_faciles),
                                   ("escalas oficiales", self.revisar_escalas_oficiales), ("vencimientos", self.actualizar_vencimientos)]:
                 try:
                     gemini._queda()
@@ -883,6 +883,214 @@ class Fabrica:
         (self.publicadas if fila["estado"] == "publicada" else self.revision).append(fila)
         if self.activo and self.db:
             self.db.upsert("notas", [fila], "slug")
+
+    # ---------- guías fáciles: ajustes que se aplican solos ----------
+    @staticmethod
+    def _norm_txt(t):
+        t = unicodedata.normalize("NFKC", str(t)).replace(" ", " ")
+        return re.sub(r"\s+", " ", t).strip().lower()
+
+    @staticmethod
+    def _numeros(t):
+        return {re.sub(r"[.,]+$", "", n) for n in re.findall(r"\d[\d.,]*", str(t))}
+
+    _NO_TEXTO = ("ruta", "profesional", "profesionales_extra", "calculadora", "datos", "destino", "id", "tema_ids", "orden", "salto_anio")
+
+    @staticmethod
+    def _textos_guia(x):
+        if isinstance(x, str):
+            yield x
+        elif isinstance(x, list):
+            for v in x:
+                yield from Fabrica._textos_guia(v)
+        elif isinstance(x, dict):
+            for k, v in x.items():
+                if not k.startswith("_") and k not in Fabrica._NO_TEXTO:
+                    yield from Fabrica._textos_guia(v)
+
+    @staticmethod
+    def _reemplazar_guia(x, actual, nuevo):
+        if isinstance(x, str):
+            return x.replace(actual, nuevo)
+        if isinstance(x, list):
+            return [Fabrica._reemplazar_guia(v, actual, nuevo) for v in x]
+        if isinstance(x, dict):
+            return {k: (v if k.startswith("_") or k in Fabrica._NO_TEXTO else Fabrica._reemplazar_guia(v, actual, nuevo)) for k, v in x.items()}
+        return x
+
+    @staticmethod
+    def _guias_faciles():
+        """ruta.html -> (archivo relativo, guía) de explicado/*.json"""
+        out = {}
+        for f in sorted((util.RAIZ / "explicado").glob("*.json")):
+            try:
+                g = json.loads(f.read_text(encoding="utf-8"))
+                out[g["ruta"] + ".html"] = (f"explicado/{f.name}", g)
+            except Exception:  # noqa
+                continue
+        return out
+
+    def validar_cambios(self, cambios, guia, items):
+        """Solo quedan los cambios que: copian tal cual un pedazo de la guía, citan textual una fuente que leímos y cuyos números
+        nuevos están en esa cita y en una fuente oficial, un blog de confianza o dos fuentes distintas."""
+        textos = list(self._textos_guia(guia))
+        por_url = {it["url"]: it for it in items}
+        ok, malos = [], []
+        for c in cambios if isinstance(cambios, list) else []:
+            actual, nuevo, cita, url = (str(c.get(k) or "").strip() for k in ("actual", "nuevo", "cita", "url"))
+            motivo = None
+            if not actual or not nuevo or actual == nuevo:
+                motivo = "vacío o sin cambio"
+            elif "{" in actual or "{" in nuevo or "}" in nuevo:
+                motivo = "toca un dato que se actualiza solo"
+            elif sum(t.count(actual) for t in textos) != 1:
+                motivo = "lo que dice la guía no está tal cual (o está más de una vez)"
+            elif len(nuevo) > 2 * len(actual) + 60:
+                motivo = "el cambio es demasiado largo (no es una corrección de dato)"
+            elif url not in por_url:
+                motivo = "la fuente no es una de las que leímos"
+            elif not cita or self._norm_txt(cita) not in self._norm_txt(por_url[url]["texto"]):
+                motivo = "la cita no está textual en la fuente"
+            else:
+                nuevos = self._numeros(nuevo) - self._numeros(actual)
+                en_cita = self._numeros(cita)
+                if not nuevos and self._numeros(nuevo) == self._numeros(actual):
+                    motivo = "no cambia ningún dato (solo redacción)"
+                elif nuevos - en_cita:
+                    motivo = "el número nuevo no está en la cita: " + ", ".join(sorted(nuevos - en_cita))
+                else:
+                    it = por_url[url]
+                    fuerte = it.get("tipo") == "oficial" or it.get("fuente") in self.confiables
+                    otras = {o["fuente"] for o in items if o["url"] != url and nuevos <= self._numeros(o["texto"])}
+                    if not fuerte and not otras:
+                        motivo = "lo dice una sola fuente que no es oficial ni de confianza"
+            (malos if motivo else ok).append((c, motivo))
+        return [c for c, _ in ok], [(c, m) for c, m in malos]
+
+    def ajustes_guias_faciles(self):
+        if not self.db:
+            return
+        self.aplicar_ajustes()
+        self.proponer_ajustes()
+
+    def proponer_ajustes(self):
+        try:
+            cal = json.loads((util.RAIZ / "guias" / "calendario.json").read_text(encoding="utf-8")).get("avisos") or []
+        except Exception:  # noqa
+            return
+        hoy = util.ahora().date()
+        md = hoy.strftime("%m-%d")
+        en_ventana = lambda a: a["desde"] <= md <= a["hasta"] if a["desde"] <= a["hasta"] else (md >= a["desde"] or md <= a["hasta"])
+        guias = self._guias_faciles()
+        anio, semana, _ = hoy.isocalendar()
+        hechos = set()
+        for a in cal:
+            if a.get("tipo") != "actualizar" or not en_ventana(a) or a["guia"] in hechos or a["guia"] not in guias:
+                continue
+            hechos.add(a["guia"])
+            archivo, guia = guias[a["guia"]]
+            base = "ajuste-" + guia["ruta"][:60]
+            slug = f"{base}-{anio}s{semana:02d}"
+            existentes = self.db.select("notas", {"select": "slug,estado", "slug": f"like.{base}-*", "limit": "60"})
+            if any(f["slug"] == slug for f in existentes):
+                continue  # ya se revisó esta semana
+            if any(f["estado"] in ("revision", "publicada") for f in existentes):
+                continue  # hay un ajuste esperando: no se apilan
+            items = fuentes.buscar_portales(a.get("buscar") or guia["titulo"], por_portal=4)
+            for ref in a.get("oficial") or []:
+                t = fuentes.texto_oficial(ref)
+                if t:
+                    items.append({"fuente": "Norma oficial", "tipo": "oficial", "titulo": ref["url"], "url": ref["url"], "texto": t})
+            marca = {"slug": slug, "fecha": hoy.isoformat(), "seccion": "impuestos", "titulo": f"Revisión de la guía fácil {guia['ruta']}",
+                     "estado": "borrada", "tipo": "nota", "tema": "ajuste: " + a["guia"]}
+            if not items:
+                util.log("Ajustes: sin fuentes para", a["guia"])
+                continue
+            pedido = ("GUÍA (JSON):\n" + json.dumps({k: v for k, v in guia.items() if not k.startswith("_")}, ensure_ascii=False)
+                      + "\n\nQUÉ REVISAR ESTA VEZ: " + a.get("que", "") + "\n\nFUENTES:\n"
+                      + "\n\n".join(f"--- FUENTE: {it['fuente']} ({it.get('tipo', 'portal')})\nURL: {it['url']}\nTítulo: {it['titulo']}\nTexto: {it['texto']}" for it in items))
+            r = gemini.gemini(_prompt("revisar_facil.md"), pedido, temperatura=0.1)
+            ok, malos = self.validar_cambios((r or {}).get("cambios"), guia, items)
+            for c, m in malos:
+                util.log("Ajuste descartado", a["guia"], "·", m, "·", str(c.get("actual"))[:80])
+            if not ok:
+                if self.activo:  # queda anotado que esta semana ya se revisó (borrada: no se ve en ningún lado)
+                    self.db.upsert("notas", [dict(marca, motivo_revision="Sin cambios: " + (f"{len(malos)} propuesta(s) descartada(s) por el control" if malos else "las fuentes no muestran datos nuevos"))], "slug")
+                continue
+            dias = int(self.cfg.get("dias_ajuste", 7))
+            cuando = hoy + timedelta(days=dias)
+            sitio = self.cfg.get("sitio_url", "")
+            fila = dict(marca, estado="revision", verificada=False,
+                        antetitulo="Ajuste de guía fácil", titulo=f"Ajuste propuesto: {guia['titulo']}"[:200],
+                        encorto=f"La fábrica encontró {len(ok)} dato(s) para actualizar en {sitio}{a['guia']}. Se aplica solo el {cuando.day}/{cuando.month}.",
+                        cuerpo=[{"p": f"Guía: {sitio}{a['guia']} (archivo {archivo})."},
+                                {"tabla": [["Dice", "Pasa a decir", "Fuente"]] + [[c["actual"], c["nuevo"], c["url"]] for c in ok]},
+                                *[{"p": f"• {c.get('por_que') or ''} — Cita: «{c['cita']}» ({c['url']})"} for c in ok],
+                                {"p": "Podés corregir la columna «Pasa a decir» con ✏️ Editar: se aplica lo que quede en la tabla."}],
+                        fuente=", ".join(sorted({it["fuente"] for it in items if it["url"] in {c["url"] for c in ok}})),
+                        fuentes=[{"nombre": it["fuente"], "url": it["url"], "titulo": it["titulo"]} for it in items if it["url"] in {c["url"] for c in ok}],
+                        actualiza=archivo,
+                        motivo_revision=(f"✏️ Se aplica SOLO el {cuando.day}/{cuando.month} si no hacés nada. "
+                                         f"✅ Publicar = aplicarlo ya (en la próxima vuelta). 🗑️ Borrar = no aplicarlo. "
+                                         + " | ".join(f"«{c['actual']}» → «{c['nuevo']}»" for c in ok))[:1500])
+            self.revision.append(fila)
+            if self.activo:
+                self.db.upsert("notas", [fila], "slug")
+
+    def aplicar_ajustes(self):
+        """Aplica los ajustes con fecha cumplida (o publicados por el administrador): cambia el JSON de la guía en el repo
+        (commit con GITHUB_TOKEN) y pide republicar la web. Los borrados en el panel no se aplican nunca."""
+        filas = self.db.select("notas", {"select": "slug,fecha,estado,cuerpo,actualiza,tema", "slug": "like.ajuste-*",
+                                         "estado": "in.(revision,publicada)", "limit": "50"})
+        if not filas:
+            return
+        dias = int(self.cfg.get("dias_ajuste", 7))
+        hoy = util.ahora().date()
+        repo, token = os.getenv("GITHUB_REPOSITORY"), util.secreto("GITHUB_TOKEN")
+        for f in filas:
+            vence = self._dia(f["fecha"])
+            if f["estado"] != "publicada" and (not vence or vence + timedelta(days=dias) > hoy):
+                continue
+            archivo = f.get("actualiza") or ""
+            tabla = next((b["tabla"] for b in f.get("cuerpo") or [] if "tabla" in b), None)
+            if not archivo.startswith("explicado/") or not tabla:
+                continue
+            if not self.activo or not repo or not token:
+                util.log("Ajuste listo para aplicar (ensayo o sin GITHUB_TOKEN):", f["slug"])
+                continue
+            api = f"https://api.github.com/repos/{repo}/contents/{archivo}"
+            cab = {"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json"}
+            rama = os.getenv("GITHUB_REF_NAME", "main")
+            r = util.pedir("GET", api, headers=cab, params={"ref": rama}, intentos=2, timeout=30)
+            if getattr(r, "status_code", 0) != 200:
+                util.avisar("No pude leer la guía para aplicar un ajuste", f"{f['slug']}: {archivo} ({getattr(r, 'status_code', '?')})")
+                continue
+            import base64
+            dato = r.json()
+            guia = json.loads(base64.b64decode(dato["content"]).decode("utf-8"))
+            hechos, saltados = [], []
+            for fila in tabla[1:]:
+                actual, nuevo = str(fila[0]), str(fila[1])
+                if actual and nuevo and actual != nuevo and sum(t.count(actual) for t in self._textos_guia(guia)) == 1:
+                    guia = self._reemplazar_guia(guia, actual, nuevo)
+                    hechos.append(f"«{actual}» → «{nuevo}»")
+                else:
+                    saltados.append(actual)
+            if hechos:
+                cuerpo = json.dumps(guia, ensure_ascii=False, indent=1) + "\n"
+                r = util.pedir("PUT", api, headers=cab, intentos=2, timeout=30, json={
+                    "message": f"Guía fácil: ajuste automático ({f['slug']}) [fábrica]", "sha": dato["sha"], "branch": rama,
+                    "content": base64.b64encode(cuerpo.encode("utf-8")).decode("ascii"),
+                    "committer": {"name": "ramacontable-bot", "email": "bot@ramacontable.com.ar"}})
+                if getattr(r, "status_code", 0) not in (200, 201):
+                    util.avisar("No pude guardar el ajuste de la guía", f"{f['slug']}: {getattr(r, 'status_code', '?')} {getattr(r, 'text', '')[:300]}")
+                    continue
+                self.vencimientos_cambio = True  # fuerza republicar la web
+            texto = (f"Aplicado el {hoy.day}/{hoy.month}: " + "; ".join(hechos)) if hechos else "No se aplicó: el texto de la guía ya había cambiado."
+            if saltados:
+                texto += " · Sin aplicar (la guía ya no decía eso): " + "; ".join(s[:80] for s in saltados)
+            self.db.update("notas", {"slug": f"eq.{f['slug']}"}, {"estado": "borrada", "motivo_revision": texto[:1500]})
+            self.observaciones.append((f"✏️ Guía fácil actualizada sola ({archivo})", texto[:400]))
 
     def vigilar_ignacio(self):
         """Revisa las notas de los blogs de confianza que usamos en los últimos días. Si la borraron o cambiaron algún
