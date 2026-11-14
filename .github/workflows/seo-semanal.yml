@@ -33,6 +33,7 @@ jobs:
         env:
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          PAGESPEED_KEY: ${{ secrets.PAGESPEED_KEY }}
           RC_SEO_PRUEBA: ${{ github.event_name == 'workflow_dispatch' && inputs.prueba == 'true' && '1' || '0' }}
         run: python seo_semanal.py
       - name: Guardar el historial (para comparar con la semana que viene)
