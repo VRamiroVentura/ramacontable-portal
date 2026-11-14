@@ -550,19 +550,11 @@ def menu_datos():
 
 
 def menu_datos_html():
-    """Doble desplegable: los grupos de datos y, al pasar por cada uno (o tocarlo en el celu), sus principales y «Ver más»."""
-    grupos, actual = [], None
-    for u, t in menu_datos():
-        if u == "#g":
-            actual = [t, []]
-            grupos.append(actual)
-        elif actual:
-            actual[1].append((u, t))
+    """Doble desplegable: los grupos de datos y, al pasar por cada uno (o tocarlo en el celu), todos sus datos."""
     out = ""
-    for nombre, items in grupos:
-        ver = next((u for u, t in items if t.endswith("→")), "datos-al-dia.html")
-        out += (f'<div class="sub"><a class="sub-t" href="{ver.split(".html")[0]}.html{ver[ver.find("#"):] if "#" in ver else ""}">{e(nombre)}</a><div class="sub-m">'
-                + "".join(f'<a href="{u}"{" class=mas" if t.endswith("→") else ""}>{e(t)}</a>' for u, t in items) + "</div></div>")
+    for gid, nombre, items in grupos_datos():
+        out += (f'<div class="sub"><a class="sub-t" href="datos-al-dia.html#{gid}">{e(nombre)}</a><div class="sub-m">'
+                + "".join(f'<a href="{sl}.html">{e(ti)}</a>' for sl, ti, _ in items) + "</div></div>")
     return out + '<a class="sep" href="datos-al-dia.html">Todos los datos del día →</a>'
 
 
