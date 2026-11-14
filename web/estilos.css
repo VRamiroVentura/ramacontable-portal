@@ -422,3 +422,16 @@ table.feriados tr.prox-f td{background:var(--bronce-suave);font-weight:600}
 .ini-vermas summary::-webkit-details-marker{display:none}
 .ini-vermas[open] summary{background:#8a6d3b}
 @media (max-width:760px){.ini-top{grid-template-columns:1fr}}
+
+/* Lo último: tarjetas con color por sección */
+.ult-g{display:grid;grid-template-columns:1fr 1fr;gap:.8em}
+.ult{--c:#3b5b8c;--f:#eef2f9;display:flex;flex-direction:column;gap:.45em;background:#fff;border:1px solid #e3ded2;border-left:5px solid var(--c);border-radius:10px;padding:.8em 1em;text-decoration:none;color:inherit;transition:transform .12s,box-shadow .12s}
+.ult:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(19,39,31,.1)}
+.ult.sec-sueldos{--c:#2e7d5b;--f:#e9f5ef}.ult.sec-impuestos{--c:#b07a2a;--f:#fbf2e3}.ult.sec-profesion{--c:#3b5b8c;--f:#eef2f9}
+.ult-top{display:flex;align-items:center;gap:.5em;font-size:.78em}
+.ult-sec{background:var(--f);color:var(--c);font-weight:700;border-radius:999px;padding:.15em .65em}
+.nuevo{background:#2e9e5b;color:#fff;font-weight:700;border-radius:999px;padding:.1em .55em;font-size:.95em}
+.ult-f{margin-left:auto;color:#777}
+.ult b{color:#13271F;line-height:1.3;font-size:1.02em}
+.ult-res{color:#5c6660;font-size:.88em;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+@media (max-width:760px){.ult-g{grid-template-columns:1fr}}

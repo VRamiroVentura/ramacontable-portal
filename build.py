@@ -2235,7 +2235,16 @@ def portada_inicio(notas, guias, convenios):
                       f'<b>{e(n["titulo"])}</b><small>{fecha_corta(str(n["fecha"]))}</small></a></li>')
     arriba = [n for n in vigentes if not es_tecnica(n)][:6]
     usados = {n["slug"] for n in arriba}
-    bloque_ultimo = (f'<section class="ini-ultimo"><h2>Lo último</h2><ul class="ini-lista ini-top">{"".join(item(n) for n in arriba)}</ul></section>') if arriba else ""
+    ICO = {"sueldos": "💼", "impuestos": "🧾", "profesion": "📌"}
+    def card(n):
+        f = str(n["fecha"])[:10]
+        dias = (hoy - datetime.date.fromisoformat(f)).days
+        cuando = "Hoy" if dias == 0 else ("Ayer" if dias == 1 else fecha_corta(f))
+        nuevo = '<span class="nuevo">Nuevo</span>' if dias <= 1 else ""
+        return (f'<a class="ult sec-{n["seccion"]}" href="nota-{n["slug"]}.html"><span class="ult-top"><span class="ult-sec">{ICO.get(n["seccion"], "📌")} '
+                f'{e(SECCIONES.get(n["seccion"], ""))}</span>{nuevo}<span class="ult-f">{cuando}</span></span>'
+                f'<b>{e(n["titulo"])}</b><span class="ult-res">{e(n.get("clave") or n.get("encorto") or "")}</span></a>')
+    bloque_ultimo = (f'<section class="ini-ultimo"><h2>Lo último</h2><div class="ult-g">{"".join(card(n) for n in arriba)}</div></section>') if arriba else ""
 
     prox = [x for x in proximos_vencimientos() if x["fecha"] <= (hoy + datetime.timedelta(days=7)).isoformat()][:5] or proximos_vencimientos(5)
     venc = ('<section class="ini-caja"><h2>📅 Vence esta semana</h2><ul class="venc">' + "".join(

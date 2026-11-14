@@ -436,7 +436,7 @@
     if (!sb) return;
     await cargarReputaciones();
     const top = Object.values(reputaciones).filter(r => r.positivos > 0).sort((a, b) => b.positivos - a.positivos).slice(0, 5);
-    if (!top.length) return;
+    if (top.length < 5) return; // «Destacados de la comunidad» aparece recién con 5 aportantes o más
     const ol = $('#ranking'); if (!ol) return; ol.innerHTML = '';
     top.forEach(r => ol.append(h('li', {}, h('b', {}, r.nombre), ` · ${nivel(r)} · ${r.positivos} pts`)));
     $('#destacados').hidden = false;
