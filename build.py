@@ -499,6 +499,26 @@ def herramienta_ld(nombre, descripcion, ruta):
         "inLanguage": "es-AR", "offers": {"@type": "Offer", "price": "0", "priceCurrency": "ARS"}}, ensure_ascii=False) + "</script>"
 
 
+def acortar_titulo(t, largo=65):
+    """Títulos que Google corta: saca el paréntesis final y la última enumeración («, …»); si sigue muy largo (más de 72),
+    se queda con lo de antes de los dos puntos, salvo que ahí esté el monto. Nunca deja menos de 35 caracteres."""
+    if len(t) <= largo:
+        return t
+    t2 = re.sub(r"\s*\([^()]*\)\s*$", "", t)
+    if 35 <= len(t2) < len(t):
+        t = t2
+    while len(t) > largo and ", " in t:
+        corto = t.rsplit(", ", 1)[0]
+        if len(corto) < 35:
+            break
+        t = corto
+    if len(t) > 72 and ": " in t:
+        izq, der = t.split(": ", 1)
+        if len(izq) >= 35 and "$" not in der:
+            t = izq
+    return t
+
+
 def pagina(titulo, cuerpo, actual="", descripcion="", ruta="", extra_head="", migas=None, imagen="compartir.png"):
     sub = {
         "sueldos": [("sueldos.html", "Novedades de sueldos"), ("convenios.html", "Escalas por convenio"), ("guias.html#sueldos", "Guías de sueldos"),
@@ -510,6 +530,7 @@ def pagina(titulo, cuerpo, actual="", descripcion="", ruta="", extra_head="", mi
     # Google corta los títulos largos y las descripciones de más de ~160 caracteres
     if len(titulo) > 62 and titulo.endswith(" | Ramacontable"):
         titulo = titulo[:-len(" | Ramacontable")]
+    titulo = acortar_titulo(titulo)
     if descripcion and len(descripcion) > 160:
         corte = max(descripcion[:160].rfind(". "), descripcion[:160].rfind("; "))
         descripcion = descripcion[:corte + 1] if corte >= 90 else descripcion[:157].rsplit(" ", 1)[0].rstrip(",;:") + "…"
@@ -1345,7 +1366,7 @@ def pagina_calendario_datos(notas):
 </div>{lateral(notas)}</div>"""
     ld = '<script type="application/ld+json">' + json.dumps({"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [
         {"@type": "Question", "name": q["p"], "acceptedAnswer": {"@type": "Answer", "text": q["r"]}} for q in qs]}, ensure_ascii=False) + "</script>"
-    return pagina("Cuándo cambia cada dato: Monotributo, recategorización, jubilaciones y AUH | Ramacontable", cuerpo, "datos-al-dia",
+    return pagina("Cuándo cambia cada dato: recategorización, jubilaciones y AUH | Ramacontable", cuerpo, "datos-al-dia",
                   "Montos del Monotributo desde el 1/2 y el 1/8, recategorización hasta el 5/2 y el 5/8, y cuándo cambian jubilaciones, AUH, Ganancias y salario mínimo.",
                   "cuando-cambia-cada-dato.html", ld, [("Datos del día", "datos-al-dia.html"), ("Cuándo cambia cada dato", "cuando-cambia-cada-dato.html")])
 
@@ -2581,7 +2602,7 @@ def main():
                                      [("Calculadoras", "calculadoras.html"), (titulo.split(":")[0].split(" | ")[0], salida_html)]))
     calc_conv("sueldo-comercio.html", "sueldo-comercio.html", "comercio", "Calculadora de sueldo Empleados de Comercio 2026: neto con antigüedad y presentismo | Ramacontable",
               "Calculá el sueldo de comercio con la escala vigente: básico por categoría, antigüedad, presentismo, sumas no remunerativas, descuentos y neto.")
-    calc_conv("sueldo-casas.html", "sueldo-casas-particulares.html", "casas-particulares", "Calculadora de sueldo de empleadas domésticas 2026: por hora y mensual | Ramacontable",
+    calc_conv("sueldo-casas.html", "sueldo-casas-particulares.html", "casas-particulares", "Sueldo de empleadas domésticas 2026: calculadora por hora y mes | Ramacontable",
               "Calculá el sueldo de casas particulares por categoría, con o sin retiro, mensual o por hora, con antigüedad y zona desfavorable.")
     CALCS = [("actualizacion.html", "Calculadora de actualización de montos por inflación, CER, UVA, dólar y tasas", "Actualizá montos y deudas entre dos fechas con datos oficiales del BCRA: inflación, CER, UVA, ICL, dólar oficial y tasas."),
              ("dias-habiles.html", "Calculadora de días hábiles 2026 con feriados", "Contá días hábiles entre dos fechas o calculá el vencimiento de un plazo, descontando sábados, domingos y feriados nacionales."),
