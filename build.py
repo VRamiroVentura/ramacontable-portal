@@ -750,6 +750,8 @@ def bloque(b):
         cab = "".join(f"<th>{e(c)}</th>" for c in filas[0])
         resto = "".join("<tr>" + "".join(f"<td>{e(c)}</td>" for c in f) + "</tr>" for f in filas[1:])
         return f'<div class="tabla"><table><thead><tr>{cab}</tr></thead><tbody>{resto}</tbody></table></div>'
+    if "lista" in b:
+        return "<ul>" + "".join(f"<li>{e(x)}</li>" for x in b["lista"]) + "</ul>"
     if "html" in b:
         return html_admin(b["html"])
     return ""
@@ -1049,7 +1051,9 @@ def pagina_respuesta(t, r, notas, aportes=None, extra=""):
     if hist and len(hist) > 1:
         cuerpo += "<h2>Cómo fue cambiando</h2><div class=\"tabla\"><table><thead><tr><th>Desde</th><th>Valor</th><th>Norma</th></tr></thead><tbody>" + "".join(
             f"<tr><td>{fecha_corta(h['fecha'])}</td><td>{e(h['valor'])}</td><td>{e(h.get('norma') or '')}</td></tr>" for h in hist) + "</tbody></table></div>"
-    faq = preguntas_html({"preguntas": d.get("preguntas") or []})
+    # «guia» en respuestas/temas.json: explicación fija verificada (qué es, quién entra, cómo se paga), además del dato que cambia
+    cuerpo += "".join(bloque(x) for x in t.get("guia") or [])
+    faq = preguntas_html({"preguntas": (d.get("preguntas") or []) + (t.get("preguntas_fijas") or [])})
     fuentes_html = ("<p class=\"fuente\"><b>Fuentes:</b> " + " · ".join(
         f'<a href="{e(f["url"])}" rel="nofollow noopener" target="_blank">{e(f["nombre"])}</a>' for f in (r.get("fuentes") or [])) + "</p>") if r else ""
     rel = rel[:3]

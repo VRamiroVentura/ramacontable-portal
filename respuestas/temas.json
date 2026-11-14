@@ -241,7 +241,34 @@
   "estructura": "estructurado: {\"categorias\": [{\"categoria\": \"texto\", \"ingresos_max\": numero, \"importe\": numero}]}",
   "cuando": "Dos veces por año, junto con el Monotributo unificado (febrero y agosto)",
   "jurisdiccion": "buenos-aires",
-  "titulo_corto": "Ingresos Brutos ARBA simplificado"
+  "titulo_corto": "Ingresos Brutos ARBA simplificado",
+  "guia": [
+   {
+    "h": "Cómo funciona el Régimen Simplificado de ARBA"
+   },
+   {
+    "p": "Es un importe fijo por mes de Ingresos Brutos para los pequeños contribuyentes de la provincia de Buenos Aires, con las mismas letras de categoría que el Monotributo (de la A a la K). Se paga junto con la cuota del Monotributo."
+   },
+   {
+    "p": "El importe es distinto según la actividad: las locaciones y prestaciones de servicios pagan un poco más que la venta de cosas muebles en la misma categoría."
+   },
+   {
+    "h": "Cuándo se actualiza"
+   },
+   {
+    "p": "ARBA puede actualizar los importes de dos formas: replicando los aumentos que ARCA aplica al impuesto integrado del Monotributo, desde el mismo período, o con aumentos propios que no superen la inflación acumulada (IPC del INDEC) desde la última actualización. Por eso en la práctica suele cambiar en febrero y en agosto, junto con el Monotributo."
+   }
+  ],
+  "preguntas_fijas": [
+   {
+    "p": "¿El Ingresos Brutos simplificado de ARBA se paga aparte del Monotributo?",
+    "r": "No: se paga junto con la cuota del Monotributo."
+   },
+   {
+    "p": "¿Por qué pago distinto que otro monotributista de mi misma categoría?",
+    "r": "Porque el importe de ARBA cambia según la actividad: servicios paga más que venta de cosas muebles en la misma categoría."
+   }
+  ]
  },
  {
   "slug": "bienes-personales-minimo-no-imponible",
@@ -317,7 +344,44 @@
   },
   "estructura": "estructurado: {\"categorias\": [{\"categoria\": \"texto\", \"ingresos_max\": numero, \"importe\": numero}]}",
   "cuando": "Dos veces por año, según la inflación del semestre (enero y julio)",
-  "titulo_corto": "IIBB Santa Fe simplificado"
+  "titulo_corto": "IIBB Santa Fe simplificado",
+  "guia": [
+   {
+    "h": "Quiénes pueden estar en el Régimen Simplificado de Santa Fe"
+   },
+   {
+    "p": "Personas humanas y sucesiones indivisas que vendan cosas muebles, industrialicen, alquilen o presten servicios gravados por Ingresos Brutos, con ingresos de los últimos 12 meses que no superen el tope de la última categoría (en el segundo semestre de 2026, $ 126.610.838,75)."
+   },
+   {
+    "lista": [
+     "Quedan afuera quienes están en Convenio Multilateral.",
+     "Quienes importaron bienes o servicios en los últimos 12 meses.",
+     "Quienes tienen actividades con alícuota mayor a la básica o las excluidas por el Código Fiscal (arts. 177, 191 y 192 a 198, con sus excepciones)."
+    ]
+   },
+   {
+    "h": "Cómo se categoriza y se recategoriza"
+   },
+   {
+    "p": "Hay 8 categorías según los ingresos brutos de los últimos 12 meses. La categorización se revisa dos veces por año, en enero y en julio: si tus ingresos cambiaron de tramo, cambia el importe mensual."
+   },
+   {
+    "h": "Cómo se adhiere y cómo se paga"
+   },
+   {
+    "p": "La adhesión empieza en ARCA, con clave fiscal nivel 3, en el servicio «API Santa Fe - Régimen Simplificado - Ingresos Brutos», y sigue con el trámite web de la API. El impuesto se paga todos los meses, en la fecha de vencimiento de cada período, con el volante de pago de la API."
+   }
+  ],
+  "preguntas_fijas": [
+   {
+    "p": "¿Quién puede estar en el Régimen Simplificado de Ingresos Brutos de Santa Fe?",
+    "r": "Personas humanas y sucesiones indivisas con actividades gravadas y con ingresos de los últimos 12 meses por debajo del tope de la última categoría. No pueden estar los contribuyentes de Convenio Multilateral ni quienes importaron en los últimos 12 meses."
+   },
+   {
+    "p": "¿Cada cuánto me recategorizo en el Simplificado de Santa Fe?",
+    "r": "Dos veces por año, en enero y en julio, según los ingresos de los últimos 12 meses."
+   }
+  ]
  },
  {
   "slug": "monotasa-la-plata",
@@ -344,7 +408,46 @@
   },
   "estructura": "estructurado: {\"categorias\": [{\"categoria\": \"texto\", \"importe\": numero}]}",
   "cuando": "Una vez por año, con la Ordenanza Impositiva (diciembre o enero)",
-  "titulo_corto": "Monotasa La Plata 2026"
+  "titulo_corto": "Monotasa La Plata 2026",
+  "guia": [
+   {
+    "h": "Qué es la Monotasa de La Plata"
+   },
+   {
+    "p": "Es el Régimen Simplificado para Pequeños Comercios: en lugar de calcular la Tasa por Inspección de Seguridad e Higiene sobre los ingresos, el comercio adherido paga un importe fijo por mes según su categoría del Monotributo."
+   },
+   {
+    "h": "Cómo saber qué categoría te toca"
+   },
+   {
+    "p": "Es la misma letra que tenés en el Monotributo de ARCA (de la A a la K), que depende de lo que facturaste en los últimos 12 meses, entre otros parámetros. Si en la recategorización de enero o julio cambiás de categoría, cambia también lo que pagás de Monotasa."
+   },
+   {
+    "h": "Ejemplo"
+   },
+   {
+    "p": "Un kiosco en la categoría C del Monotributo y adherido a la Monotasa paga hasta el importe de la categoría C de la tabla por mes. Si en la recategorización pasa a la D, paga hasta el importe de la D."
+   },
+   {
+    "h": "Ocupación del espacio público"
+   },
+   {
+    "p": "Según el artículo 20 de la Ordenanza Impositiva, los comercios que NO están en la Monotasa pagan aparte la ocupación del espacio público (mesas, exhibidores, etc.) por metro cuadrado. Los importes de la Monotasa son máximos: la Municipalidad puede cobrar hasta esos valores."
+   },
+   {
+    "p": "Los requisitos para adherir, el alta y la forma de pago los informa la Municipalidad de La Plata."
+   }
+  ],
+  "preguntas_fijas": [
+   {
+    "p": "¿Qué es la Monotasa en La Plata?",
+    "r": "El Régimen Simplificado para Pequeños Comercios: un importe fijo por mes de Seguridad e Higiene según la categoría del Monotributo (Ordenanza Impositiva 12682, art. 41)."
+   },
+   {
+    "p": "¿La Monotasa cambia si me recategorizo en el Monotributo?",
+    "r": "Sí: el importe depende de la categoría, así que si cambiás de letra en el Monotributo cambia lo que pagás."
+   }
+  ]
  },
  {
   "slug": "monotributo-unificado-mendoza",
@@ -451,6 +554,39 @@
   },
   "estructura": "estructurado: {\"categorias\": [{\"categoria\": \"texto\", \"importe\": numero}]}",
   "cuando": "Una vez por año, con la Ordenanza Impositiva",
-  "titulo_corto": "Monotasa Mar del Plata 2026"
+  "titulo_corto": "Monotasa Mar del Plata 2026",
+  "guia": [
+   {
+    "h": "Qué es la Monotasa de Mar del Plata"
+   },
+   {
+    "p": "Es el Régimen Simplificado para Pequeños Establecimientos de General Pueyrredon (Mar del Plata, Batán y Sierra de los Padres): en lugar de calcular la Tasa por Inspección de Seguridad e Higiene sobre los ingresos, el comercio adherido paga un importe fijo por mes según su categoría del Monotributo."
+   },
+   {
+    "h": "Cómo saber qué categoría te toca"
+   },
+   {
+    "p": "Es la misma letra que tenés en el Monotributo de ARCA (de la A a la K), que depende de lo que facturaste en los últimos 12 meses, entre otros parámetros. Si en la recategorización de enero o julio cambiás de categoría, cambia también lo que pagás de Monotasa."
+   },
+   {
+    "h": "Ejemplo"
+   },
+   {
+    "p": "Un comercio en la categoría B del Monotributo y adherido a la Monotasa paga por mes el importe de la categoría B de la tabla. Si en la recategorización pasa a la C, paga el de la C."
+   },
+   {
+    "p": "Los requisitos para adherir, el alta y la forma de pago los informa la Municipalidad de General Pueyrredon."
+   }
+  ],
+  "preguntas_fijas": [
+   {
+    "p": "¿Qué es la Monotasa en Mar del Plata?",
+    "r": "El Régimen Simplificado para Pequeños Establecimientos de General Pueyrredon: un importe fijo por mes de Seguridad e Higiene según la categoría del Monotributo (Ordenanza Impositiva 26.899, Anexo I, art. 79)."
+   },
+   {
+    "p": "¿La Monotasa cambia si me recategorizo en el Monotributo?",
+    "r": "Sí: el importe depende de la categoría del Monotributo."
+   }
+  ]
  }
 ]
