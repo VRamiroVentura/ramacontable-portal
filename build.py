@@ -503,7 +503,7 @@ def pagina(titulo, cuerpo, actual="", descripcion="", ruta="", extra_head="", mi
         "sueldos": [("sueldos.html", "Novedades de sueldos"), ("convenios.html", "Escalas por convenio"), ("guias.html#sueldos", "Guías de sueldos"),
                     ("sueldo-comercio.html", "Calculadora de sueldo de Comercio"), ("datos-al-dia.html#sueldos", "Datos del día de sueldos"), ("vencimiento-931.html", "Vencimientos del F.931"), ("comparador-escalas.html", "Aumentos vs. inflación")],
         "impuestos": [("impuestos.html", "Novedades de impuestos")] + [(f"impuesto-{s}.html", n) for s, n, _, _ in IMPUESTOS] + [("provincias-y-municipios.html", "Provincias y municipios"), ("guias.html#impuestos", "Guías de impuestos"), ("datos-al-dia.html#impuestos", "Datos del día de impuestos")],
-        "guias": [(f"guias.html#{k}", v) for k, v in GRUPOS_GUIAS.items()] + [("guias.html", "Todas las guías"), ("glosario.html", "Glosario")],
+        "guias": [(g["ruta"] + ".html", "⭐ Monotributo explicado fácil") for g in EXPLICADO] + [(f"guias.html#{k}", v) for k, v in GRUPOS_GUIAS.items()] + [("guias.html", "Todas las guías"), ("glosario.html", "Glosario")],
         "datos-al-dia": [x for gid, nombre, items in grupos_datos() for x in [("#g", nombre)] + [(f"{sl}.html", ti) for sl, ti, _ in items][:7]],
     }
     # Google corta los títulos largos y las descripciones de más de ~160 caracteres
@@ -2205,6 +2205,121 @@ def pagina_provincias(notas):
                   "provincias-y-municipios.html", migas=[("Impuestos", "impuestos.html"), ("Provincias y municipios", "provincias-y-municipios.html")])
 
 
+_MES_NUM = {m: i + 1 for i, m in enumerate(MESES)}
+
+
+def nota_vencida(n):
+    """True si todas las fechas con mes que menciona la nota (título y dato clave) ya pasaron: se saca de la portada, sigue en su sección."""
+    hoy = datetime.date.today()
+    txt = _N(f"{n.get('titulo', '')} {n.get('clave', '')}")
+    fechas = []
+    for m in re.finditer(r"\b(" + "|".join(MESES) + r")\b(?:\s+(?:de\s+)?(\d{4}))?", txt):
+        anio = int(m.group(2)) if m.group(2) else hoy.year
+        fechas.append((anio, _MES_NUM[m.group(1)]))
+    return bool(fechas) and all(f < (hoy.year, hoy.month) for f in fechas)
+
+
+def es_tecnica(n):
+    """Notas muy específicas que no van arriba en la portada (siguen en su sección y en la lista de abajo)."""
+    return n["slug"].startswith("boletin-oficial-sumario")
+
+
+def portada_inicio(notas, guias, convenios):
+    """Portada: fecha de actualización, lo último, vencimientos, qué cambió, accesos, novedades por sección y las últimas 24 horas."""
+    hoy = datetime.date.today()
+    ahora_ar = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=3)
+    vigentes = [n for n in notas if not nota_vencida(n)]
+    frescura = (f'<p class="fresco"><span class="punto"></span>Actualizado el {ahora_ar.day} de {MESES[ahora_ar.month - 1]} de {ahora_ar.year}, '
+                f'a las {ahora_ar:%H:%M}</p>')
+    item = lambda n: (f'<li><a href="nota-{n["slug"]}.html"><span class="ante">{e(n["antetitulo"].split("|")[0].strip())}</span>'
+                      f'<b>{e(n["titulo"])}</b><small>{fecha_corta(str(n["fecha"]))}</small></a></li>')
+    arriba = [n for n in vigentes if not es_tecnica(n)][:6]
+    usados = {n["slug"] for n in arriba}
+    bloque_ultimo = (f'<section class="ini-ultimo"><h2>Lo último</h2><ul class="ini-lista ini-top">{"".join(item(n) for n in arriba)}</ul></section>') if arriba else ""
+
+    prox = [x for x in proximos_vencimientos() if x["fecha"] <= (hoy + datetime.timedelta(days=7)).isoformat()][:5] or proximos_vencimientos(5)
+    venc = ('<section class="ini-caja"><h2>📅 Vence esta semana</h2><ul class="venc">' + "".join(
+        f'<li><span>{e(x["concepto"])}{(" · " + e(x["detalle"])) if x.get("detalle") else ""}</span><b>{fecha_corta(x["fecha"])}</b></li>' for x in prox)
+        + '</ul><a class="mas" href="herramientas.html">Agenda completa por CUIT →</a></section>') if prox else ""
+
+    # datos que más se buscan, en este orden: siempre la jubilación y los dos más importantes que tengan valor
+    prioridad = ["jubilacion-minima-y-bono", "salario-minimo-vital-y-movil", "monotributo-categorias-vigentes", "tope-aportes-base-maxima",
+                 "asignaciones-familiares-auh"]
+    temas = {t["slug"]: t for t in TEMAS_RESP}
+    elegidos = [sl for sl in prioridad if sl in temas and ajustar_tramo((RESP.get(sl) or {}).get("datos") or {}).get("valor")][:3]
+    def fila_dato(sl):
+        r = RESP.get(sl) or {}
+        t = temas[sl]
+        c = str(r.get("cambiado") or "")[:10]
+        return (f'<li><span><a href="{sl}.html">{e(t.get("titulo_corto") or t["titulo"].split(":")[0].split("(")[0].strip())}</a>'
+                f'<small>{e(_corto(ajustar_tramo(r.get("datos") or {}).get("valor") or "", 44))}</small></span>'
+                f'<b>{("desde " + fecha_corta(c)) if c else ""}</b></li>')
+    cambio = ('<section class="ini-caja"><h2>🔔 Datos clave de hoy</h2><ul class="venc">' + "".join(fila_dato(sl) for sl in elegidos)
+              + '</ul><a class="mas" href="datos-al-dia.html">Todos los datos del día →</a></section>') if elegidos else ""
+
+    hechas = {g["slug"] for g in guias}
+    top_guias = [(s_, t_) for s_, t_ in [("guia-sac-aguinaldo", "Aguinaldo"), ("guia-categorias-comercio", "Categorías de Comercio"),
+                                         ("guia-sumas-no-remunerativas", "Sumas no remunerativas"), ("guia-vacaciones", "Vacaciones"),
+                                         ("guia-liquidacion-final", "Liquidación final")] if s_ in hechas]
+    conv = sorted(convenios, key=lambda c: PRINCIPALES.index(c["slug"]) if c["slug"] in PRINCIPALES else 99)
+    conv = [c for c in conv if c["slug"] in PRINCIPALES] + [c for c in conv if c["slug"] == "gastronomicos"]
+    chips = lambda xs: "".join(f'<a href="{u}">{e(t)}</a>' for u, t in xs)
+    recursos = f"""<section class="ini-recursos"><h2>Lo más consultado</h2>
+<div class="ini-rec"><b>📊 Escalas</b><div class="chips">{chips([(f"escala-{c['slug']}.html", c["nombre"]) for c in conv[:6]] + [("convenios.html", f"Todas ({len(convenios)}) →")])}</div></div>
+<div class="ini-rec"><b>📚 Guías</b><div class="chips">{chips([(f"nota-{s_}.html", t_) for s_, t_ in top_guias] + [(g["ruta"] + ".html", "Monotributo explicado fácil") for g in EXPLICADO] + [("guias.html", "Todas →")])}</div></div>
+<div class="ini-rec"><b>🧮 Calculadoras</b><div class="chips">{chips([("aguinaldo.html", "Aguinaldo"), ("liquidacion-final.html", "Liquidación final"), ("vacaciones.html", "Vacaciones"), ("intereses-arca.html", "Intereses de ARCA"), ("monotributo-categoria.html", "Categoría de Monotributo"), ("calculadoras.html", "Todas →")])}</div></div>
+<div class="ini-rec"><b>📍 Provincias</b><div class="chips">{chips([(j["ruta"] + ".html", j["titulo_corto"]) for j in JURIS][:6] + [("provincias-y-municipios.html", "Todas →")])}</div></div>
+</section>"""
+
+    resto = [n for n in vigentes if n["slug"] not in usados]
+    cols = ""
+    for k, nombre in SECCIONES.items():
+        xs = [n for n in resto if n["seccion"] == k and not es_tecnica(n)][:2]
+        if xs:
+            usados |= {n["slug"] for n in xs}
+            cols += (f'<div class="ini-sec"><h3><a href="{k}.html">{e(nombre)}</a></h3><ul>'
+                     + "".join(f'<li><a href="nota-{n["slug"]}.html">{e(n["titulo"])}</a><small>{fecha_corta(str(n["fecha"]))}</small></li>' for n in xs)
+                     + f'</ul><a class="mas" href="{k}.html">Más de {e(nombre)} →</a></div>')
+    por_sec = f'<section class="ini-secciones"><h2>Por sección</h2><div class="ini-sec-g">{cols}</div></section>' if cols else ""
+
+    # últimas 24 horas (si no hubo nada, lo del último día con novedades) y el resto plegado en «Ver más»
+    quedan = [n for n in vigentes if n["slug"] not in usados]
+    ayer = (hoy - datetime.timedelta(days=1)).isoformat()
+    recientes = [n for n in quedan if str(n["fecha"])[:10] >= ayer]
+    tit24 = "Últimas 24 horas"
+    if not recientes and quedan:
+        ult = str(quedan[0]["fecha"])[:10]
+        recientes, tit24 = [n for n in quedan if str(n["fecha"])[:10] == ult], f"Novedades del {fecha_corta(ult)}"
+    mas = [n for n in quedan if n not in recientes][:25]
+    todas = ""
+    if recientes or mas:
+        todas = (f'<section class="ini-mas"><h2>{tit24}</h2><ul class="ini-lista">{"".join(item(n) for n in recientes)}</ul>'
+                 + (f'<details class="ini-vermas"><summary>Ver más novedades ({len(mas)})</summary><ul class="ini-lista">{"".join(item(n) for n in mas)}</ul>'
+                    f'<p class="mas"><a href="sueldos.html">Sueldos</a> · <a href="impuestos.html">Impuestos</a> · <a href="profesion.html">Profesión</a></p></details>' if mas else "")
+                 + "</section>")
+
+    cuerpo = (f'<div class="grilla"><section><h1 class="oculto">Ramacontable: novedades contables, impositivas y laborales, guías y calculadoras</h1>'
+              f'{frescura}{bloque_ultimo}<div class="ini-dos">{venc}{cambio}</div>{recursos}{por_sec}{todas}</section>'
+              f'{_lateral(notas, "") if venc else lateral(notas)}</div>')
+    ld = '<script type="application/ld+json">' + json.dumps({"@context": "https://schema.org", "@type": "CollectionPage", "name": "Ramacontable",
+        "url": sitio_url(), "dateModified": ahora_ar.strftime("%Y-%m-%dT%H:%M:00-03:00"), "inLanguage": "es-AR",
+        "mainEntity": {"@type": "ItemList", "itemListElement": [{"@type": "ListItem", "position": i + 1, "url": f"{sitio_url()}nota-{n['slug']}.html"}
+                                                                 for i, n in enumerate(arriba)]}}, ensure_ascii=False) + "</script>"
+    return pagina("Ramacontable | Comunidad contable", cuerpo, "", "Novedades contables, impositivas y laborales explicadas claro, escalas salariales, guías, calculadoras y vencimientos.", "", ld)
+
+
+def franja_empeza():
+    """Accesos de la portada para quien no es contador: lo más usado, en una fila."""
+    hoy = datetime.date.today()
+    vto = datetime.date(hoy.year, 12, 18) if hoy.month >= 7 else datetime.date(hoy.year, 6, 30)
+    items = [(g["ruta"] + ".html", "📘", "Monotributo explicado fácil", "Qué pagás, qué factura hacer y cuándo recategorizarte") for g in EXPLICADO]
+    items += [("aguinaldo.html", "🧮", "Calculadora de aguinaldo", f"Se paga hasta el {vto.day}/{vto.month}"),
+              ("monotributo-categoria.html", "🏷️", "¿Qué categoría me toca?", "Monotributo según lo que facturás"),
+              ("herramientas.html", "📅", "Vencimientos del mes", "Por terminación de CUIT")]
+    return ('<section class="empeza"><h2>Empezá por acá</h2><div class="empeza-g">'
+            + "".join(f'<a href="{u}"><span>{i}</span><b>{e(t)}</b><small>{e(d)}</small></a>' for u, i, t, d in items) + "</div></section>")
+
+
 def portada(notas, titulo_pag="Ramacontable | Comunidad contable", actual="", encabezado="", extra=""):
     if not notas:
         lista = '<p class="vacio">Todavía no hay notas en esta sección.</p>'
@@ -2290,7 +2405,7 @@ def main():
         catalogo = json.load(open(os.path.join(RAIZ, "guias", "catalogo.json"), encoding="utf-8"))
     except Exception:
         catalogo = []
-    escribir("index.html", portada([n for n in notas if not nota_de_nicho(n)]))
+    escribir("index.html", portada_inicio([n for n in notas if not nota_de_nicho(n)], guias, convenios))
     escribir("guias.html", pagina_guias(guias, notas, catalogo))
     for imp in IMPUESTOS:
         escribir(f"impuesto-{imp[0]}.html", pagina_impuesto(imp, notas, guias, catalogo))
