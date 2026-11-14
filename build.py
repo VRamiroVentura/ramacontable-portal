@@ -2302,10 +2302,13 @@ def portada_inicio(notas, guias, convenios):
     def fila_dato(sl):
         r = RESP.get(sl) or {}
         t = temas[sl]
-        c = str(r.get("cambiado") or "")[:10]
+        d = ajustar_tramo(r.get("datos") or {})
+        mv, c = str(d.get("mes_vigente") or ""), str(r.get("cambiado") or "")[:10]
+        # «cambiado» puede ser la fecha en que la fábrica reescribió el dato: si hay mes vigente, se muestra ese
+        cuando = f"{MESES[int(mv[5:7]) - 1].capitalize()} {mv[:4]}" if re.fullmatch(r"\d{4}-\d{2}", mv) else (("desde " + fecha_corta(c)) if c else "")
         return (f'<li><span><a href="{sl}.html">{e(t.get("titulo_corto") or t["titulo"].split(":")[0].split("(")[0].strip())}</a>'
-                f'<small>{e(_corto(ajustar_tramo(r.get("datos") or {}).get("valor") or "", 44))}</small></span>'
-                f'<b>{("desde " + fecha_corta(c)) if c else ""}</b></li>')
+                f'<small>{e(_corto(d.get("valor") or "", 44))}</small></span>'
+                f'<b>{cuando}</b></li>')
     cambio = ('<section class="ini-caja"><h2>🔔 Datos clave de hoy</h2><ul class="venc">' + "".join(fila_dato(sl) for sl in elegidos)
               + '</ul><a class="mas" href="datos-al-dia.html">Todos los datos del día →</a></section>') if elegidos else ""
 
