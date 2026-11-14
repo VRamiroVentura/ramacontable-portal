@@ -1,0 +1,157 @@
+{
+ "_ayuda": "Guía fácil de la liquidación final (renuncia, despido sin causa, despido con causa). Datos: LCT arts. 231-233 (preaviso 1 mes hasta 5 años y 2 meses desde 5 años; integración del mes de despido), art. 245 según Ley 27.802 (un mes de la mejor remuneración mensual, normal y habitual del último año por año o fracción mayor de 3 meses; la base no incluye SAC, vacaciones ni conceptos que no se paguen todos los meses; tope de 3 veces el promedio del convenio; mínimo un mes), art. 156 (vacaciones no gozadas), art. 123 (SAC proporcional). Coincide con la calculadora liquidacion-final.html. Fuentes: Estudio Vilaplana (07/03/2026), García Alonso (doctrina Dra. Carina Suárez), Blog del Contador (06/03/2026), iProfesional (05/06/2026). No se menciona el FAL (las fuentes se contradicen en fecha y alcance) ni el plazo de pago (no verificado tras la reforma). Búsquedas reales: «liquidación final por despido / por renuncia», «cuánto me corresponde si renuncio a mi trabajo de 1/2/3/5 años», «cuánto me corresponde si me despiden sin causa», «indemnización por despido se calcula sobre sueldo bruto o neto», «liquidación final por despido nueva ley».",
+ "orden": 7,
+ "ruta": "cuanto-me-corresponde-si-renuncio-o-me-despiden",
+ "titulo": "¿Cuánto me corresponde si renuncio o me despiden? Explicado fácil",
+ "seo_titulo": "Cuánto me corresponde si renuncio o me despiden ({anio})",
+ "descripcion": "Qué te tienen que pagar en la liquidación final si renunciás o te despiden, cómo se calcula la indemnización con la nueva ley y una calculadora para sacar tu cuenta.",
+ "tarjeta": "Qué cobrás si renunciás, qué se suma si te despiden y cómo se calcula la indemnización con la nueva ley.",
+ "para_quien": "Para cualquier persona en relación de dependencia que renunció, la despidieron o lo está pensando y quiere saber qué le tienen que pagar. Sin palabras raras.",
+ "profesional": [
+  "nota-guia-liquidacion-final.html",
+  "¿Sos contador o liquidás sueldos? Guía profesional de liquidación final"
+ ],
+ "profesionales_extra": [
+  "nota-guia-reforma-laboral.html"
+ ],
+ "contacto": "liquidación final",
+ "secciones": [
+  {
+   "id": "que-es",
+   "titulo": "¿Qué es la liquidación final?",
+   "texto": [
+    "Es lo último que te paga tu empleador cuando termina el trabajo, sea porque renunciaste o porque te despidieron. Siempre tiene una parte que te corresponde pase lo que pase, y en el despido sin causa se le suma la indemnización.",
+    "Se calcula sobre el sueldo bruto (antes de los descuentos)."
+   ],
+   "tabla": [
+    [
+     "Concepto",
+     "Renuncia",
+     "Despido con causa",
+     "Despido sin causa"
+    ],
+    [
+     "Días trabajados del mes",
+     "Sí",
+     "Sí",
+     "Sí"
+    ],
+    [
+     "Aguinaldo proporcional",
+     "Sí",
+     "Sí",
+     "Sí"
+    ],
+    [
+     "Vacaciones no gozadas",
+     "Sí",
+     "Sí",
+     "Sí"
+    ],
+    [
+     "Indemnización por antigüedad",
+     "No",
+     "No",
+     "Sí"
+    ],
+    [
+     "Preaviso (si no te avisaron antes)",
+     "No",
+     "No",
+     "Sí"
+    ],
+    [
+     "Integración del mes de despido",
+     "No",
+     "No",
+     "Sí"
+    ]
+   ]
+  },
+  {
+   "id": "renuncia",
+   "titulo": "¿Cuánto me corresponde si renuncio?",
+   "texto": [
+    "Si renunciás no cobrás indemnización, pero sí tres cosas: los días que trabajaste en el mes, la parte del aguinaldo que llevabas acumulada en el semestre y los días de vacaciones del año que no te tomaste.",
+    "No importa cuántos años trabajaste: con 1, 2 o 5 años de antigüedad la cuenta es la misma. Los años solo cambian cuántos días de vacaciones te tocan.",
+    "Valeria renunció el 15 de octubre (es un ejemplo). Le corresponden los 15 días de octubre, el aguinaldo proporcional de julio a octubre y las vacaciones del año que no usó."
+   ],
+   "destino": [
+    "cuantos-dias-de-vacaciones-me-corresponden.html",
+    "Cuántos días de vacaciones me tocan"
+   ]
+  },
+  {
+   "id": "despido-sin-causa",
+   "titulo": "¿Cuánto me corresponde si me despiden sin causa?",
+   "texto": [
+    "A lo de la renuncia se suman tres conceptos: la indemnización por antigüedad, el preaviso (si no te avisaron con tiempo) y la integración del mes de despido.",
+    "La indemnización es un sueldo por cada año trabajado. Si te sobran más de 3 meses, se cuentan como un año más. Con la nueva ley, la base es tu mejor sueldo mensual normal y habitual del último año, sin contar el aguinaldo, las vacaciones ni lo que no cobrás todos los meses."
+   ],
+   "clave": [
+    "Indemnización: 1 mes de sueldo por cada año o fracción de más de 3 meses. Nunca menos de 1 mes.",
+    "Hay un tope según el convenio de tu actividad, pero la indemnización nunca puede quedar demasiado baja por ese tope.",
+    "Preaviso: si no te avisaron antes, te pagan 1 mes de sueldo si tenías hasta 5 años de antigüedad y 2 meses si tenías más de 5 años.",
+    "Integración: si te despiden sin preaviso y no es el último día del mes, te pagan los días que faltaban hasta fin de mes."
+   ]
+  },
+  {
+   "id": "ejemplo",
+   "titulo": "Un ejemplo con números",
+   "texto": [
+    "Martín trabajó 4 años y 5 meses y su mejor sueldo bruto mensual del último año fue $ 1.000.000 (es un número de ejemplo). Lo despidieron sin causa y sin preaviso.",
+    "Indemnización: 4 años y 5 meses cuentan como 5 años (los 5 meses pasan los 3), así que son 5 × $ 1.000.000 = $ 5.000.000. Preaviso: tenía menos de 5 años, así que es 1 mes, $ 1.000.000. A eso se suman los días trabajados, el aguinaldo proporcional, las vacaciones no gozadas y la integración si corresponde. La cuenta completa la hace la calculadora de abajo."
+   ]
+  },
+  {
+   "id": "calculadora",
+   "titulo": "Calculá tu liquidación final",
+   "texto": [
+    "Poné tu fecha de ingreso y de salida, el motivo y tu sueldo: te muestra cada concepto con su explicación."
+   ],
+   "calculadora": "liquidacion-final"
+  },
+  {
+   "id": "con-causa-y-prueba",
+   "titulo": "¿Y si me despiden con causa o estaba en período de prueba?",
+   "texto": [
+    "En el despido con causa (por ejemplo, por una falta grave que el empleador tiene que poder probar) cobrás lo mismo que en una renuncia: días trabajados, aguinaldo proporcional y vacaciones no gozadas. Si no estás de acuerdo con la causa, conviene consultar con un abogado laboralista.",
+    "Si estabas en período de prueba, tampoco corresponde indemnización por antigüedad. Igual te tienen que pagar los días trabajados, el aguinaldo proporcional y las vacaciones."
+   ]
+  },
+  {
+   "id": "nueva-ley",
+   "titulo": "¿Qué cambió con la nueva ley (Ley 27.802)?",
+   "texto": [
+    "La reforma laboral de 2026 aclaró qué entra en la base de la indemnización: tu mejor sueldo mensual normal y habitual, sin el aguinaldo, sin las vacaciones y sin los premios o pagos que no cobrás todos los meses. Las horas extras y las comisiones que cobrás seguido sí cuentan, con un promedio.",
+    "El cálculo sigue siendo un sueldo por año trabajado, con el preaviso y la integración del mes como antes. Rige para los despidos desde que salió la ley, aunque hayas empezado a trabajar antes."
+   ]
+  }
+ ],
+ "preguntas": [
+  [
+   "¿Cuánto me corresponde si renuncio a mi trabajo?",
+   "Los días trabajados del mes, el aguinaldo proporcional y las vacaciones no gozadas del año. En la renuncia no hay indemnización."
+  ],
+  [
+   "¿Cuánto me corresponde si renuncio después de 5 años?",
+   "Lo mismo que con menos años: días trabajados, aguinaldo proporcional y vacaciones no gozadas. Con 5 años o más te tocan más días de vacaciones (21 si tenés más de 5 años y hasta 10), así que ese concepto puede ser mayor."
+  ],
+  [
+   "¿Cuánto me corresponde si me despiden sin causa?",
+   "Lo de la renuncia más la indemnización (un sueldo por año o fracción de más de 3 meses), el preaviso si no te avisaron (1 mes hasta 5 años de antigüedad, 2 meses si tenías más) y la integración del mes de despido."
+  ],
+  [
+   "¿La indemnización se calcula sobre el sueldo bruto o neto?",
+   "Sobre el bruto: la mejor remuneración mensual, normal y habitual del último año, antes de los descuentos y sin aguinaldo ni vacaciones."
+  ],
+  [
+   "¿Qué cambió en la liquidación final con la nueva ley?",
+   "La Ley 27.802 aclaró que la base de la indemnización no incluye el aguinaldo, las vacaciones ni los pagos que no son mensuales. El resto del cálculo (un sueldo por año, preaviso e integración) sigue igual."
+  ],
+  [
+   "¿Si me despiden en período de prueba cobro indemnización?",
+   "No, pero te tienen que pagar los días trabajados, el aguinaldo proporcional y las vacaciones no gozadas."
+  ]
+ ]
+}

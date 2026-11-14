@@ -82,11 +82,20 @@
    "buscar": "aportes trabajador recibo de sueldo"
   },
   {
-   "tipo": "crear",
-   "guia": "liquidación final explicada fácil (renuncia y despido)",
+   "tipo": "actualizar",
+   "guia": "cuanto-me-corresponde-si-renuncio-o-me-despiden.html",
    "desde": "11-15",
-   "hasta": "02-28",
-   "que": "Crear la guía fácil de liquidación final después de verificar los cambios de la Ley 27.802 en indemnizaciones."
+   "hasta": "12-15",
+   "que": "Revisar si hubo cambios en indemnizaciones, preaviso o el Fondo de Asistencia Laboral (FAL) antes de fin de año.",
+   "buscar": "indemnizacion despido ley 27802"
+  },
+  {
+   "tipo": "actualizar",
+   "guia": "cuanto-me-corresponde-si-renuncio-o-me-despiden.html",
+   "desde": "05-15",
+   "hasta": "06-15",
+   "que": "Revisar cambios de la reforma laboral en liquidación final e indemnizaciones.",
+   "buscar": "liquidacion final despido indemnizacion"
   }
  ]
 }

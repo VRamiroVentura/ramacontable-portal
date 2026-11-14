@@ -195,11 +195,11 @@
       if (tope > 0) base = Math.max(Math.min(mejor, tope), mejor * 0.67);
       antig = Math.max(base * periodos, sueldo);
       add(`Indemnización por antigüedad (${periodos} ${periodos === 1 ? 'período' : 'períodos'})`, antig,
-        `Mejor remuneración mensual, normal y habitual${tope > 0 ? ` con el tope del convenio (nunca menos del 67% de la remuneración)` : ''} × años de servicio o fracción mayor a 3 meses (art. 245 LCT). Según la Ley 27.802, la base no incluye SAC ni premios que no sean mensuales.`, 'ind');
+        `Mejor remuneración mensual, normal y habitual${tope > 0 ? ` con el tope del convenio (nunca menos del 67% de la remuneración)` : ''} × años de servicio o fracción mayor a 3 meses (art. 245 LCT). Según la Ley 27.802, la base no incluye SAC, vacaciones ni conceptos que no sean mensuales.`, 'ind');
       if (!preavisoOtorgado) {
-        const mesesPre = (anios + mesesRest / 12) >= 5 ? 2 : 1;
+        const mesesPre = (anios > 5 || (anios === 5 && (mesesRest > 0 || diaMes > F(ingreso).getUTCDate()))) ? 2 : 1;
         const pre = sueldo * mesesPre;
-        add(`Indemnización sustitutiva del preaviso (${mesesPre} ${mesesPre === 1 ? 'mes' : 'meses'})`, pre, '1 mes hasta 5 años de antigüedad y 2 meses desde los 5 años (arts. 231 y 232 LCT).', 'ind');
+        add(`Indemnización sustitutiva del preaviso (${mesesPre} ${mesesPre === 1 ? 'mes' : 'meses'})`, pre, '1 mes con antigüedad de hasta 5 años y 2 meses si es superior a 5 años (arts. 231 y 232 LCT).', 'ind');
         const integ = diaMes < diasMes ? sueldo / 30 * Math.max(0, 30 - Math.min(diaMes, 30)) : 0;
         add(`Integración del mes de despido (${Math.max(0, 30 - Math.min(diaMes, 30))} días)`, integ, 'Días que faltan para terminar el mes, cuando el despido no coincide con el último día (art. 233 LCT).', 'ind');
         add('SAC sobre preaviso e integración', (pre + integ) / 12, 'Criterio habitual en la práctica: un doceavo del preaviso y la integración.', 'ind');

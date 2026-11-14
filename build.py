@@ -577,7 +577,7 @@ def pagina(titulo, cuerpo, actual="", descripcion="", ruta="", extra_head="", mi
 <p class="secs">{" · ".join(f'<a href="{k}.html">{v}</a>' for k, v in SECCIONES.items())} · <a href="guias.html">Guías</a>{f' · <a href="{RUTA_FACIL}.html">{SECCION_FACIL}</a>' if EXPLICADO else ""} · <a href="calculadoras.html">Calculadoras</a> · <a href="datos-al-dia.html">Datos del día</a></p>
 <div class="redes">{redes}</div>
 <p><a href="mailto:{MAIL}">{MAIL}</a></p>
-<p class="legal">Información de carácter general. Se recomienda verificar siempre en las fuentes oficiales. Cada profesional es responsable de su aplicación. · <a href="terminos.html">Términos y privacidad</a> · © {anio} Ramacontable</p>
+<p class="legal">Información de carácter general. Se recomienda verificar siempre en las fuentes oficiales. Cada profesional es responsable de su aplicación. · <a href="como-trabajamos.html">Cómo trabajamos</a> · <a href="terminos.html">Términos y privacidad</a> · © {anio} Ramacontable</p>
 </div></footer>
 <div id="modal" class="modal" hidden></div>
 <script>(function(){{var chico=function(){{return window.matchMedia('(max-width:760px)').matches||window.matchMedia('(hover:none)').matches}};
@@ -724,7 +724,7 @@ def sitemaps(notas, convenios=()):
     fijas = ["aguinaldo", "convenios", "guias", "calculadoras", "feriados", "sueldo-comercio", "sueldo-casas-particulares", "actualizacion", "dias-habiles",
              "plazo-fijo", "prestamos", "vacaciones", "liquidacion-final", "horas-extras", "iva", "conversor-dolar", "monotributo-categoria", "intereses-arca",
              "actualizacion-alquiler", "embargo-sueldo", "cuando-cambia-cada-dato", "glosario", "comparador-escalas", "agenda-vencimientos",
-             "retencion-ganancias"] + [g["ruta"] for g in EXPLICADO] + ([RUTA_FACIL] if EXPLICADO else []) + JURIS_URLS + PARITARIAS_URLS + FERIADOS_URLS + [f"impuesto-{i[0]}" for i in IMPUESTOS]
+             "retencion-ganancias", "como-trabajamos"] + [g["ruta"] for g in EXPLICADO] + ([RUTA_FACIL] if EXPLICADO else []) + JURIS_URLS + PARITARIAS_URLS + FERIADOS_URLS + [f"impuesto-{i[0]}" for i in IMPUESTOS]
     urls = [f"<url><loc>{base}</loc><lastmod>{hoy}</lastmod></url>"] + [
         f"<url><loc>{base}{k}.html</loc><lastmod>{hoy}</lastmod></url>" for k in diarias if k not in PAGINAS_FINAS] + [
         f"<url><loc>{base}{k}.html</loc></url>" for k in fijas if k not in PAGINAS_FINAS] + [
@@ -1038,6 +1038,66 @@ def pagina_respuesta(t, r, notas, aportes=None, extra=""):
                   desc, t["slug"] + ".html", head, migas_r)
 
 
+# Texto propio de las páginas de tasas (qué es, para qué sirve). Datos: BCRA (noticia TAMAR, nov. 2024) y La Nación (07/11/2024).
+TEXTO_TASAS = {
+    "badlar": {
+        "que": ["La BADLAR es la tasa promedio que pagan los bancos por los plazos fijos en pesos de $ 1 millón o más, a 30 a 35 días. "
+                "La página muestra la serie de bancos privados que publica el Banco Central todos los días hábiles.",
+                "Es una de las tasas de referencia más usadas del mercado: sirve para comparar lo que pagan los bancos por los depósitos grandes "
+                "y como referencia en préstamos, bonos y otros contratos que pactan una tasa variable."],
+        "preguntas": [{"p": "¿Qué es la tasa BADLAR?", "r": "Es la tasa promedio que pagan los bancos por plazos fijos en pesos de $ 1 millón o más, de 30 a 35 días. La publica el BCRA todos los días hábiles."},
+                      {"p": "¿Cuál es la diferencia entre la BADLAR y la TAMAR?", "r": "Las dos miden lo que pagan los bancos por depósitos grandes a 30-35 días, pero la BADLAR toma plazos fijos desde $ 1 millón (monto que no se actualiza) y la TAMAR desde un monto mucho más alto que el BCRA actualiza todos los años por inflación."}]},
+    "tamar": {
+        "que": ["La TAMAR (tasa mayorista de Argentina) es la tasa promedio que pagan los bancos por los plazos fijos en pesos de montos muy grandes, a 30 a 35 días. "
+                "El BCRA la publica todos los días desde diciembre de 2024, con datos desde octubre de 2024. La página muestra la serie de bancos privados.",
+                "Al principio tomó los depósitos de $ 1.000 millones o más, y ese monto mínimo se actualiza una vez por año por la inflación. "
+                "Así sigue midiendo los depósitos realmente grandes aunque haya inflación, algo que no pasa con la BADLAR (su monto de $ 1 millón no cambia)."],
+        "preguntas": [{"p": "¿Qué significa TAMAR?", "r": "Tasa Mayorista de Argentina: el promedio de lo que pagan los bancos por plazos fijos en pesos de montos muy grandes, a 30 a 35 días. La publica el BCRA."},
+                      {"p": "¿Cuál es la diferencia entre la TAMAR y la BADLAR?", "r": "La TAMAR toma depósitos mucho más grandes (empezó en $ 1.000 millones) y su monto mínimo se actualiza todos los años por inflación; la BADLAR toma depósitos desde $ 1 millón, monto que no cambia."}]},
+    "plazo_fijo": {
+        "que": ["Es la tasa promedio que pagan los bancos por los plazos fijos en pesos a 30 días, según la serie oficial del Banco Central. "
+                "Cada banco fija la suya: algunos pagan más y otros menos que el promedio, y suele cambiar entre clientes y canales (sucursal o home banking).",
+                "La tasa se expresa como nominal anual (TNA). Para saber cuánto ganás en 30 días hay que dividirla por 365 y multiplicarla por 30; "
+                "si renovás todos los meses los intereses, lo que ganás en el año es la tasa efectiva anual (TEA), que es un poco más alta."],
+        "preguntas": [{"p": "¿Cómo calculo cuánto me da un plazo fijo?", "r": "Interés = monto × TNA ÷ 100 × días ÷ 365. Por ejemplo, $ 1.000.000 a 30 días al 30% TNA rinde $ 24.657,53. También lo podés hacer con la calculadora de plazo fijo."},
+                      {"p": "¿Qué diferencia hay entre TNA y TEA?", "r": "La TNA es la tasa nominal anual que informa el banco. La TEA supone que renovás el plazo fijo con los intereses durante todo el año, por eso es un poco más alta."}]},
+}
+
+
+def bloque_tasa(clave, f, v, num):
+    """Párrafos que cambian solos con la serie: comparación con hace un mes y un año, máximo y mínimo, rendimiento a 30 días e inflación."""
+    import bisect
+    out = []
+    fl = lambda d: f"{d[8:10]}/{d[5:7]}/{d[:4]}"
+    fecha, ult = f[-1], v[-1]
+    def valor_en(dias):
+        objetivo = (datetime.date.fromisoformat(fecha) - datetime.timedelta(days=dias)).isoformat()
+        i = bisect.bisect_right(f, objetivo) - 1
+        return (f[i], v[i]) if i >= 0 and f[i] >= (datetime.date.fromisoformat(objetivo) - datetime.timedelta(days=7)).isoformat() else None
+    for dias, txt in ((30, "hace un mes"), (365, "hace un año")):
+        x = valor_en(dias)
+        if x:
+            dif = ult - x[1]
+            out.append(f"{txt.capitalize()} ({fl(x[0])}) estaba en {num(x[1])}%: " + ("sin cambios." if abs(dif) < 0.005 else f"{'subió' if dif > 0 else 'bajó'} {num(abs(dif))} puntos."))
+    desde = (datetime.date.fromisoformat(fecha) - datetime.timedelta(days=365)).isoformat()
+    anio = [(a, b) for a, b in zip(f, v) if a >= desde]
+    if len(anio) > 20:
+        mx, mn = max(anio, key=lambda t: t[1]), min(anio, key=lambda t: t[1])
+        out.append(f"En los últimos 12 meses, el máximo fue {num(mx[1])}% ({fl(mx[0])}) y el mínimo {num(mn[1])}% ({fl(mn[0])}).")
+    mensual = ult * 30 / 365
+    tea = ((1 + ult / 100 * 30 / 365) ** (365 / 30) - 1) * 100
+    out.append(f"A esta tasa, $ 1.000.000 a 30 días generan $ {num(10000 * mensual)} de interés ({num(mensual)}% en el mes). "
+               f"Renovando todos los meses con los intereses, equivale a una tasa efectiva anual (TEA) de {num(tea)}%.")
+    try:
+        ipc = json.load(open(os.path.join(SALIDA, "datos", "serie-ipc.json"), encoding="utf-8"))
+        mes, inf = ipc["f"][-1], ipc["v"][-1]
+        out.append(f"Para comparar: la última inflación mensual publicada fue {num(inf)}% ({MESES[int(mes[5:7]) - 1]} {mes[:4]}). "
+                   + ("Una tasa mensual por encima de la inflación le gana a la suba de precios; por debajo, pierde contra ella." ))
+    except Exception:
+        pass
+    return out
+
+
 def pagina_bcra(slug, clave, titulo, pregunta, corto, seccion, notas):
     try:
         sr = json.load(open(os.path.join(SALIDA, "datos", f"serie-{clave}.json"), encoding="utf-8"))
@@ -1062,12 +1122,17 @@ def pagina_bcra(slug, clave, titulo, pregunta, corto, seccion, notas):
         resp = f"El valor de {corto} al {fecha_corta(fecha)} es {valor}, según la serie oficial del Banco Central (BCRA)."
         cab = ["Fecha", "Valor"]
     t = {"slug": slug, "titulo": titulo, "pregunta": pregunta, "seccion": seccion, "claves": [corto]}
-    r = {"datos": {"valor": valor, "respuesta": resp, "tabla": [cab] + filas,
-                   "explicacion": [f"Dato tomado automáticamente de la API oficial de estadísticas del BCRA. Se actualiza solo cada hora.",
-                                   "Para actualizar un monto por este índice entre dos fechas, usá la calculadora de actualización."]},
+    extra = TEXTO_TASAS.get(clave) or {}
+    explicacion = list(extra.get("que") or []) + (bloque_tasa(clave, f, v, num) if clave in TEXTO_TASAS else []) + [
+        f"Dato tomado automáticamente de la API oficial de estadísticas del BCRA. Se actualiza solo cada hora."]
+    if clave != "ipc":
+        explicacion.append("Para actualizar un monto por " + ("esta tasa" if clave in TEXTO_TASAS else "este índice") + " entre dos fechas, usá la calculadora de actualización.")
+    r = {"datos": {"valor": valor, "respuesta": resp, "tabla": [cab] + filas, "explicacion": explicacion, "preguntas": extra.get("preguntas") or []},
          "fuentes": [{"nombre": "BCRA (API de estadísticas)", "url": "https://www.bcra.gob.ar/PublicacionesEstadisticas/Principales_variables.asp"}],
          "revisado": datetime.datetime.now(datetime.timezone.utc).isoformat(), "cambiado": fecha}
-    html = pagina_respuesta(t, r, notas, None, '<p><a class="btn" href="actualizacion.html">Ir a la calculadora de actualización</a></p>' if clave != "ipc" else "")
+    boton = ('<p><a class="btn" href="plazo-fijo.html">Calcular un plazo fijo</a> <a class="btn" href="actualizacion.html">Actualizar un monto por tasa</a></p>' if clave in TEXTO_TASAS
+             else '<p><a class="btn" href="actualizacion.html">Ir a la calculadora de actualización</a></p>' if clave != "ipc" else "")
+    html = pagina_respuesta(t, r, notas, None, boton)
     return html.replace("La fábrica lo rechequea todos los días.", "Se actualiza solo cada hora.")
 
 
@@ -2665,6 +2730,10 @@ def main():
     with open(os.path.join(RAIZ, "paginas", "terminos.html"), encoding="utf-8") as f:
         escribir("terminos.html", pagina("Términos y condiciones y política de privacidad | Ramacontable", f.read(), "",
                  "Términos de uso, política de privacidad y tratamiento de datos de Ramacontable, la comunidad contable con novedades, guías y calculadoras.", "terminos.html"))
+    with open(os.path.join(RAIZ, "paginas", "como-trabajamos.html"), encoding="utf-8") as f:
+        escribir("como-trabajamos.html", pagina("Cómo trabajamos: fuentes, verificación y correcciones | Ramacontable", f.read(), "",
+                 "De dónde sale cada dato de Ramacontable, cómo se verifica contra la fuente antes de publicar, cómo usamos la IA y cómo pedir una corrección.",
+                 "como-trabajamos.html"))
     with open(os.path.join(RAIZ, "paginas", "aguinaldo.html"), encoding="utf-8") as f:
         escribir("aguinaldo.html", pagina("Calculadora de aguinaldo diciembre 2026 (SAC): cálculo paso a paso | Ramacontable", f.read(), "",
                  "Calculá el aguinaldo de diciembre 2026: mensualizados y jornalizados, proporcional por días, descuentos y neto, con el cálculo paso a paso.",
