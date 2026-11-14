@@ -538,7 +538,7 @@ def pagina(titulo, cuerpo, actual="", descripcion="", ruta="", extra_head="", mi
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Source+Sans+3:wght@400;600;700&display=optional"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Source+Sans+3:wght@400;600;700&display=optional" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Source+Sans+3:wght@400;600;700&display=optional"></noscript>
 <link rel="stylesheet" href="estilos.css?v={VERSION}">
-<link rel="icon" href="/favicon.ico" sizes="48x48"><link rel="icon" href="/icono-96.png" type="image/png" sizes="96x96"><link rel="icon" href="/icono-192.png" type="image/png" sizes="192x192"><link rel="icon" href="/logo.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/icono-180.png"><link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#13271F"><meta name="robots" content="max-image-preview:large, max-snippet:-1">
+<link rel="icon" href="/favicon.ico" sizes="48x48"><link rel="icon" href="/icono-96.png" type="image/png" sizes="96x96"><link rel="icon" href="/icono-192.png" type="image/png" sizes="192x192"><link rel="icon" href="/logo.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/icono-180.png"><link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#13271F">{"" if "noindex" in extra_head else '<meta name="robots" content="max-image-preview:large, max-snippet:-1">'}
 </head><body>
 <header class="cab"><div class="wrap fila">
 <a class="logo" href="index.html">{LOGO_SVG}<span>ramacontable</span></a>
@@ -2350,7 +2350,7 @@ def portada_inicio(notas, guias, convenios):
                     f'<p class="mas"><a href="sueldos.html">Sueldos</a> · <a href="impuestos.html">Impuestos</a> · <a href="profesion.html">Profesión</a></p></details>' if mas else "")
                  + "</section>")
 
-    cuerpo = (f'<div class="grilla"><section><h1 class="oculto">Ramacontable: novedades contables, impositivas y laborales, guías y calculadoras</h1>'
+    cuerpo = (f'<div class="grilla"><section><h1 class="oculto">Ramacontable, la comunidad contable: novedades impositivas y laborales, guías y calculadoras</h1>'
               f'{frescura}{bloque_ultimo}<div class="ini-dos">{venc}{cambio}</div>{recursos}{por_sec}{todas}</section>'
               f'{_lateral(notas, "") if venc else lateral(notas)}</div>')
     ld = '<script type="application/ld+json">' + json.dumps({"@context": "https://schema.org", "@type": "CollectionPage", "name": "Ramacontable",
@@ -2379,7 +2379,7 @@ def portada(notas, titulo_pag="Ramacontable | Comunidad contable", actual="", en
             PAGINAS_FINAS.add(actual)
     else:
         lista = tarjeta(notas[0], grande=True) + '<div class="tarjetas">' + "".join(tarjeta(n) for n in notas[1:]) + "</div>"
-    cab = f'<h1 class="titsec">{e(encabezado)}</h1>' if encabezado else '<h1 class="oculto">Ramacontable: novedades contables, impositivas y laborales, guías y calculadoras</h1>'
+    cab = f'<h1 class="titsec">{e(encabezado)}</h1>' if encabezado else '<h1 class="oculto">Ramacontable, la comunidad contable: novedades impositivas y laborales, guías y calculadoras</h1>'
     desc = DESC_SECCION.get(actual, "Novedades contables, impositivas y laborales explicadas claro, escalas salariales, guías, calculadoras y vencimientos.")
     return pagina(titulo_pag, f'<div class="grilla"><section>{cab}{extra}{lista}</section>{lateral(notas)}</div>', actual, desc,
                   f"{actual}.html" if actual else "", migas=[(encabezado, f"{actual}.html")] if actual else None)

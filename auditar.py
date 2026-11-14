@@ -9,6 +9,7 @@ Uso: python auditar.py   → imprime el informe y escribe sitio-auditoria.md (fu
 En GitHub el informe aparece en el resumen de la ejecución de "Publicar web". Nunca frena la publicación.
 """
 import hashlib
+import json
 import os
 import re
 import sys
@@ -90,6 +91,145 @@ def ruta_de_url(url, base):
     return r or "index.html"
 
 
+# ---------------------------------------------------------------------------
+# Controles por página tomados de claude-seo (scripts/page_checks.py), de Agrici Daniel, licencia MIT:
+# https://github.com/AgriciDaniel/claude-seo — se reprogramaron acá con los mismos umbrales
+# (relevancia del título 30% y de la descripción 20% con 50+ palabras; HTML de más de 2 MB),
+# con palabras vacías en español.
+# ---------------------------------------------------------------------------
+HTML_MAX_BYTES = 2_000_000
+TITULO_RELEVANCIA_MIN, DESC_RELEVANCIA_MIN, RELEVANCIA_MIN_PALABRAS = 0.3, 0.2, 50
+VACIAS = frozenset("""a al algo algun alguna algunas alguno algunos ante antes aqui asi aun bajo bien cada como con contra cual cuales cuando
+de del desde donde dos el ella ellas ellos en entre era es esa esas ese eso esos esta estan estas este esto estos fue fueron ha
+hace hasta hay la las le les lo los mas me mi muy nada ni no nos o otra otras otro otros para pero poco por porque que quien
+se sea ser si sin sobre son su sus tambien tan te tiene tienen todo todos tu un una unas uno unos ya y ramacontable hoy""".split())
+
+
+class Revisor(HTMLParser):
+    """Junta lo que necesitan los controles por página."""
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.c = defaultdict(int)          # cantidad de title / description / canonical / robots
+        self.og_url = self.og_img = self.canonical = self.lang = None
+        self.viewport = False
+        self.jsonld, self._en_ld, self._ld = [], False, []
+        self.imgs = []                     # (tiene medidas, lazy, en main)
+        self.links_sin_texto = []
+        self._link = None
+        self._main = 0
+        self._cromo = 0                    # nav / header / footer / aside
+        self._salto = 0
+        self.visible = []
+
+    def handle_starttag(self, tag, attrs):
+        a = dict(attrs)
+        if tag == "html":
+            self.lang = a.get("lang")
+        elif tag == "title":
+            self.c["title"] += 1
+        elif tag == "meta":
+            n, pr = (a.get("name") or "").lower(), (a.get("property") or "").lower()
+            if n in ("description", "robots"):
+                self.c[n] += 1
+            elif n == "viewport":
+                self.viewport = True
+            elif pr == "og:url":
+                self.og_url = a.get("content")
+            elif pr == "og:image":
+                self.og_img = a.get("content")
+        elif tag == "link" and (a.get("rel") or "").lower() == "canonical":
+            self.c["canonical"] += 1
+            self.canonical = a.get("href")
+        elif tag == "script" and (a.get("type") or "").lower() == "application/ld+json":
+            self._en_ld, self._ld = True, []
+        if tag in ("script", "style", "noscript", "template"):
+            self._salto += 1
+        if tag in ("nav", "header", "footer", "aside"):
+            self._cromo += 1
+        if tag == "main":
+            self._main += 1
+        if tag == "img":
+            self.imgs.append((bool(a.get("width") and a.get("height")), (a.get("loading") or "").lower() == "lazy", self._main > 0 and not self._cromo))
+            if self._link is not None and (a.get("alt") or "").strip():
+                self._link["txt"] += " " + a["alt"]
+        if tag == "svg" and self._link is not None and (a.get("aria-label") or ""):
+            self._link["txt"] += " " + a["aria-label"]
+        if tag == "a" and a.get("href") and not a["href"].startswith(("#", "javascript:", "mailto:", "tel:")):
+            self._link = {"href": a["href"], "txt": (a.get("aria-label") or a.get("title") or "")}
+
+    def handle_endtag(self, tag):
+        if tag == "script" and self._en_ld:
+            self.jsonld.append("".join(self._ld))
+            self._en_ld = False
+        if tag in ("script", "style", "noscript", "template"):
+            self._salto = max(0, self._salto - 1)
+        if tag in ("nav", "header", "footer", "aside"):
+            self._cromo = max(0, self._cromo - 1)
+        if tag == "main":
+            self._main = max(0, self._main - 1)
+        if tag == "a" and self._link is not None:
+            if not self._link["txt"].strip():
+                self.links_sin_texto.append(self._link["href"])
+            self._link = None
+
+    def handle_data(self, data):
+        if self._en_ld:
+            self._ld.append(data)
+        if self._link is not None:
+            self._link["txt"] += data
+        if not self._salto and self._main and not self._cromo:
+            self.visible.append(data)
+
+
+def terminos(texto):
+    return [w for w in re.findall(r"[a-záéíóúñü]{3,}", (texto or "").lower()) if w not in VACIAS]
+
+
+def controles_pagina(rel, p, problemas, base):
+    """Controles por página (ver Revisor). p es el Lector de la página, con título y descripción ya leídos."""
+    ruta = os.path.join(SITIO, rel)
+    tam = os.path.getsize(ruta)
+    rv = Revisor()
+    with open(ruta, encoding="utf-8", errors="replace") as f:
+        html_txt = f.read()
+    rv.feed(html_txt)
+    if tam > HTML_MAX_BYTES:
+        problemas["html-mas-2mb"].append((rel, f"{tam // 1000} KB"))
+    if not html_txt.lstrip().lower().startswith("<!doctype html"):
+        problemas["sin-doctype"].append((rel, ""))
+    if not rv.lang:
+        problemas["sin-idioma"].append((rel, ""))
+    if not rv.viewport:
+        problemas["sin-viewport"].append((rel, ""))
+    dup = [k for k in ("title", "description", "canonical", "robots") if rv.c[k] > 1]
+    if dup:
+        problemas["etiquetas-duplicadas"].append((rel, ", ".join(f"{k} ×{rv.c[k]}" for k in dup)))
+    for i, bloque in enumerate(rv.jsonld, 1):
+        try:
+            json.loads(bloque)
+        except Exception as ex:
+            problemas["jsonld-invalido"].append((rel, f"bloque {i}: {str(ex)[:80]}"))
+    if rv.canonical and rv.og_url and rv.og_url.rstrip("/") != rv.canonical.rstrip("/"):
+        problemas["og-url-distinta"].append((rel, f"og:url {rv.og_url}"))
+    if not rv.og_img:
+        problemas["sin-imagen-para-compartir"].append((rel, ""))
+    sin_medidas = sum(1 for m, _, _ in rv.imgs if not m)
+    if sin_medidas:
+        problemas["imagen-sin-medidas"].append((rel, f"{sin_medidas} imagen(es)"))
+    en_main = [x for x in rv.imgs if x[2]]
+    if en_main and en_main[0][1]:
+        problemas["primera-imagen-diferida"].append((rel, ""))
+    if rv.links_sin_texto:
+        problemas["link-sin-texto"].append((rel, f"{len(rv.links_sin_texto)}: {', '.join(rv.links_sin_texto[:3])}"))
+    if "noindex" not in p.robots:
+        cuerpo = set(terminos(" ".join(rv.visible)))
+        if len(cuerpo) >= RELEVANCIA_MIN_PALABRAS:
+            for campo, minimo, cod in ((p.titulo, TITULO_RELEVANCIA_MIN, "titulo-no-refleja"), (p.desc, DESC_RELEVANCIA_MIN, "descripcion-no-refleja")):
+                ts = set(terminos(campo))
+                if ts and len(ts & cuerpo) / len(ts) < minimo:
+                    problemas[cod].append((rel, f"{round(100 * len(ts & cuerpo) / len(ts))}% de sus palabras en el texto; faltan: {', '.join(sorted(ts - cuerpo)[:6])}"))
+
+
 MESES_A = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
 TEXTO_PROPIO_MIN = 40
 
@@ -151,6 +291,7 @@ def auditar():
     entrantes = defaultdict(set)
     salientes = {}
     for rel, p in paginas.items():
+        controles_pagina(rel, p, problemas, base)
         noindex = "noindex" in p.robots
         destinos = set()
         for href in p.enlaces:
@@ -280,6 +421,19 @@ def auditar():
             problemas["poco-texto-propio"].append((r, f"{nombre_f}: {pct[r]}% propio, {len(cuerpos[r])} palabras"))
 
     NOMBRES = {
+        "jsonld-invalido": ("🔴", "Datos estructurados (JSON-LD) mal escritos: Google los ignora"),
+        "html-mas-2mb": ("🔴", "Páginas de más de 2 MB (Google lee solo los primeros 2 MB)"),
+        "etiquetas-duplicadas": ("🟠", "Etiquetas repetidas (title, description, canonical o robots)"),
+        "titulo-no-refleja": ("🟠", "Títulos cuyas palabras casi no aparecen en el texto de la página"),
+        "descripcion-no-refleja": ("🟡", "Descripciones cuyas palabras casi no aparecen en el texto"),
+        "og-url-distinta": ("🟡", "Link para compartir (og:url) distinto de la dirección oficial"),
+        "sin-imagen-para-compartir": ("🟡", "Páginas sin imagen para compartir (og:image)"),
+        "imagen-sin-medidas": ("🟡", "Imágenes sin ancho y alto (la página salta mientras carga)"),
+        "primera-imagen-diferida": ("🟡", "La primera imagen del contenido carga tarde (lazy)"),
+        "link-sin-texto": ("🟡", "Links sin texto ni nombre (íconos sin descripción)"),
+        "sin-doctype": ("🟡", "Páginas sin <!doctype html>"),
+        "sin-idioma": ("🟡", "Páginas sin idioma declarado"),
+        "sin-viewport": ("🟡", "Páginas sin ajuste para celular (viewport)"),
         "poco-texto-propio": ("🟠", f"Páginas automáticas con menos de {TEXTO_PROPIO_MIN}% de texto propio y menos de 300 palabras"),
         "enlace-roto": ("🔴", "Enlaces internos rotos"),
         "sitemap-a-pagina-inexistente": ("🔴", "El sitemap apunta a páginas que no existen"),
