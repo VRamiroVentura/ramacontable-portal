@@ -104,6 +104,7 @@
         + fila('Gastos de la actividad', m ? fmt(p.gastos) : '—', fmt(p.gastos - r.credito) + (r.credito ? ' <small>(sin el IVA que recuperás)</small>' : ''))
         + `<tr><th>Te queda en el bolsillo</th><th>${m ? fmt(m.bolsillo) : '—'}</th><th>${fmt(r.bolsillo)}</th></tr></tbody></table></div>`
         + (m ? `<p class="ayuda">Si absorbieras todo el IVA (cobrás lo mismo que hoy), como inscripto te quedarían ${fmt(x.r100.bolsillo)}; si lo sumaras todo al precio, ${fmt(x.r0.bolsillo)}.</p>` : '')
+        + `<p class="alerta-calc">Resultado estimativo: no incluye honorarios, percepciones ni casos especiales. Antes de decidir, consultalo con un contador. ¿Algo no te cierra? <a href="mailto:ramacontable@gmail.com?subject=Calculadora%20Monotributo%20o%20RI%3A%20comentario">Contanos</a>.</p>`
         + `<p class="ayuda">Escala y deducciones de Ganancias: ${esc(x.periodo || 'vigentes')} (ganancia no imponible y deducción especial de cuenta propia${p.conyuge ? ', cónyuge' : ''}${p.hijos ? ', hijos' : ''}). Aportes de autónomos: categoría ${esc(p.catAut)}.</p>`;
       salida.hidden = false;
       salida.scrollIntoView({ behavior: 'smooth', block: 'start' });

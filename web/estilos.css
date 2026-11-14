@@ -469,3 +469,4 @@ table.feriados tr.prox-f td{background:var(--bronce-suave);font-weight:600}
 #resultado-monori small{display:block;white-space:normal;font-size:12px;color:#666}
 #resultado-monori small.cat{color:inherit;opacity:.8}
 @media (max-width:600px){#resultado-monori td small:not(.cat){display:none}#resultado-monori th,#resultado-monori td{font-size:13.5px;padding:6px 5px}}
+.alerta-calc{background:#fff6e0;border-left:4px solid var(--bronce);padding:10px 14px;border-radius:6px;font-size:15px;margin:12px 0}
