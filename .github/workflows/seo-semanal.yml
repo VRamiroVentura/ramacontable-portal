@@ -1,0 +1,44 @@
+name: Informe SEO semanal
+
+on:
+  schedule:
+    # lunes 8:23 (hora de Argentina = UTC-3)
+    - cron: "23 11 * * 1"
+  workflow_dispatch:
+    inputs:
+      prueba:
+        description: "Solo armar el informe, sin mandar el mail (true / false)"
+        default: "false"
+
+permissions:
+  contents: write
+
+jobs:
+  seo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Instalar librerías
+        run: pip install pillow certifi
+      - name: Armar la web (igual que la publicada)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+        run: python build.py
+      - name: Revisar SEO, medir velocidad y mandar el informe
+        env:
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          RC_SEO_PRUEBA: ${{ github.event_name == 'workflow_dispatch' && inputs.prueba == 'true' && '1' || '0' }}
+        run: python seo_semanal.py
+      - name: Guardar el historial (para comparar con la semana que viene)
+        run: |
+          git config user.name "ramacontable-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add seo/historial.json
+          git diff --cached --quiet || git commit -m "Informe SEO semanal [skip ci]"
+          git push || echo "No pude guardar el historial (se reintenta la semana que viene)"
