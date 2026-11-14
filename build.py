@@ -1166,7 +1166,8 @@ def grupos_datos():
          ("dolar", "Dólar y cripto", [("dolar-hoy", "Dólar hoy: todas las cotizaciones", "")] + [(x[0], x[2], "") for x in DOLARES]),
          ("vencimientos", "Vencimientos del mes por CUIT", [(o[0], o[1], "") for o in OBLIGACIONES]),
          ("calendario", "Calendario", [(f"que-cambia-en-{MESES[int(m[5:]) - 1]}-{m[:4]}", f"Qué cambia en {MESES[int(m[5:]) - 1]} {m[:4]}", "") for m in meses_que_cambia()[-2:]]
-          + [("cuando-cambia-cada-dato", "Cuándo cambia cada dato", "")])]
+          + [("cuando-cambia-cada-dato", "Cuándo cambia cada dato", ""), ("feriados", "Feriados " + str(datetime.date.today().year), "")]
+          + [(u, "Feriados " + u[-4:], "") for u in FERIADOS_URLS if u[-4:] != str(datetime.date.today().year)])]
     return g
 
 
@@ -2344,6 +2345,7 @@ def portada_inicio(notas, guias, convenios):
 <div class="ini-rec"><b>📊 Escalas</b><div class="chips">{chips([(f"escala-{c['slug']}.html", c["nombre"]) for c in conv[:6]] + [("convenios.html", f"Todas ({len(convenios)}) →")])}</div></div>
 <div class="ini-rec"><b>📚 Guías</b><div class="chips">{chips([(f"nota-{s_}.html", t_) for s_, t_ in top_guias] + [(g["ruta"] + ".html", "Monotributo explicado fácil") for g in EXPLICADO] + [("guias.html", "Todas →")])}</div></div>
 <div class="ini-rec"><b>🧮 Calculadoras</b><div class="chips">{chips([("aguinaldo.html", "Aguinaldo"), ("liquidacion-final.html", "Liquidación final"), ("vacaciones.html", "Vacaciones"), ("intereses-arca.html", "Intereses de ARCA"), ("monotributo-categoria.html", "Categoría de Monotributo"), ("calculadoras.html", "Todas →")])}</div></div>
+<div class="ini-rec"><b>📅 Calendario</b><div class="chips">{chips([("feriados.html", "Feriados " + str(hoy.year))] + [(u + ".html", "Feriados " + u[-4:]) for u in FERIADOS_URLS if u[-4:] != str(hoy.year)] + [("herramientas.html", "Vencimientos"), ("cuando-cambia-cada-dato.html", "Cuándo cambia cada dato")])}</div></div>
 <div class="ini-rec"><b>📍 Provincias</b><div class="chips">{chips([(j["ruta"] + ".html", j["titulo_corto"]) for j in JURIS][:6] + [("provincias-y-municipios.html", "Todas →")])}</div></div>
 </section>"""
 
@@ -2463,6 +2465,8 @@ def main():
     cargar_respuestas()
     cargar_jurisdicciones()
     EXPLICADO[:] = cargar_explicado()
+    # años con calendario de feriados propio (feriados/AAAA.json): se cargan antes de armar menú y portada
+    FERIADOS_URLS[:] = sorted(f"feriados-{os.path.basename(r)[:4]}" for r in glob.glob(os.path.join(RAIZ, "feriados", "*.json")))
     notas = cargar_notas()
     with open(os.path.join(SALIDA, "config.js"), "w", encoding="utf-8") as f:
         f.write("window.RC_CONFIG=" + json.dumps({
@@ -2556,7 +2560,8 @@ def main():
     for ruta in glob.glob(os.path.join(RAIZ, "feriados", "*.json")):
         anio, h = pagina_feriados_anio(ruta, notas)
         escribir(f"feriados-{anio}.html", h)
-        FERIADOS_URLS.append(f"feriados-{anio}")
+        if f"feriados-{anio}" not in FERIADOS_URLS:
+            FERIADOS_URLS.append(f"feriados-{anio}")
     for m in meses_que_cambia():
         url, h = pagina_que_cambia(m, notas)
         escribir(url + ".html", h)
