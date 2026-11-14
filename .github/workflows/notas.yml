@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write   # la fábrica guarda los ajustes de las guías fáciles (explicado/*.json)
   actions: write
 
 concurrency:
