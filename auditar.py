@@ -402,7 +402,7 @@ def auditar():
     # Texto propio en las familias de páginas automáticas (criterio de «contenido en masa» de Google):
     # palabras que aparecen en menos del 10% de las páginas de la familia, sobre el total de la página.
     familias = {"Escalas por convenio": r"^escala-", "Datos por mes": r"-(?:" + "|".join(MESES_A) + r")-\d{4}\.html$",
-                "Provincias y municipios": r"^(?:ingresos-brutos|monotributo-unificado|regimen-simplificado|monotasa|tasas?-|alicuotas-)"}
+                "Provincias y municipios": r"^(?:ingresos-brutos|monotributo-unificado|regimen-simplificado|monotasa|tasas-municipales|alicuotas-|licencia-|patente-)"}
     unicidad = {}
     for nombre_f, patron in familias.items():
         grupo = [r for r in indexables if re.search(patron, r) and not r.startswith(("nota-", "que-cambia-"))]

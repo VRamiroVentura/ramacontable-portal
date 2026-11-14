@@ -13,6 +13,7 @@ import os
 import smtplib
 import ssl
 import sys
+import time
 import urllib.parse
 import urllib.request
 from email.mime.text import MIMEText
@@ -44,12 +45,25 @@ def velocidad(base):
     """{página: {nota, lcp, cls, inp_real}} con PageSpeed Insights (celular). Lo que falle queda afuera."""
     out = {}
     for p in PAGINAS_VELOCIDAD:
-        url = "https://www.googleapis.com/pagespeedonline/v5/runPagespeed?" + urllib.parse.urlencode(
-            {"url": base + p, "strategy": "mobile", "category": "performance"})
-        try:
-            d = json.load(_abrir(url, 120))
-        except Exception as ex:
-            print(f"Aviso: PageSpeed no respondió para /{p}:", ex)
+        q = {"url": base + p, "strategy": "mobile", "category": "performance"}
+        if os.environ.get("PAGESPEED_KEY"):   # opcional (secreto de GitHub): sin clave Google limita mucho las consultas
+            q["key"] = os.environ["PAGESPEED_KEY"]
+        url = "https://www.googleapis.com/pagespeedonline/v5/runPagespeed?" + urllib.parse.urlencode(q)
+        d = None
+        for intento in range(3):
+            try:
+                d = json.load(_abrir(url, 120))
+                break
+            except Exception as ex:
+                detalle = ""
+                if hasattr(ex, "read"):
+                    try:
+                        detalle = ex.read().decode("utf-8", "replace")[:200]
+                    except Exception:
+                        pass
+                print(f"Aviso: PageSpeed no respondió para /{p} (intento {intento + 1}):", ex, detalle)
+                time.sleep(20 * (intento + 1))
+        if not d:
             continue
         lh = d.get("lighthouseResult") or {}
         aud = lh.get("audits") or {}
