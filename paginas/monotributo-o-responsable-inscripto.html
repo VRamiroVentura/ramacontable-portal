@@ -1,0 +1,43 @@
+<div class="grilla"><article class="nota calc">
+<p class="ante">Herramientas | Monotributo e IVA</p>
+<h1>¿Me conviene Monotributo o Responsable Inscripto? Calculadora</h1>
+<p class="firma">Redacción Ramacontable · Con los valores vigentes del Monotributo, Ganancias y autónomos</p>
+<div class="encorto"><b>En corto</b><p>Cargá cuánto facturás, tus gastos y cuánto del IVA podrías trasladar a tus clientes: te muestra cuánto te queda en el bolsillo por año como monotributista y como Responsable Inscripto.</p></div>
+<form id="calc-monori" class="form-calc" novalidate>
+<div class="fila2"><label>Facturación anual (lo que cobrás hoy por año)<input name="facturacion" inputmode="decimal" placeholder="Ej.: 30.000.000"></label>
+<label>Actividad<select name="tipo"><option value="servicios">Servicios</option><option value="bienes">Venta de productos</option></select></label></div>
+<div class="fila2"><label>Gastos anuales de la actividad (con IVA incluido)<input name="gastos" inputmode="decimal" placeholder="Ej.: 6.000.000"></label>
+<label>¿Qué parte de esos gastos tendría factura A? (%)<input name="facta" inputmode="decimal" value="50"></label></div>
+<div class="fila2"><label>Tus clientes son, sobre todo…<select name="clientes"><option value="consumidores">Consumidores finales</option><option value="empresas">Empresas o responsables inscriptos</option></select></label>
+<label>¿Qué porcentaje del IVA absorberías? (%)<input name="absorbe" inputmode="decimal" value="100"></label></div>
+<p class="ayuda">Como inscripto tenés que sumar 21% de IVA a cada factura. Si tus clientes no aceptan pagar más, lo absorbés vos: 100% = seguís cobrando lo mismo que hoy; 0% = le sumás todo el IVA al precio; 50% = subís la mitad.</p>
+<div class="fila2"><label>Provincia<select name="prov"><option value="ba">Buenos Aires</option><option value="sf">Santa Fe</option><option value="cba">Córdoba</option><option value="mza">Mendoza</option><option value="er">Entre Ríos</option><option value="salta">Salta</option><option value="otra">Otra</option></select></label>
+<label>Alícuota de Ingresos Brutos como inscripto (%)<input name="alic" inputmode="decimal" value="3,5"></label></div>
+<label data-otra hidden>Ingresos Brutos simplificado por mes en tu provincia (como monotributista)<input name="iibbotra" inputmode="decimal" placeholder="Ej.: 15.000"></label>
+<p class="ayuda">La alícuota de Ingresos Brutos depende de la provincia y de la actividad: el 3,5% es un ejemplo, cambiala por la tuya.</p>
+<div class="fila2"><label>Categoría de autónomos<select name="catAut"><option>I</option><option>II</option><option>III</option><option>IV</option><option>V</option></select></label>
+<label>Hijos a cargo<input name="hijos" inputmode="numeric" value="0"></label></div>
+<label class="check"><input type="checkbox" name="conyuge"> Tengo cónyuge o conviviente a cargo</label>
+<p class="error"></p>
+<button class="btn ancho">Comparar</button>
+</form>
+<section id="resultado-monori" class="resultado" hidden></section>
+<h2>Cómo hace la cuenta</h2>
+<ul>
+<li><b>Monotributo:</b> busca tu categoría por la facturación anual y suma la cuota mensual por 12 (incluye el impuesto, la jubilación y la obra social) más el Ingresos Brutos simplificado de tu provincia.</li>
+<li><b>Responsable Inscripto:</b> calcula el IVA a pagar (el de tus ventas menos el de tus compras con factura A), Ingresos Brutos con tu alícuota, los aportes de autónomos y Ganancias con la escala y las deducciones vigentes.</li>
+<li><b>Te queda en el bolsillo:</b> lo que cobrás, menos los gastos y todos los impuestos y aportes. Es la mejor forma de comparar.</li>
+</ul>
+<h2>Lo que no incluye</h2>
+<p>Honorarios del contador, percepciones y retenciones a cuenta, el impuesto a los débitos y créditos bancarios, Bienes Personales, ni casos especiales (exenciones, actividades con otra alícuota de IVA, regímenes promocionales). La categoría del Monotributo también depende de la superficie, la energía y los alquileres: acá se toma solo la facturación.</p>
+<section class="faq"><h2>Preguntas frecuentes</h2>
+<details><summary>¿Cuándo conviene pasar a Responsable Inscripto?</summary><p>Suele convenir cuando tus clientes son empresas (pueden pagar el IVA y descontárselo) y tenés muchos gastos con factura A, o cuando superás el tope del Monotributo. Si le vendés a consumidores finales y tenés que absorber el IVA, el Monotributo suele salir más barato.</p></details>
+<details><summary>¿Qué pasa si supero el tope del Monotributo?</summary><p>Si tus ingresos de los últimos 12 meses superan el tope de la categoría más alta, tenés que pasar al régimen general como Responsable Inscripto.</p></details>
+<details><summary>¿Qué es absorber el IVA?</summary><p>Si como inscripto seguís cobrando el mismo precio que hoy, el 21% de IVA sale de ese precio: de cada $ 121 que cobrás, $ 21 son IVA. Si podés sumarlo al precio, lo paga el cliente.</p></details>
+</section>
+<p class="aviso">Herramienta de carácter general. El resultado es una estimación y no reemplaza el análisis profesional de cada caso. Antes de cambiar de régimen, consultá con un contador.</p>
+</article>
+<aside class="lateral"><a class="caja caja-calc" href="monotributo-categoria.html"><b>¿Qué categoría del Monotributo me toca?</b><span>Con la tabla vigente</span></a><a class="caja caja-calc" href="monotributo-explicado-facil.html"><b>Monotributo explicado fácil</b><span>Guía para no profesionales</span></a><a class="caja caja-calc" href="calculadoras.html"><b>Todas las calculadoras</b><span>Sueldos, aguinaldo, IVA y más</span></a></aside>
+</div>
+<script src="monori.js?v=1"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "¿Cuándo conviene pasar a Responsable Inscripto?", "acceptedAnswer": {"@type": "Answer", "text": "Suele convenir cuando tus clientes son empresas y tenés muchos gastos con factura A, o cuando superás el tope del Monotributo. Si le vendés a consumidores finales y tenés que absorber el IVA, el Monotributo suele salir más barato."}}, {"@type": "Question", "name": "¿Qué pasa si supero el tope del Monotributo?", "acceptedAnswer": {"@type": "Answer", "text": "Si tus ingresos de los últimos 12 meses superan el tope de la categoría más alta, tenés que pasar al régimen general como Responsable Inscripto."}}, {"@type": "Question", "name": "¿Qué es absorber el IVA?", "acceptedAnswer": {"@type": "Answer", "text": "Si como inscripto seguís cobrando el mismo precio que hoy, el 21% de IVA sale de ese precio: de cada $ 121 que cobrás, $ 21 son IVA. Si podés sumarlo al precio, lo paga el cliente."}}]}</script>

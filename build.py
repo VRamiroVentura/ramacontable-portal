@@ -783,7 +783,7 @@ def sitemaps(notas, convenios=()):
     fijas = ["aguinaldo", "convenios", "guias", "calculadoras", "feriados", "sueldo-comercio", "sueldo-casas-particulares", "actualizacion", "dias-habiles",
              "plazo-fijo", "prestamos", "vacaciones", "liquidacion-final", "horas-extras", "iva", "conversor-dolar", "monotributo-categoria", "intereses-arca",
              "actualizacion-alquiler", "embargo-sueldo", "cuando-cambia-cada-dato", "glosario", "comparador-escalas", "agenda-vencimientos",
-             "retencion-ganancias", "como-trabajamos"] + [g["ruta"] for g in EXPLICADO] + ([RUTA_FACIL] if EXPLICADO else []) + JURIS_URLS + PARITARIAS_URLS + FERIADOS_URLS + [f"impuesto-{i[0]}" for i in IMPUESTOS]
+             "retencion-ganancias", "como-trabajamos", "monotributo-o-responsable-inscripto"] + [g["ruta"] for g in EXPLICADO] + ([RUTA_FACIL] if EXPLICADO else []) + JURIS_URLS + PARITARIAS_URLS + FERIADOS_URLS + [f"impuesto-{i[0]}" for i in IMPUESTOS]
     urls = [f"<url><loc>{base}</loc><lastmod>{hoy}</lastmod></url>"] + [
         f"<url><loc>{base}{k}.html</loc><lastmod>{hoy}</lastmod></url>" for k in diarias if k not in PAGINAS_FINAS] + [
         f"<url><loc>{base}{k}.html</loc></url>" for k in fijas if k not in PAGINAS_FINAS] + [
@@ -2896,6 +2896,7 @@ def main():
              ("iva.html", "Calculadora de IVA: agregar o quitar IVA", "Sumá o quitá el IVA de un importe con alícuotas del 21%, 10,5%, 27% y otras."),
              ("conversor-dolar.html", "Conversor de dólar a pesos: oficial, MEP, CCL, tarjeta, cripto y blue", "Convertí pesos a dólares y dólares a pesos con las cotizaciones de hoy: oficial, mayorista, MEP, CCL, tarjeta, cripto y blue."),
              ("monotributo-categoria.html", "Calculadora de categoría del Monotributo 2026", "Cargá lo que facturaste en los últimos 12 meses y mirá en qué categoría del Monotributo estás y cuánto pagás por mes."),
+             ("monotributo-o-responsable-inscripto.html", "¿Monotributo o Responsable Inscripto? Calculadora 2026", "Compará cuánto te queda por año como monotributista y como Responsable Inscripto: IVA, Ganancias, autónomos e Ingresos Brutos con valores vigentes."),
              ("intereses-arca.html", "Calculadora de intereses resarcitorios de ARCA", "Calculá los intereses por pagar tarde un impuesto o aporte a ARCA, con la tasa vigente y los días de atraso."),
              ("actualizacion-alquiler.html", "Calculadora de actualización de alquiler por ICL o IPC", "Calculá cuánto aumenta tu alquiler por ICL o por inflación (IPC) entre dos fechas, con datos oficiales del BCRA."),
              ("agenda-vencimientos.html", "Agenda de vencimientos por CUIT", "Cargá la terminación de CUIT de tus clientes y mirá solo sus vencimientos de ARCA, con descarga al calendario."),

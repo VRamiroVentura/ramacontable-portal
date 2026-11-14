@@ -462,3 +462,10 @@ table.feriados tr.prox-f td{background:var(--bronce-suave);font-weight:600}
   .cab .menu .dd-m .sub.abierto .sub-m{display:block}
   .cab .menu .dd-m .sub.abierto .sub-t::after{content:"▴"}
 }
+
+/* v85: calculadora Monotributo o Responsable Inscripto */
+#resultado-monori th,#resultado-monori td{padding:7px 8px;font-size:14.5px;vertical-align:top}
+#resultado-monori td:nth-child(n+2),#resultado-monori th:nth-child(n+2){white-space:nowrap;text-align:right}
+#resultado-monori small{display:block;white-space:normal;font-size:12px;color:#666}
+#resultado-monori small.cat{color:inherit;opacity:.8}
+@media (max-width:600px){#resultado-monori td small:not(.cat){display:none}#resultado-monori th,#resultado-monori td{font-size:13.5px;padding:6px 5px}}
