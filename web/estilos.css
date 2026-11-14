@@ -448,3 +448,17 @@ table.feriados tr.prox-f td{background:var(--bronce-suave);font-weight:600}
 @media (min-width:761px) and (hover:hover){.cab .menu .dd-der{margin-left:4px}.cab .menu .dd-der .dd-m{left:auto;right:-14px}}
 .cab .menu .dd-m a.mas{color:#8A6A36;font-weight:700;font-size:13.5px;padding-top:4px}
 .cab .menu .dd-der > a{font-weight:400;color:#9FB3A7}
+
+/* v82: doble desplegable de «Datos del día» (grupo → sus datos) */
+.cab .menu .dd-datos .dd-m{columns:auto!important;min-width:240px!important}
+.cab .menu .dd-m .sub{position:relative}
+.cab .menu .dd-m .sub-t{display:flex!important;justify-content:space-between;gap:12px;font-weight:600!important}
+.cab .menu .dd-m .sub-t::after{content:"›";color:#8A6A36;font-weight:700}
+.cab .menu .dd-m .sub-m{display:none;position:absolute;left:100%;top:-6px;min-width:290px;background:#fff;border-top:3px solid var(--bronce);box-shadow:0 10px 24px rgba(0,0,0,.18);padding:6px 0}
+@media (min-width:761px) and (hover:hover){.cab .menu .dd-m .sub:hover .sub-m,.cab .menu .dd-m .sub:focus-within .sub-m{display:block}.cab .menu .dd-m .sub:hover>.sub-t{background:var(--bronce-suave)}}
+@media (max-width:760px),(hover:none){
+  .cab .menu .dd-m .sub-t::after{content:"▾"}
+  .cab .menu .dd-m .sub-m{position:static;box-shadow:none;border:0;padding:0 0 6px 12px;min-width:0}
+  .cab .menu .dd-m .sub.abierto .sub-m{display:block}
+  .cab .menu .dd-m .sub.abierto .sub-t::after{content:"▴"}
+}

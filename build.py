@@ -549,6 +549,23 @@ def menu_datos():
     return out
 
 
+def menu_datos_html():
+    """Doble desplegable: los grupos de datos y, al pasar por cada uno (o tocarlo en el celu), sus principales y «Ver más»."""
+    grupos, actual = [], None
+    for u, t in menu_datos():
+        if u == "#g":
+            actual = [t, []]
+            grupos.append(actual)
+        elif actual:
+            actual[1].append((u, t))
+    out = ""
+    for nombre, items in grupos:
+        ver = next((u for u, t in items if t.endswith("→")), "datos-al-dia.html")
+        out += (f'<div class="sub"><a class="sub-t" href="{ver.split(".html")[0]}.html{ver[ver.find("#"):] if "#" in ver else ""}">{e(nombre)}</a><div class="sub-m">'
+                + "".join(f'<a href="{u}"{" class=mas" if t.endswith("→") else ""}>{e(t)}</a>' for u, t in items) + "</div></div>")
+    return out + '<a class="sep" href="datos-al-dia.html">Todos los datos del día →</a>'
+
+
 _N_CALCS = None
 
 
@@ -588,7 +605,7 @@ def pagina(titulo, cuerpo, actual="", descripcion="", ruta="", extra_head="", mi
         extra_head += NOI
     menu = "".join(
         f'<div class="dd{" dd-datos" if k == "datos-al-dia" else ""}"><a href="{k}.html"{" aria-current=page" if k == actual else ""}>{v}</a>'
-        f'<div class="dd-m">' + "".join((f'<span class="dd-g">{e(t)}</span>' if u == "#g" else f'<a href="{u}"{" class=sep" if ("guias.html" in u or "datos-al-dia.html#" in u) and k in ("sueldos", "impuestos") else " class=mas" if t.endswith("→") else ""}>{e(t)}</a>') for u, t in sub.get(k, [])) + '</div></div>'
+        f'<div class="dd-m">' + (menu_datos_html() if k == "datos-al-dia" else "".join((f'<span class="dd-g">{e(t)}</span>' if u == "#g" else f'<a href="{u}"{" class=sep" if ("guias.html" in u or "datos-al-dia.html#" in u) and k in ("sueldos", "impuestos") else " class=mas" if t.endswith("→") else ""}>{e(t)}</a>') for u, t in sub.get(k, []))) + '</div></div>'
         for k, v in list(MENU.items()))
     redes = "".join(
         f'<a href="{u}" target="_blank" rel="noopener" aria-label="{n}">{ICONOS[n]}</a>'
@@ -630,6 +647,8 @@ def pagina(titulo, cuerpo, actual="", descripcion="", ruta="", extra_head="", mi
 document.querySelectorAll('.cab .menu .dd > a').forEach(function(a){{a.addEventListener('click',function(ev){{if(!chico())return;var dd=a.parentNode,ab=dd.classList.contains('abierto');
 document.querySelectorAll('.cab .menu .dd.abierto').forEach(function(x){{x.classList.remove('abierto')}});if(!ab){{ev.preventDefault();dd.classList.add('abierto');
 var m=dd.querySelector('.dd-m');m.style.top=document.querySelector('.cab').getBoundingClientRect().bottom+'px'}}}})}});
+document.querySelectorAll('.cab .menu .sub-t').forEach(function(a){{a.addEventListener('click',function(ev){{if(!chico())return;var sb=a.parentNode,ab=sb.classList.contains('abierto');
+document.querySelectorAll('.cab .menu .sub.abierto').forEach(function(x){{x.classList.remove('abierto')}});if(!ab){{ev.preventDefault();sb.classList.add('abierto')}}}})}});
 document.addEventListener('click',function(ev){{if(!ev.target.closest('.cab .menu .dd'))document.querySelectorAll('.cab .menu .dd.abierto').forEach(function(x){{x.classList.remove('abierto')}})}});}})();</script>
 <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script defer src="vendor/purify.min.js"></script>
