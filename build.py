@@ -577,7 +577,7 @@ def pagina(titulo, cuerpo, actual="", descripcion="", ruta="", extra_head="", mi
 <p class="secs">{" · ".join(f'<a href="{k}.html">{v}</a>' for k, v in SECCIONES.items())} · <a href="guias.html">Guías</a>{f' · <a href="{RUTA_FACIL}.html">{SECCION_FACIL}</a>' if EXPLICADO else ""} · <a href="calculadoras.html">Calculadoras</a> · <a href="datos-al-dia.html">Datos del día</a></p>
 <div class="redes">{redes}</div>
 <p><a href="mailto:{MAIL}">{MAIL}</a></p>
-<p class="legal">Información de carácter general. Se recomienda verificar siempre en las fuentes oficiales. Cada profesional es responsable de su aplicación. · <a href="como-trabajamos.html">Cómo trabajamos</a> · <a href="terminos.html">Términos y privacidad</a> · © {anio} Ramacontable</p>
+<p class="legal">Información de carácter general. Se recomienda verificar siempre en las fuentes oficiales. Cada profesional es responsable de su aplicación. · <a href="como-trabajamos.html">Quiénes somos</a> · <a href="terminos.html">Términos y privacidad</a> · © {anio} Ramacontable</p>
 </div></footer>
 <div id="modal" class="modal" hidden></div>
 <script>(function(){{var chico=function(){{return window.matchMedia('(max-width:760px)').matches||window.matchMedia('(hover:none)').matches}};
@@ -2731,8 +2731,8 @@ def main():
         escribir("terminos.html", pagina("Términos y condiciones y política de privacidad | Ramacontable", f.read(), "",
                  "Términos de uso, política de privacidad y tratamiento de datos de Ramacontable, la comunidad contable con novedades, guías y calculadoras.", "terminos.html"))
     with open(os.path.join(RAIZ, "paginas", "como-trabajamos.html"), encoding="utf-8") as f:
-        escribir("como-trabajamos.html", pagina("Cómo trabajamos: fuentes, verificación y correcciones | Ramacontable", f.read(), "",
-                 "De dónde sale cada dato de Ramacontable, cómo se verifica contra la fuente antes de publicar, cómo usamos la IA y cómo pedir una corrección.",
+        escribir("como-trabajamos.html", pagina("Quiénes somos y cómo trabajamos | Ramacontable", f.read(), "",
+                 "Ramacontable es una comunidad de contadores públicos que colaboran para estar al día. De dónde sale cada dato, cómo se verifica y cómo pedir una corrección.",
                  "como-trabajamos.html"))
     with open(os.path.join(RAIZ, "paginas", "aguinaldo.html"), encoding="utf-8") as f:
         escribir("aguinaldo.html", pagina("Calculadora de aguinaldo diciembre 2026 (SAC): cálculo paso a paso | Ramacontable", f.read(), "",
