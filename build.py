@@ -317,6 +317,7 @@ def pagina_convenio(c, notas, aportes=None):
                   + tabla_html(esc["tabla"]) + (f'<p class="ayuda">{e(esc.get("aclaraciones",""))}</p>' if esc.get("aclaraciones") else ""))
     else:
         escala = '<div class="vacio-caja"><b>Escala pendiente de carga</b>Se actualiza automáticamente con el próximo acuerdo salarial publicado.</div>'
+        PAGINAS_FINAS.add(f"escala-{c['slug']}")  # sin tabla queda flaca: no se indexa hasta que se cargue la escala
     relacionadas_c = [n for n in notas if n.get("convenio") == c["slug"]][:8]
     hist = c.get("historial") or []
     hist_html = ("<h2>Historial de escalas</h2><ul class='historial'>" + "".join(
@@ -702,7 +703,7 @@ def sitemaps(notas, convenios=()):
     urls = [f"<url><loc>{base}</loc><lastmod>{hoy}</lastmod></url>"] + [
         f"<url><loc>{base}{k}.html</loc><lastmod>{hoy}</lastmod></url>" for k in diarias if k not in PAGINAS_FINAS] + [
         f"<url><loc>{base}{k}.html</loc></url>" for k in fijas if k not in PAGINAS_FINAS] + [
-        f"<url><loc>{base}escala-{c['slug']}.html</loc><lastmod>{str(c.get('actualizado') or hoy)[:10]}</lastmod></url>" for c in convenios] + [
+        f"<url><loc>{base}escala-{c['slug']}.html</loc><lastmod>{str(c.get('actualizado') or hoy)[:10]}</lastmod></url>" for c in convenios if f"escala-{c['slug']}" not in PAGINAS_FINAS] + [
         f"<url><loc>{base}nota-{n['slug']}.html</loc><lastmod>{hoy if (es_guia(n) and 'aguinaldo' in n['slug']) else str(n.get('actualizado') or n['fecha'])[:10]}</lastmod></url>" for n in notas]
     mapa = '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' + "".join(urls) + "</urlset>"
     limite = datetime.date.today() - datetime.timedelta(days=2)
@@ -1575,6 +1576,45 @@ def valor_de_mes(t, mes):
     return None, "Para este mes el dato se publica en cuanto lo confirmen las fuentes.", "pendiente"
 
 
+def _monto_txt(v):
+    m = re.search(r"\$\s*([\d.]+(?:,\d+)?)", str(v or ""))
+    return float(m.group(1).replace(".", "").replace(",", ".")) if m else None
+
+
+def bloque_evolucion(t):
+    """Últimos valores del dato con su fecha y la variación entre los dos últimos (sale del historial verificado)."""
+    r = RESP.get(t["slug"]) or {}
+    hist = sorted([h for h in r.get("historial") or [] if h.get("valor") and h.get("fecha")], key=lambda h: str(h["fecha"]))[-4:]
+    if not hist:
+        return ""
+    filas = "".join(f'<tr><td>{fecha_larga(str(h["fecha"])[:10])}</td><td>{e(h["valor"])}</td><td>{e(h.get("norma") or "")}</td></tr>' for h in hist[::-1])
+    var = ""
+    if len(hist) >= 2:
+        a, b = _monto_txt(hist[-2]["valor"]), _monto_txt(hist[-1]["valor"])
+        if a and b and a > 0:
+            var = (f'<p>Con el último cambio, del {fecha_larga(str(hist[-1]["fecha"])[:10])}, el valor pasó de <b>{e(_corto(hist[-2]["valor"], 40))}</b> '
+                   f'a <b>{e(_corto(hist[-1]["valor"], 40))}</b>: una variación de <b>{f"{(b / a - 1) * 100:+.2f}".replace(".", ",")}%</b>.</p>')
+    cuando = f'<p><b>Cuándo cambia:</b> {e(t["cuando"])}.</p>' if t.get("cuando") else ""
+    return (f'<section class="evolucion"><h2>Cómo viene este dato</h2>{var}{cuando}'
+            f'<div class="tabla"><table><thead><tr><th>Desde</th><th>Valor</th><th>Norma</th></tr></thead><tbody>{filas}</tbody></table></div></section>')
+
+
+def bloque_dato_mes(t, estado):
+    """Lo propio de cada dato (verificado): tabla vigente, explicación y preguntas. La tabla solo si el mes es el vigente."""
+    d = ajustar_tramo((RESP.get(t["slug"]) or {}).get("datos") or {})
+    partes = ""
+    if estado == "vigente" and d.get("tabla"):
+        partes += "<h2>Detalle vigente</h2>" + tabla_html(d["tabla"])
+    if d.get("explicacion"):
+        partes += "<h2>Para entenderlo</h2><ul>" + "".join(f"<li>{e(x)}</li>" for x in d["explicacion"]) + "</ul>"
+    qs = [q for q in d.get("preguntas") or [] if isinstance(q, dict) and q.get("p") and q.get("r")]
+    if qs:
+        partes += preguntas_html({"preguntas": qs})
+    if d.get("norma"):
+        partes += f'<p class="fuente"><b>Norma:</b> {e(d["norma"])}</p>'
+    return partes
+
+
 def pagina_mes(pref, slug_dato, tit, preg, mes, notas):
     t = next((x for x in TEMAS_RESP if x["slug"] == slug_dato), None)
     if not t:
@@ -1592,12 +1632,15 @@ def pagina_mes(pref, slug_dato, tit, preg, mes, notas):
 <p class="firma">Redacción Ramacontable · Actualizado {fecha_larga(datetime.date.today().isoformat())}</p>
 {caja}
 <p><a class="btn" href="{t['slug']}.html">Ver el dato vigente hoy y su historial →</a></p>
+{bloque_dato_mes(t, estado)}
+{bloque_evolucion(t)}
 <section class="relacionadas"><h2>Otros meses</h2><ul>{otros}</ul></section>
 <p class="aviso">Información de carácter general. Verificá siempre en la norma oficial.</p>
 </div>{lateral(notas)}</div>"""
     ld = '<script type="application/ld+json">' + json.dumps({"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [
         {"@type": "Question", "name": pregunta, "acceptedAnswer": {"@type": "Answer", "text": f"{valor}. {texto}" if valor else texto}}]}, ensure_ascii=False) + "</script>"
-    if not valor:
+    # El mes en curso ya lo cubre la página del dato (su título lleva el mes): se indexa solo el mes que viene con valor ya conocido
+    if not valor or mes <= datetime.date.today().strftime("%Y-%m"):
         PAGINAS_FINAS.add(f"{pref}-{MESES[int(mes[5:]) - 1]}-{mes[:4]}")
     v_tit = re.sub(r"^(Máxima|Mínima) ", lambda m: m.group(1).lower() + " ", valor or "")
     return pagina(f"{titulo.split(':')[0] + ': ' + v_tit if valor else titulo} | Ramacontable", cuerpo, "datos-al-dia",
@@ -1645,12 +1688,12 @@ def pagina_paritaria(c, mes, notas):
 {h_html}{rel_html}
 <p class="aviso">Información de carácter general. Verificá siempre en el acuerdo homologado.</p>
 </div>{lateral(notas)}</div>"""
-    if not periodo:
-        PAGINAS_FINAS.add(f"paritarias-{c['slug']}-{nombre_mes}-{mes[:4]}")
+    # repiten la escala del convenio: no se indexan nunca, para que Google junte la fuerza en escala-<convenio>.html
+    PAGINAS_FINAS.add(f"paritarias-{c['slug']}-{nombre_mes}-{mes[:4]}")
     tit_seo = titulo if len(titulo) <= 65 else titulo.replace(": escala salarial y aumento", ": escala y aumento")
     return pagina(f"{tit_seo} | Ramacontable", cuerpo, "sueldos",
                   f"Paritarias {c['nombre']} ({c.get('cct') or ''}) {mes_txt}: escala salarial vigente, aumentos y sumas no remunerativas.",
-                  f"paritarias-{c['slug']}-{nombre_mes}-{mes[:4]}.html", NOI if not periodo else "", migas=[("Escalas por convenio", "convenios.html"), (titulo, f"paritarias-{c['slug']}-{nombre_mes}-{mes[:4]}.html")])
+                  f"paritarias-{c['slug']}-{nombre_mes}-{mes[:4]}.html", NOI, migas=[("Escalas por convenio", "convenios.html"), (titulo, f"paritarias-{c['slug']}-{nombre_mes}-{mes[:4]}.html")])
 
 
 DIAS_SEM = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"]

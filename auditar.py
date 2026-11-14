@@ -90,10 +90,36 @@ def ruta_de_url(url, base):
     return r or "index.html"
 
 
+MESES_A = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
+TEXTO_PROPIO_MIN = 40
+
+
+def cuerpo_principal(rel):
+    """Texto del contenido principal (sin menú, barra lateral ni pie)."""
+    with open(os.path.join(SITIO, rel), encoding="utf-8", errors="replace") as f:
+        t = f.read()
+    m = re.search(r"<main[^>]*>(.*)</main>", t, re.S)
+    t = m.group(1) if m else t
+    t = re.sub(r"<(script|style|aside|nav)[^>]*>.*?</\1>", " ", t, flags=re.S)
+    return re.sub(r"<[^>]+>", " ", t)
+
+
 def main():
+    informe, _ = auditar()
+    with open(INFORME, "w", encoding="utf-8") as f:
+        f.write(informe)
+    resumen = os.environ.get("GITHUB_STEP_SUMMARY")
+    if resumen:
+        with open(resumen, "a", encoding="utf-8") as f:
+            f.write(informe + "\n")
+    print(informe)
+    return 0
+
+
+def auditar():
+    """Devuelve (informe en markdown, datos) para el control diario y el informe semanal."""
     if not os.path.isdir(SITIO):
-        print("No existe sitio/: corré primero python build.py")
-        return 0
+        return "No existe sitio/: corré primero python build.py", {}
     paginas = {}
     for carpeta, _, archivos in os.walk(SITIO):
         for a in archivos:
@@ -232,7 +258,29 @@ def main():
         if base and sitemap and r not in en_sitemap and r not in FUERA_DE_SITEMAP_OK:
             problemas["fuera-del-sitemap"].append((r, ""))
 
+    # Texto propio en las familias de páginas automáticas (criterio de «contenido en masa» de Google):
+    # palabras que aparecen en menos del 10% de las páginas de la familia, sobre el total de la página.
+    familias = {"Escalas por convenio": r"^escala-", "Datos por mes": r"-(?:" + "|".join(MESES_A) + r")-\d{4}\.html$",
+                "Provincias y municipios": r"^(?:ingresos-brutos|monotributo-unificado|regimen-simplificado|monotasa|tasas?-|alicuotas-)"}
+    unicidad = {}
+    for nombre_f, patron in familias.items():
+        grupo = [r for r in indexables if re.search(patron, r) and not r.startswith(("nota-", "que-cambia-"))]
+        if len(grupo) < 3:
+            continue
+        cuerpos = {r: re.findall(r"[a-záéíóúñü]{3,}", cuerpo_principal(r).lower()) for r in grupo}
+        cuenta = defaultdict(int)
+        for ws in cuerpos.values():
+            for w in set(ws):
+                cuenta[w] += 1
+        tope = max(2, len(grupo) // 10)  # 2: el mismo dato en dos meses comparte su explicación
+        pct = {r: round(100 * sum(1 for w in ws if cuenta[w] <= tope) / len(ws)) if ws else 0 for r, ws in cuerpos.items()}
+        flacas = sorted([r for r in grupo if pct[r] < TEXTO_PROPIO_MIN and len(cuerpos[r]) < 300], key=lambda r: pct[r])
+        unicidad[nombre_f] = {"paginas": len(grupo), "flacas": len(flacas), "promedio": round(sum(pct.values()) / len(grupo))}
+        for r in flacas:
+            problemas["poco-texto-propio"].append((r, f"{nombre_f}: {pct[r]}% propio, {len(cuerpos[r])} palabras"))
+
     NOMBRES = {
+        "poco-texto-propio": ("🟠", f"Páginas automáticas con menos de {TEXTO_PROPIO_MIN}% de texto propio y menos de 300 palabras"),
         "enlace-roto": ("🔴", "Enlaces internos rotos"),
         "sitemap-a-pagina-inexistente": ("🔴", "El sitemap apunta a páginas que no existen"),
         "sin-titulo": ("🔴", "Páginas sin título"),
@@ -274,15 +322,14 @@ def main():
         lineas.append("")
     if not total:
         lineas.append("Sin problemas. 👌")
-    informe = "\n".join(lineas)
-    with open(INFORME, "w", encoding="utf-8") as f:
-        f.write(informe)
-    resumen = os.environ.get("GITHUB_STEP_SUMMARY")
-    if resumen:
-        with open(resumen, "a", encoding="utf-8") as f:
-            f.write(informe + "\n")
-    print(informe)
-    return 0
+    if unicidad:
+        lineas += ["## Texto propio por familia de páginas automáticas", ""] + [
+            f"- {k}: {v['paginas']} páginas indexables, {v['promedio']}% de texto propio en promedio, {v['flacas']} flacas" for k, v in unicidad.items()]
+    datos = {"paginas": len(paginas), "indexables": len(indexables), "unicidad": unicidad,
+             "conteo": {cod: len(v) for cod, v in problemas.items()},
+             "nombres": {cod: NOMBRES[cod] for cod in problemas},
+             "detalle": {cod: v[:10] for cod, v in problemas.items()}}
+    return "\n".join(lineas), datos
 
 
 if __name__ == "__main__":
