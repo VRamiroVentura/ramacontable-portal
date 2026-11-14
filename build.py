@@ -523,13 +523,59 @@ def acortar_titulo(t, largo=65):
     return t
 
 
+# Menú «Datos del día»: los más consultados de cada grupo y «Ver más» con lo que queda (pedido de Ramiro)
+MENU_DATOS_TOP = {"sueldos": ["salario-minimo-vital-y-movil", "jubilacion-minima-y-bono", "autonomos-categorias-aportes"],
+                  "impuestos": ["monotributo-categorias-vigentes"],
+                  "indices": ["valor-uva-hoy", "inflacion-mensual-ipc"],
+                  "dolar": ["dolar-hoy", "dolar-oficial-hoy", "dolar-cripto-hoy"],
+                  "vencimientos": ["vencimiento-autonomos"],
+                  "calendario": ["feriados", "feriados-{prox}"]}
+MENU_DATOS_VERMAS = {"sueldos": "sueldos", "impuestos": "impuestos", "indices": "tasas e índices", "dolar": "dólar", "vencimientos": "vencimientos", "calendario": "calendario"}
+MENU_CALCS = [("aguinaldo.html", "Aguinaldo"), ("liquidacion-final.html", "Liquidación final e indemnización"), ("vacaciones.html", "Vacaciones"),
+              ("retencion-ganancias.html", "Retención de Ganancias"), ("sueldo-comercio.html", "Sueldo de Comercio")]
+MENU_VENC = ["agenda-vencimientos", "vencimiento-931", "vencimiento-monotributo", "vencimiento-autonomos", "vencimiento-iva"]
+
+
+def menu_datos():
+    prox = str(datetime.date.today().year + 1)
+    out = []
+    for gid, nombre, items in grupos_datos():
+        top = [x.replace("{prox}", prox) for x in MENU_DATOS_TOP.get(gid, [])]
+        elegidos = [(sl, ti) for sl in top for s2, ti, _ in items if s2 == sl] or [(sl, ti) for sl, ti, _ in items[:2]]
+        resto = len(items) - len(elegidos)
+        out += [("#g", nombre)] + [(f"{sl}.html", ti) for sl, ti in elegidos]
+        if resto > 0:
+            out.append((f"datos-al-dia.html#{gid}", f"Ver más de {MENU_DATOS_VERMAS.get(gid, nombre.lower())} ({resto}) →"))
+    return out
+
+
+_N_CALCS = None
+
+
+def menu_extra(actual=""):
+    """Desplegables de Calculadoras y Vencimientos (los principales y «Ver todas»)."""
+    global _N_CALCS
+    if _N_CALCS is None:
+        try:
+            _N_CALCS = open(os.path.join(RAIZ, "paginas", "calculadoras.html"), encoding="utf-8").read().count('class="tarjeta"')
+        except Exception:
+            _N_CALCS = 0
+    venc = dict((o[0], o[1]) for o in OBLIGACIONES)
+    venc["agenda-vencimientos"] = "Agenda de vencimientos por CUIT"
+    calcs = MENU_CALCS + [("calculadoras.html", f"Ver todas las calculadoras ({_N_CALCS}) →" if _N_CALCS else "Ver todas las calculadoras →")]
+    vencs = [(f"{v}.html", venc[v]) for v in MENU_VENC if v in venc] + [("herramientas.html", "Ver todos los vencimientos →")]
+    dd = lambda href, nombre, items, k: (f'<div class="dd dd-der"><a href="{href}"{" aria-current=page" if k == actual else ""}>{nombre}</a><div class="dd-m">'
+                                          + "".join(f'<a href="{u}"{" class=sep" if t.endswith("→") else ""}>{e(t)}</a>' for u, t in items) + "</div></div>")
+    return dd("calculadoras.html", "Calculadoras", calcs, "calculadoras") + dd("herramientas.html", "Vencimientos", vencs, "herramientas")
+
+
 def pagina(titulo, cuerpo, actual="", descripcion="", ruta="", extra_head="", migas=None, imagen="compartir.png"):
     sub = {
         "sueldos": [("sueldos.html", "Novedades de sueldos"), ("convenios.html", "Escalas por convenio"), ("guias.html#sueldos", "Guías de sueldos"),
                     ("sueldo-comercio.html", "Calculadora de sueldo de Comercio"), ("datos-al-dia.html#sueldos", "Datos del día de sueldos"), ("vencimiento-931.html", "Vencimientos del F.931"), ("comparador-escalas.html", "Aumentos vs. inflación")],
         "impuestos": [("impuestos.html", "Novedades de impuestos")] + [(f"impuesto-{s}.html", n) for s, n, _, _ in IMPUESTOS] + [("provincias-y-municipios.html", "Provincias y municipios"), ("guias.html#impuestos", "Guías de impuestos"), ("datos-al-dia.html#impuestos", "Datos del día de impuestos")],
         "guias": ([(RUTA_FACIL + ".html", f"{SECCION_FACIL} ({SECCION_FACIL_SUB})")] if EXPLICADO else []) + [(f"guias.html#{k}", v) for k, v in GRUPOS_GUIAS.items()] + [("guias.html", "Todas las guías"), ("glosario.html", "Glosario")],
-        "datos-al-dia": [x for gid, nombre, items in grupos_datos() for x in [("#g", nombre)] + [(f"{sl}.html", ti) for sl, ti, _ in items][:7]],
+        "datos-al-dia": menu_datos(),
     }
     # Google corta los títulos largos y las descripciones de más de ~160 caracteres
     if len(titulo) > 62 and titulo.endswith(" | Ramacontable"):
@@ -542,7 +588,7 @@ def pagina(titulo, cuerpo, actual="", descripcion="", ruta="", extra_head="", mi
         extra_head += NOI
     menu = "".join(
         f'<div class="dd{" dd-datos" if k == "datos-al-dia" else ""}"><a href="{k}.html"{" aria-current=page" if k == actual else ""}>{v}</a>'
-        f'<div class="dd-m">' + "".join((f'<span class="dd-g">{e(t)}</span>' if u == "#g" else f'<a href="{u}"{" class=sep" if ("guias.html" in u or "datos-al-dia.html#" in u) and k in ("sueldos", "impuestos") else ""}>{e(t)}</a>') for u, t in sub.get(k, [])) + '</div></div>'
+        f'<div class="dd-m">' + "".join((f'<span class="dd-g">{e(t)}</span>' if u == "#g" else f'<a href="{u}"{" class=sep" if ("guias.html" in u or "datos-al-dia.html#" in u) and k in ("sueldos", "impuestos") else " class=mas" if t.endswith("→") else ""}>{e(t)}</a>') for u, t in sub.get(k, [])) + '</div></div>'
         for k, v in list(MENU.items()))
     redes = "".join(
         f'<a href="{u}" target="_blank" rel="noopener" aria-label="{n}">{ICONOS[n]}</a>'
@@ -567,7 +613,7 @@ def pagina(titulo, cuerpo, actual="", descripcion="", ruta="", extra_head="", mi
 </head><body>
 <header class="cab"><div class="wrap fila">
 <a class="logo" href="index.html">{LOGO_SVG}<span>ramacontable</span></a>
-<nav class="menu">{menu}<a class="chico" href="calculadoras.html">Calculadoras</a><a class="chico2" href="herramientas.html">Vencimientos</a><a class="chico2" href="buscar.html" aria-label="Buscar en Ramacontable">🔍 Buscar</a></nav>
+<nav class="menu">{menu}{menu_extra(actual)}<a class="chico2" href="buscar.html" aria-label="Buscar en Ramacontable">🔍 Buscar</a></nav>
 <div id="sesion" class="sesion"><button class="btn" data-ingresar>Ingresar</button></div>
 </div></header>
 <main class="wrap">{cuerpo}</main>

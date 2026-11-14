@@ -443,3 +443,8 @@ table.feriados tr.prox-f td{background:var(--bronce-suave);font-weight:600}
 .ef-contacto .btn{background:#b08d57;color:#fff}
 .ef-bloque-guias{background:#fff;border:1px solid #e3ded2;border-left:5px solid #2e7d5b;border-radius:10px;padding:.8em 1em;margin:0 0 1.2em}
 .ef-bloque-guias h2{margin:.1em 0 .2em;font-size:1.1em}
+
+/* v81: desplegables de Calculadoras y Vencimientos (se abren hacia la izquierda) y «Ver más» del menú de datos */
+@media (min-width:761px) and (hover:hover){.cab .menu .dd-der{margin-left:4px}.cab .menu .dd-der .dd-m{left:auto;right:-14px}}
+.cab .menu .dd-m a.mas{color:#8A6A36;font-weight:700;font-size:13.5px;padding-top:4px}
+.cab .menu .dd-der > a{font-weight:400;color:#9FB3A7}
