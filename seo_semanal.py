@@ -77,6 +77,45 @@ def velocidad(base):
     return out
 
 
+def _en_ventana(hoy_md, desde, hasta):
+    return desde <= hoy_md <= hasta if desde <= hasta else (hoy_md >= desde or hoy_md <= hasta)
+
+
+def calendario_guias():
+    """Avisos de guías para actualizar o crear (guias/calendario.json) y reescrituras automáticas de los próximos 15 días."""
+    hoy = datetime.date.today()
+    md = hoy.strftime("%m-%d")
+    out = []
+    try:
+        cal = json.load(open(os.path.join(RAIZ, "guias", "calendario.json"), encoding="utf-8")).get("avisos") or []
+    except Exception:
+        cal = []
+    activos = [a for a in cal if _en_ventana(md, a["desde"], a["hasta"])]
+    if activos:
+        out.append("GUÍAS PARA ACTUALIZAR O CREAR (calendario)")
+        for a in activos:
+            out.append(f"{'✏️' if a['tipo'] == 'actualizar' else '🆕'} {a['guia']} (hasta el {a['hasta'][3:]}/{a['hasta'][:2]}): {a['que']}")
+        out.append("")
+    try:
+        cat = json.load(open(os.path.join(RAIZ, "guias", "catalogo.json"), encoding="utf-8"))
+    except Exception:
+        cat = []
+    prox = []
+    for g in cat:
+        for f in g.get("rehacer_anual") or []:
+            try:
+                d = hoy.replace(month=int(f[:2]), day=int(f[3:]))
+            except ValueError:
+                continue
+            if d < hoy:
+                d = d.replace(year=d.year + 1)
+            if (d - hoy).days <= 15:
+                prox.append(f"🔄 «{g['titulo']}»: la fábrica la reescribe desde el {d.day}/{d.month} (si la nueva no pasa el control, queda la anterior).")
+    if prox:
+        out += ["GUÍAS PROFESIONALES QUE SE ACTUALIZAN SOLAS EN LOS PRÓXIMOS 15 DÍAS"] + prox + [""]
+    return out
+
+
 def severidades(datos):
     s = {"🔴": 0, "🟠": 0, "🟡": 0}
     for cod, n in datos.get("conteo", {}).items():
@@ -147,6 +186,7 @@ def main():
         lineas.append("")
     else:
         lineas += ["Velocidad: PageSpeed no respondió esta semana (se vuelve a intentar el lunes que viene).", ""]
+    lineas += calendario_guias()
     lineas += ["El detalle completo está en Actions → «Informe SEO semanal» → la última ejecución.",
                "Para ver clics, impresiones y posiciones: Search Console."]
     texto = "\n".join(lineas)

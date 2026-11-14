@@ -1,0 +1,82 @@
+{
+ "_ayuda": "Calendario de guías permanentes. Cada aviso aparece en el informe SEO de los lunes mientras la fecha de hoy esté entre «desde» y «hasta» (MM-DD; puede cruzar el año). «tipo»: actualizar (guía fácil escrita a mano en explicado/) o crear (guía nueva). Las guías profesionales las reescribe sola la fábrica (rehacer_anual en guias/catalogo.json) y el informe avisa unos días antes. Las direcciones no cambian nunca: el año del título se actualiza solo con {anio}.",
+ "avisos": [
+  {
+   "tipo": "actualizar",
+   "guia": "tengo-que-presentar-ganancias-y-bienes-personales.html",
+   "desde": "01-10",
+   "hasta": "02-20",
+   "que": "Cargar los valores del año anterior cuando ARCA los publique (umbral de la declaración informativa, mínimo de Bienes Personales, casa-habitación y alícuotas) en explicado/declaracion-anual.json."
+  },
+  {
+   "tipo": "actualizar",
+   "guia": "tengo-que-presentar-ganancias-y-bienes-personales.html",
+   "desde": "03-01",
+   "hasta": "04-15",
+   "que": "Revisar las fechas de vencimiento de la declaración anual (ARCA publica el calendario) antes del pico de mayo y junio."
+  },
+  {
+   "tipo": "actualizar",
+   "guia": "por-que-me-descuentan-ganancias.html",
+   "desde": "12-01",
+   "hasta": "01-31",
+   "que": "Revisar deducciones, topes y el plazo del SIRADIG para el año que viene (las tablas nuevas salen en enero). El título ya pasa solo al año que viene el 1/12."
+  },
+  {
+   "tipo": "actualizar",
+   "guia": "por-que-me-descuentan-ganancias.html",
+   "desde": "07-01",
+   "hasta": "07-31",
+   "que": "Revisar si cambió algo con las tablas del segundo semestre."
+  },
+  {
+   "tipo": "actualizar",
+   "guia": "cuanto-cobro-de-aguinaldo.html",
+   "desde": "05-01",
+   "hasta": "05-31",
+   "que": "Revisar fechas y ejemplos antes del pico de junio."
+  },
+  {
+   "tipo": "actualizar",
+   "guia": "cuanto-cobro-de-aguinaldo.html",
+   "desde": "11-01",
+   "hasta": "11-30",
+   "que": "Revisar fechas y ejemplos antes del pico de diciembre."
+  },
+  {
+   "tipo": "actualizar",
+   "guia": "cuantos-dias-de-vacaciones-me-corresponden.html",
+   "desde": "09-01",
+   "hasta": "09-30",
+   "que": "Revisar cambios de ley o convenios antes de la temporada de vacaciones (1/10 al 30/4)."
+  },
+  {
+   "tipo": "actualizar",
+   "guia": "monotributo-explicado-facil.html",
+   "desde": "01-10",
+   "hasta": "01-31",
+   "que": "Revisar la recategorización de enero y los valores nuevos de febrero (los montos se actualizan solos; revisar textos y fechas)."
+  },
+  {
+   "tipo": "actualizar",
+   "guia": "monotributo-explicado-facil.html",
+   "desde": "07-10",
+   "hasta": "07-31",
+   "que": "Revisar la recategorización de julio y los valores nuevos de agosto."
+  },
+  {
+   "tipo": "actualizar",
+   "guia": "como-leer-el-recibo-de-sueldo.html",
+   "desde": "03-01",
+   "hasta": "03-31",
+   "que": "Revisar si cambió algún porcentaje de aportes o el tratamiento de las sumas no remunerativas."
+  },
+  {
+   "tipo": "crear",
+   "guia": "liquidación final explicada fácil (renuncia y despido)",
+   "desde": "11-15",
+   "hasta": "02-28",
+   "que": "Crear la guía fácil de liquidación final después de verificar los cambios de la Ley 27.802 en indemnizaciones."
+  }
+ ]
+}

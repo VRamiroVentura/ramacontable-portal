@@ -1,0 +1,129 @@
+{
+ "_ayuda": "Guía fácil del aguinaldo. Datos: Ley de Contrato de Trabajo arts. 121 a 123 (50% de la mejor remuneración del semestre, proporcional), fechas de pago 30 de junio y 18 de diciembre, aportes del trabajador (jubilación 11%, ley 19.032 3%, obra social 3%). Búsquedas reales: «cuánto cobro de aguinaldo si trabajé 3/5/6 meses», «aguinaldo cuánto es por ley», «aguinaldo cuántos días son», «cuánto cobro de aguinaldo calculadora».",
+ "orden": 3,
+ "ruta": "cuanto-cobro-de-aguinaldo",
+ "titulo": "¿Cuánto cobro de aguinaldo? Explicado fácil",
+ "seo_titulo": "Aguinaldo {anio}: cuánto cobro, proporcional y fechas de pago",
+ "descripcion": "El aguinaldo es la mitad de tu mejor sueldo del semestre. Cuánto cobrás si trabajaste menos meses, cuándo te lo pagan y una calculadora para sacar la cuenta.",
+ "tarjeta": "Cuánto es, cuánto cobrás si trabajaste pocos meses y cuándo te lo pagan.",
+ "para_quien": "Para cualquier persona que trabaja en relación de dependencia y quiere saber cuánto le toca de aguinaldo y cuándo lo cobra.",
+ "profesional": [
+  "nota-guia-sac-aguinaldo.html",
+  "¿Sos contador o liquidás sueldos? Guía profesional del SAC"
+ ],
+ "contacto": "aguinaldo",
+ "secciones": [
+  {
+   "id": "que-es",
+   "titulo": "¿Qué es el aguinaldo?",
+   "texto": [
+    "Es un sueldo extra por año que se cobra en dos partes: una en junio y otra en diciembre. Su nombre oficial es Sueldo Anual Complementario (por eso en el recibo dice «SAC»).",
+    "Cada parte es la mitad de tu mejor sueldo bruto de ese semestre: de enero a junio para la primera, de julio a diciembre para la segunda."
+   ],
+   "clave": [
+    "Primera parte: hasta el 30 de junio. Segunda parte: hasta el 18 de diciembre.",
+    "Es el 50% del mejor sueldo bruto del semestre, contando todo lo remunerativo (básico, antigüedad, presentismo, horas extra).",
+    "Lo dicen los artículos 121 y 122 de la Ley de Contrato de Trabajo."
+   ]
+  },
+  {
+   "id": "cuanto",
+   "titulo": "¿Cuánto cobro de aguinaldo?",
+   "texto": [
+    "Si trabajaste todo el semestre, cobrás la mitad de tu mejor sueldo bruto.",
+    "Martina tuvo su mejor sueldo en octubre: $ 1.200.000 (es un número de ejemplo). Como trabajó de julio a diciembre completo, su aguinaldo de diciembre es $ 1.200.000 ÷ 2 = $ 600.000 brutos."
+   ]
+  },
+  {
+   "id": "pocos-meses",
+   "titulo": "¿Cuánto cobro si trabajé solo algunos meses?",
+   "texto": [
+    "Cobrás la parte proporcional a los días que trabajaste en el semestre. Una cuenta rápida y aproximada: tu mejor sueldo dividido 12, por la cantidad de meses que trabajaste.",
+    "Diego entró en octubre y trabajó 3 meses del semestre, con un mejor sueldo de $ 900.000. Le corresponden aproximadamente $ 900.000 ÷ 12 × 3 = $ 225.000. La cuenta exacta se hace por días y la tenés en la calculadora de abajo."
+   ],
+   "tabla": [
+    [
+     "Meses trabajados en el semestre",
+     "Te corresponde, aproximadamente"
+    ],
+    [
+     "1 mes",
+     "1/12 del mejor sueldo"
+    ],
+    [
+     "3 meses",
+     "1/4 del mejor sueldo"
+    ],
+    [
+     "5 meses",
+     "5/12 del mejor sueldo"
+    ],
+    [
+     "6 meses (completo)",
+     "La mitad del mejor sueldo"
+    ]
+   ]
+  },
+  {
+   "id": "calculadora",
+   "titulo": "Calculá tu aguinaldo",
+   "texto": [
+    "Cargá tus sueldos del semestre y te dice cuánto cobrás en bruto y en mano."
+   ],
+   "calculadora": "aguinaldo"
+  },
+  {
+   "id": "descuentos",
+   "titulo": "¿El aguinaldo tiene descuentos?",
+   "texto": [
+    "Sí. Tiene los mismos descuentos que el sueldo: jubilación (11%), PAMI (3%) y obra social (3%), más el sindicato si corresponde. Por eso lo que cobrás en mano es menos que el bruto.",
+    "Si te descuentan Ganancias, también puede haber retención sobre el aguinaldo."
+   ],
+   "destino": [
+    "por-que-me-descuentan-ganancias.html",
+    "Por qué me descuentan Ganancias"
+   ]
+  },
+  {
+   "id": "si-me-voy",
+   "titulo": "¿Y si renuncio o me despiden?",
+   "texto": [
+    "Te tienen que pagar la parte proporcional del aguinaldo que llevabas acumulada en el semestre. Va dentro de la liquidación final."
+   ],
+   "destino": [
+    "liquidacion-final.html",
+    "Calculadora de liquidación final"
+   ]
+  }
+ ],
+ "preguntas": [
+  [
+   "¿Cuánto es el aguinaldo por ley?",
+   "La mitad del mejor sueldo bruto de cada semestre: una parte en junio y otra en diciembre (artículos 121 y 122 de la Ley de Contrato de Trabajo)."
+  ],
+  [
+   "¿Cuándo se paga el aguinaldo?",
+   "La primera parte hasta el 30 de junio y la segunda hasta el 18 de diciembre."
+  ],
+  [
+   "¿Cuánto cobro de aguinaldo si trabajé 3 meses?",
+   "Aproximadamente la cuarta parte de tu mejor sueldo (mejor sueldo ÷ 12 × 3). La cuenta exacta se hace por días trabajados."
+  ],
+  [
+   "¿Cuánto cobro de aguinaldo si trabajé 5 meses?",
+   "Aproximadamente 5/12 de tu mejor sueldo (mejor sueldo ÷ 12 × 5)."
+  ],
+  [
+   "¿Cuánto cobro de aguinaldo si trabajé 1 mes?",
+   "Aproximadamente la doceava parte de tu mejor sueldo."
+  ],
+  [
+   "¿El aguinaldo son días?",
+   "No: no se cuenta en días sino en plata. Es la mitad del mejor sueldo del semestre, o la parte proporcional si no trabajaste los 6 meses."
+  ],
+  [
+   "¿El aguinaldo tiene descuentos?",
+   "Sí, los mismos que el sueldo: jubilación, PAMI, obra social y sindicato si corresponde. También puede tener retención de Ganancias."
+  ]
+ ]
+}

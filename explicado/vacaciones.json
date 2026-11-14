@@ -1,0 +1,152 @@
+{
+ "_ayuda": "Guía para todos (no contadores) de vacaciones. Datos: Ley de Contrato de Trabajo arts. 150 a 157 y art. 154 según Ley 27.802 (aviso de 30 días, fraccionamiento en tramos de 7 días o más, acuerdo fuera del período, interrupción por enfermedad). Título y preguntas armados con las búsquedas reales de Google («cuántos días de vacaciones me corresponden por 5 años», «cuándo me tienen que pagar las vacaciones»).",
+ "orden": 2,
+ "ruta": "cuantos-dias-de-vacaciones-me-corresponden",
+ "titulo": "¿Cuántos días de vacaciones me corresponden? Explicado fácil",
+ "seo_titulo": "Cuántos días de vacaciones me corresponden: calculadora {anio}",
+ "descripcion": "Según tus años de trabajo te tocan 14, 21, 28 o 35 días. Cuándo te las tienen que dar, cuánto cobrás y una calculadora para sacar tu cuenta.",
+ "tarjeta": "Cuántos días te tocan, cuándo te las tienen que dar y cuánto cobrás.",
+ "para_quien": "Para cualquier persona que trabaja en relación de dependencia y quiere saber cuántos días de vacaciones le tocan y cuánto cobra. Sin palabras raras.",
+ "profesional": [
+  "nota-guia-vacaciones.html",
+  "¿Sos contador o liquidás sueldos? Guía profesional de vacaciones (LCT y Ley 27.802)"
+ ],
+ "contacto": "vacaciones",
+ "secciones": [
+  {
+   "id": "cuantos-dias",
+   "titulo": "¿Cuántos días de vacaciones me tocan?",
+   "texto": [
+    "Depende de cuántos años llevás trabajando en ese lugar, contados al 31 de diciembre del año de las vacaciones.",
+    "Paula, al 31 de diciembre de este año, va a tener 5 años y 9 meses de antigüedad: le tocan 21 días."
+   ],
+   "tabla": [
+    [
+     "Antigüedad al 31 de diciembre",
+     "Días de vacaciones"
+    ],
+    [
+     "Menos de 5 años",
+     "14 días corridos"
+    ],
+    [
+     "De 5 a menos de 10 años",
+     "21 días corridos"
+    ],
+    [
+     "De 10 a menos de 20 años",
+     "28 días corridos"
+    ],
+    [
+     "20 años o más",
+     "35 días corridos"
+    ]
+   ],
+   "clave": [
+    "Son días corridos: se cuentan también los sábados, los domingos y los feriados que caigan en el medio.",
+    "Algunos convenios colectivos dan más días: fijate el tuyo.",
+    "Lo dice el artículo 150 de la Ley de Contrato de Trabajo."
+   ]
+  },
+  {
+   "id": "si-empece-este-ano",
+   "titulo": "¿Y si empecé a trabajar este año?",
+   "texto": [
+    "Para tener los días completos tenés que haber trabajado al menos la mitad de los días hábiles del año. Si no llegás, te corresponde 1 día de vacaciones por cada 20 días que trabajaste.",
+    "Lucas empezó en septiembre y hasta fin de año trabajó 60 días: le tocan 3 días de vacaciones (60 ÷ 20)."
+   ],
+   "clave": [
+    "1 día de vacaciones por cada 20 días trabajados, si no llegaste a la mitad de los días hábiles del año (artículo 153 de la Ley de Contrato de Trabajo)."
+   ]
+  },
+  {
+   "id": "calculadora",
+   "titulo": "Calculá tus días y cuánto cobrás",
+   "texto": [
+    "Poné tu fecha de ingreso y tu sueldo bruto: te dice cuántos días te tocan y cuánto vas a cobrar."
+   ],
+   "calculadora": "vacaciones"
+  },
+  {
+   "id": "cuando-me-las-dan",
+   "titulo": "¿Cuándo me tienen que dar las vacaciones?",
+   "texto": [
+    "En general, entre el 1 de octubre y el 30 de abril. Con la reforma laboral (Ley 27.802), si vos y tu empleador están de acuerdo, también se pueden tomar en otra época del año.",
+    "Te las tienen que avisar por escrito con al menos 30 días de anticipación (antes eran 45)."
+   ],
+   "clave": [
+    "Se pueden dividir en partes si los dos están de acuerdo, pero cada parte tiene que ser de 7 días o más.",
+    "Si en tu trabajo no salen todos juntos, cada uno tiene que poder tomarlas en verano por lo menos una vez cada 3 años.",
+    "Arrancan un lunes, o el día hábil siguiente si ese lunes es feriado.",
+    "Si no te avisaron a tiempo, podés avisar vos por escrito y tomarlas, de manera que terminen antes del 31 de mayo."
+   ]
+  },
+  {
+   "id": "cuanto-cobro",
+   "titulo": "¿Cuánto cobro de vacaciones?",
+   "texto": [
+    "Las vacaciones se pagan antes de salir, al empezar el descanso.",
+    "Si cobrás un sueldo mensual, cada día de vacaciones vale tu sueldo dividido 25, no 30. Por eso esos días se pagan un poco más que un día común: es el famoso «plus vacacional».",
+    "Paula cobra $ 1.000.000 por mes (es un número de ejemplo). Cada día de vacaciones vale $ 1.000.000 ÷ 25 = $ 40.000, así que por sus 21 días cobra $ 840.000. Si se dividiera por 30 serían $ 700.000: esos $ 140.000 de diferencia son el plus."
+   ],
+   "clave": [
+    "Se pagan al comienzo de las vacaciones.",
+    "Sueldo mensual: cada día vale sueldo ÷ 25. Si cobrás por jornal: el valor del jornal.",
+    "Lo dice el artículo 155 de la Ley de Contrato de Trabajo."
+   ]
+  },
+  {
+   "id": "me-las-pueden-pagar",
+   "titulo": "¿Me las pueden pagar en vez de tomarlas?",
+   "texto": [
+    "No. Mientras seguís trabajando, las vacaciones se tienen que tomar: no se pueden cambiar por plata.",
+    "Solo se cobran sin tomarlas cuando termina la relación laboral (por renuncia o despido), en proporción a lo que trabajaste en el año. Eso va en la liquidación final."
+   ],
+   "destino": [
+    "liquidacion-final.html",
+    "Calculadora de liquidación final"
+   ]
+  },
+  {
+   "id": "si-me-enfermo",
+   "titulo": "¿Y si me enfermo durante las vacaciones?",
+   "texto": [
+    "Con la reforma laboral, si te enfermás durante las vacaciones y lo avisás a tiempo (así tu empleador puede hacer el control médico), las vacaciones se cortan. Los días que te quedaron se vuelven a programar."
+   ]
+  }
+ ],
+ "preguntas": [
+  [
+   "¿Cuántos días de vacaciones me corresponden por 1 año de trabajo?",
+   "Con menos de 5 años de antigüedad al 31 de diciembre te corresponden 14 días corridos, siempre que hayas trabajado al menos la mitad de los días hábiles del año. Si no, 1 día por cada 20 trabajados."
+  ],
+  [
+   "¿Cuántos días de vacaciones me corresponden por 5 años?",
+   "Con 5 años cumplidos al 31 de diciembre (y menos de 10), 21 días corridos."
+  ],
+  [
+   "¿Cuántos días de vacaciones me corresponden por 10 años?",
+   "Con 10 años cumplidos al 31 de diciembre (y menos de 20), 28 días corridos."
+  ],
+  [
+   "¿Cuántos días de vacaciones me corresponden por 20 años?",
+   "Con 20 años o más de antigüedad al 31 de diciembre, 35 días corridos."
+  ],
+  [
+   "¿Cuándo me tienen que pagar las vacaciones?",
+   "Al comienzo del descanso, antes de que salgas de vacaciones."
+  ],
+  [
+   "¿Con cuánta anticipación me tienen que avisar las vacaciones?",
+   "Al menos 30 días antes y por escrito, según la reforma laboral (Ley 27.802). Antes eran 45 días."
+  ],
+  [
+   "¿Las vacaciones son días hábiles o corridos?",
+   "Corridos: se cuentan todos los días, incluidos sábados, domingos y feriados."
+  ],
+  [
+   "¿Puedo dividir mis vacaciones?",
+   "Sí, si estás de acuerdo con tu empleador, en partes de al menos 7 días cada una."
+  ]
+ ]
+}

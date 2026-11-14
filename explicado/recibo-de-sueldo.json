@@ -1,0 +1,60 @@
+{
+ "_ayuda": "Guía fácil del recibo de sueldo. Datos: aportes del trabajador (jubilación 11%, ley 19.032 / PAMI 3%, obra social 3%), cuota sindical según convenio, sumas no remunerativas sin aportes jubilatorios, tope de aportes (dato vigente del portal).",
+ "orden": 5,
+ "ruta": "como-leer-el-recibo-de-sueldo",
+ "titulo": "¿Cómo leer el recibo de sueldo? Explicado fácil",
+ "seo_titulo": "Cómo leer el recibo de sueldo: qué es cada descuento",
+ "descripcion": "Qué es cada línea del recibo: básico, antigüedad, presentismo, sumas no remunerativas y descuentos (jubilación 11%, PAMI 3%, obra social 3%, sindicato y Ganancias).",
+ "tarjeta": "Qué es cada línea y cada descuento, y por qué cobrás menos que el bruto.",
+ "para_quien": "Para cualquier persona que recibe un recibo de sueldo y quiere entender qué cobra y qué le descuentan.",
+ "profesional": ["nota-guia-liquidar-sueldo-paso-a-paso.html", "¿Sos contador o liquidás sueldos? Cómo liquidar un sueldo paso a paso"],
+ "contacto": "recibo de sueldo",
+ "secciones": [
+  {
+   "id": "partes",
+   "titulo": "Las tres partes del recibo",
+   "texto": [
+    "Todo recibo tiene lo que ganás (remunerativo), lo que te pagan aparte por acuerdos (no remunerativo) y lo que te descuentan. Lo que queda al final es tu sueldo en mano, o «neto»."
+   ],
+   "tabla": [["Parte", "Qué incluye"], ["Remunerativo", "Básico, antigüedad, presentismo, horas extra y adicionales de tu convenio"], ["No remunerativo", "Sumas que se acordaron en paritarias por fuera del básico"], ["Descuentos", "Jubilación, PAMI, obra social, sindicato y, si corresponde, Ganancias"]]
+  },
+  {
+   "id": "descuentos",
+   "titulo": "¿Qué me descuentan y por qué?",
+   "texto": [
+    "Sobre la parte remunerativa te descuentan aportes que van a tu jubilación y a tu salud. Son el 17% en total, más el sindicato si corresponde.",
+    "Lucía gana $ 1.000.000 brutos (número de ejemplo). Le descuentan $ 110.000 de jubilación, $ 30.000 de PAMI y $ 30.000 de obra social: $ 170.000 en total. Antes del sindicato y de Ganancias, le quedan $ 830.000."
+   ],
+   "tabla": [["Descuento", "Porcentaje", "Para qué es"], ["Jubilación", "11%", "Tu jubilación futura"], ["PAMI (Ley 19.032)", "3%", "La obra social de los jubilados"], ["Obra social", "3%", "Tu cobertura de salud"], ["Sindicato", "Según tu convenio", "Cuota o aporte del gremio"]]
+  },
+  {
+   "id": "no-remunerativo",
+   "titulo": "¿Qué es lo «no remunerativo»?",
+   "texto": [
+    "Son sumas que se pagan por acuerdos de paritarias y que no llevan descuento de jubilación. Según el acuerdo, a veces sí llevan obra social o sindicato.",
+    "Por eso, mientras una suma sea no remunerativa, no suma para tu jubilación. Cuando se incorpora al básico, empieza a tener todos los descuentos."
+   ],
+   "destino": ["convenios.html", "Ver la escala de tu convenio"]
+  },
+  {
+   "id": "tope",
+   "titulo": "Si gano mucho, ¿me descuentan sobre todo?",
+   "texto": [
+    "No. Los aportes se calculan hasta un tope de sueldo que actualiza ANSES todos los meses. Lo que supera ese tope no tiene descuentos de jubilación, PAMI ni obra social."
+   ],
+   "datos": ["tope-aportes-base-maxima"]
+  },
+  {
+   "id": "ganancias",
+   "titulo": "¿Y Ganancias?",
+   "texto": ["Si tu sueldo supera el piso del impuesto, también aparece un descuento de Ganancias."],
+   "destino": ["por-que-me-descuentan-ganancias.html", "Por qué me descuentan Ganancias"]
+  }
+ ],
+ "preguntas": [
+  ["¿Cuánto me descuentan del sueldo?", "El 17% de la parte remunerativa: 11% de jubilación, 3% de PAMI y 3% de obra social, más el sindicato si corresponde y Ganancias si superás el piso."],
+  ["¿Qué es el sueldo neto?", "Es lo que cobrás en mano: el total del recibo menos los descuentos."],
+  ["¿Las sumas no remunerativas tienen descuentos?", "No llevan descuento de jubilación. Según el acuerdo, pueden llevar obra social o sindicato."],
+  ["¿Qué significa SAC en el recibo?", "Sueldo Anual Complementario: es el aguinaldo."]
+ ]
+}

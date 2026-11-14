@@ -340,7 +340,7 @@
           ${tabla([['Antigüedad al 31/12', `${r.anios} ${r.anios === 1 ? 'año' : 'años'}`],
             ['Días que corresponden', r.art153 ? `${r.dias} (1 día cada 20 hábiles trabajados: trabajó ${r.trabajados} días hábiles, menos de la mitad del año · art. 153 LCT)` : `${r.dias} días corridos (art. 150 LCT)`],
             ...(form.tipo.value === 'mensual' ? [['Cálculo del día', 'Sueldo ÷ 25 (art. 155 LCT)'], ['Plus vacacional (diferencia contra sueldo ÷ 30)', fmt(r.plus)]] : [['Cálculo del día', 'Valor del jornal']])])}
-          <p class="nota-chica">Las vacaciones se pagan al inicio del descanso. El período para otorgarlas es entre el 1 de octubre y el 30 de abril, con aviso de 45 días (art. 154 LCT). Algunos convenios dan más días: verificá el tuyo.</p>`);
+          <p class="nota-chica">Las vacaciones se pagan al inicio del descanso. El período general para otorgarlas es entre el 1 de octubre y el 30 de abril, con aviso por escrito de al menos 30 días; de común acuerdo pueden darse en otra época o dividirse en tramos de 7 días o más (art. 154 LCT, según Ley 27.802). Algunos convenios dan más días: verificá el tuyo.</p>`);
       } catch (e) { err.textContent = e.message; salida.hidden = true; }
     });
   }

@@ -1,0 +1,110 @@
+{
+ "_ayuda": "Guía fácil de Ganancias para empleados. Datos: régimen de retención sobre sueldos (el empleador retiene si el sueldo supera el piso), SIRADIG Trabajador (F.572 web), deducciones (cargas de familia; alquiler 40% hasta la ganancia no imponible y 10% adicional con contrato en RELI; prepaga hasta 5% de la ganancia neta; honorarios médicos 40%; servicio doméstico hasta la ganancia no imponible; intereses hipotecarios; gastos educativos de hijos; seguros de vida y retiro; donaciones hasta 5%; aportes voluntarios; indumentaria y equipamiento obligatorios), plazo 31 de marzo del año siguiente. Fuentes: iProfesional, Calcular Sueldo, ARCA. Búsquedas reales: «por qué me descuentan ganancias», «ganancias en sueldos 2026», «deducciones ganancias 2026», «siradig trabajador».",
+ "orden": 4,
+ "ruta": "por-que-me-descuentan-ganancias",
+ "titulo": "¿Por qué me descuentan Ganancias del sueldo? Explicado fácil",
+ "seo_titulo": "Por qué me descuentan Ganancias {anio} y cómo pagar menos",
+ "descripcion": "Te descuentan Ganancias si tu sueldo pasa un piso. Qué gastos podés cargar en el SIRADIG para pagar menos (alquiler, prepaga, hijos) y cómo verlo en el recibo.",
+ "tarjeta": "Por qué te lo descuentan, qué podés cargar para pagar menos y cómo verlo en el recibo.",
+ "para_quien": "Para empleados a los que les descuentan Ganancias (o están cerca) y quieren entender por qué y cómo pagar lo justo.",
+ "profesional": [
+  "nota-guia-ganancias-cuarta-categoria.html",
+  "¿Sos contador o liquidás sueldos? Guía profesional de Ganancias 4ª categoría"
+ ],
+ "profesionales_extra": [
+  "nota-guia-siradig.html"
+ ],
+ "contacto": "Ganancias en el sueldo",
+ "secciones": [
+  {
+   "id": "por-que",
+   "titulo": "¿Por qué me descuentan Ganancias?",
+   "texto": [
+    "Ganancias es un impuesto que pagan los sueldos que superan un piso. Si tu sueldo pasa ese piso, tu empleador está obligado a descontarte el impuesto todos los meses y depositarlo en ARCA. Por eso aparece en tu recibo.",
+    "El piso cambia dos veces por año y depende de tu familia: si tenés cónyuge o hijos a cargo, el piso es más alto y pagás menos."
+   ],
+   "datos": [
+    "ganancias-deducciones-sueldos"
+   ],
+   "destino": [
+    "ganancias-deducciones-sueldos.html",
+    "Ver el piso y las deducciones de hoy"
+   ]
+  },
+  {
+   "id": "calculadora",
+   "titulo": "Calculá cuánto te descuentan",
+   "texto": [
+    "Poné tu sueldo y tu situación familiar: te dice cuánto te corresponde que te retengan por mes."
+   ],
+   "calculadora": "retencion-ganancias"
+  },
+  {
+   "id": "pagar-menos",
+   "titulo": "¿Qué puedo cargar para pagar menos?",
+   "texto": [
+    "Hay gastos que ARCA te deja restar. Se cargan en el SIRADIG (el formulario 572 web) y tu empleador los descuenta antes de calcular el impuesto.",
+    "Sofía alquila el departamento donde vive y paga una prepaga. Cargando las dos cosas en el SIRADIG, le retienen menos todos los meses."
+   ],
+   "clave": [
+    "Familia: cónyuge o conviviente, hijos menores de 18 (los hijos con discapacidad cuentan doble y sin límite de edad).",
+    "Alquiler de tu vivienda: el 40% de lo que pagás, hasta un tope, y un 10% más si el contrato está registrado en ARCA (registro RELI). Tenés que tener la factura.",
+    "Prepaga u obra social complementaria: hasta el 5% de tu ganancia del año.",
+    "Médicos, dentistas y psicólogos que no te cubrió la prepaga: el 40% de lo facturado (se carga al cerrar el año).",
+    "Empleada doméstica: su sueldo y sus aportes, hasta un tope.",
+    "Colegio y gastos educativos de tus hijos, intereses de crédito hipotecario para tu casa, seguros de vida, donaciones y la ropa o equipos que te exige el trabajo y no te reintegran."
+   ]
+  },
+  {
+   "id": "siradig",
+   "titulo": "¿Cómo se carga el SIRADIG?",
+   "texto": [
+    "Entrás a la web de ARCA con tu clave fiscal, buscás el servicio «SIRADIG – Trabajador», elegís el año, cargás cada gasto con el CUIT de quien te facturó, la fecha y el monto, y al final tocás «Enviar al empleador»."
+   ],
+   "clave": [
+    "Conviene cargarlo mes a mes: así te retienen menos en cada recibo.",
+    "El plazo para cargar lo de un año vence el 31 de marzo del año siguiente.",
+    "Si tenés dos trabajos, elegís como agente de retención al que te paga el sueldo más alto.",
+    "Guardá las facturas a tu nombre: ARCA te las puede pedir."
+   ]
+  },
+  {
+   "id": "recibo",
+   "titulo": "¿Dónde lo veo en el recibo?",
+   "texto": [
+    "Aparece como un descuento más, con el nombre «Impuesto a las Ganancias» o «Retención de Ganancias». Si un mes te retuvieron de más (por ejemplo, porque cargaste gastos tarde), tu empleador te lo devuelve en un recibo siguiente."
+   ],
+   "destino": [
+    "como-leer-el-recibo-de-sueldo.html",
+    "Cómo leer el recibo de sueldo"
+   ]
+  }
+ ],
+ "preguntas": [
+  [
+   "¿Por qué me descuentan Ganancias?",
+   "Porque tu sueldo supera el piso del impuesto. Tu empleador está obligado a retenerlo cada mes y depositarlo en ARCA."
+  ],
+  [
+   "¿Cómo hago para que me descuenten menos Ganancias?",
+   "Cargando en el SIRADIG (formulario 572 web) a tu familia a cargo y los gastos que se pueden deducir: alquiler, prepaga, médicos, empleada doméstica, colegio de tus hijos, entre otros."
+  ],
+  [
+   "¿Hasta cuándo puedo cargar el SIRADIG?",
+   "Lo de cada año se puede cargar hasta el 31 de marzo del año siguiente, pero conviene hacerlo mes a mes."
+  ],
+  [
+   "¿Cuánto del alquiler puedo deducir?",
+   "El 40% de lo que pagás por tu vivienda, hasta un tope, y un 10% más si el contrato está registrado en el RELI de ARCA. Necesitás la factura."
+  ],
+  [
+   "¿Me devuelven lo que me descontaron de más?",
+   "Sí: tu empleador ajusta en los recibos siguientes y, al cerrar el año, hace la liquidación anual."
+  ],
+  [
+   "Tengo dos trabajos, ¿quién me retiene?",
+   "El empleador que te paga el sueldo más alto; lo informás en el SIRADIG."
+  ]
+ ],
+ "salto_anio": "12-01"
+}

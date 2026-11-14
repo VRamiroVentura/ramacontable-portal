@@ -811,6 +811,20 @@ class Fabrica:
                 return
             # "rehacer" en el catálogo: la guía se vuelve a escribir si es anterior a esa fecha (misma dirección)
             rehacer = {"guia-" + g["slug"]: g["rehacer"] for g in catalogo if g.get("rehacer")}
+            # «rehacer_anual»: fechas MM-DD de cada año (antes del pico de búsquedas). La guía se reescribe si es anterior
+            # a la última de esas fechas que ya pasó (misma dirección: suma posicionamiento año tras año).
+            hoy_d = util.ahora().date()
+            for g in catalogo:
+                fechas = []
+                for md in g.get("rehacer_anual") or []:
+                    try:
+                        f_ = hoy_d.replace(month=int(md[:2]), day=int(md[3:]))
+                    except ValueError:
+                        continue
+                    fechas.append(f_ if f_ <= hoy_d else f_.replace(year=f_.year - 1))
+                if fechas:
+                    tope = max(fechas).isoformat()
+                    rehacer["guia-" + g["slug"]] = max(rehacer.get("guia-" + g["slug"], ""), tope)
             self.guias_a_rehacer = {f["slug"] for f in filas} & set(rehacer)
             existentes = {f["slug"] for f in filas
                           if not (f["slug"] in rehacer and str(f.get("actualizado") or f.get("fecha") or "")[:10] < rehacer[f["slug"]])}

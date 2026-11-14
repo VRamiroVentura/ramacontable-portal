@@ -1,0 +1,85 @@
+{
+ "_ayuda": "Guía fácil de la declaración anual de Ganancias y Bienes Personales para personas. Datos período 2025 (actualizar cada año): umbral de la declaración informativa para empleados y jubilados $ 196.963.134,52 de ingresos (RG 4003, art. 14); Bienes Personales mínimo no imponible $ 384.728.044,57, casa-habitación exenta hasta $ 1.346.548.155,99, alícuotas 0,50% a 1%; REIBP dispensa de la informativa 2024-2027. Fuentes: ARCA vía Blog del Contador (19/01/2026) y Peña Freytes (16/01/2026).",
+ "orden": 6,
+ "ruta": "tengo-que-presentar-ganancias-y-bienes-personales",
+ "titulo": "¿Tengo que presentar Ganancias y Bienes Personales? Explicado fácil",
+ "seo_titulo": "Quién tiene que presentar Ganancias y Bienes Personales {anio}",
+ "descripcion": "Si sos empleado o jubilado, desde qué ingreso tenés que presentar la declaración, quién paga Bienes Personales, el mínimo y la casa-habitación, y cuándo vence.",
+ "tarjeta": "Quién tiene que presentar, desde qué monto se paga Bienes Personales y cuándo vence.",
+ "para_quien": "Para empleados, jubilados y cualquier persona que se pregunta si tiene que presentar algo ante ARCA a mitad de año.",
+ "profesional": [
+  "nota-guia-ganancias-personas-humanas.html",
+  "¿Sos contador? Guía profesional de Ganancias personas humanas"
+ ],
+ "profesionales_extra": [
+  "nota-guia-bienes-personales.html"
+ ],
+ "contacto": "declaración de Ganancias y Bienes Personales",
+ "secciones": [
+  {
+   "id": "empleados",
+   "titulo": "Soy empleado o jubilado: ¿tengo que presentar algo?",
+   "texto": [
+    "En general no: si solo tenés tu sueldo o tu jubilación, el impuesto ya te lo retienen en el recibo.",
+    "Pero si en el año tus ingresos brutos pasaron un monto alto, tenés que presentar una declaración «informativa»: le contás a ARCA cuánto ganaste y qué bienes tenés. No te genera nada para pagar por sí sola."
+   ],
+   "clave": [
+    "Por lo ganado en 2025, la declaración informativa es obligatoria si tus ingresos brutos fueron de $ 196.963.134,52 o más (ARCA, RG 4003).",
+    "Ese monto se actualiza todos los años."
+   ]
+  },
+  {
+   "id": "bienes-personales",
+   "titulo": "¿Quién paga Bienes Personales?",
+   "texto": [
+    "Es un impuesto anual sobre lo que tenés al 31 de diciembre (casa, auto, plata en el banco, dólares, inversiones). Solo se paga sobre lo que supera un mínimo.",
+    "Además, la casa donde vivís no paga mientras valga menos que un tope. Por eso la gran mayoría de la gente no paga Bienes Personales."
+   ],
+   "clave": [
+    "Por el año 2025, el mínimo es $ 384.728.044,57: solo se paga sobre lo que lo supera.",
+    "La casa donde vivís no paga si vale hasta $ 1.346.548.155,99 (año 2025).",
+    "Sobre lo que supera el mínimo se paga entre el 0,5% y el 1% (año 2025).",
+    "Quienes entraron al régimen especial de pago adelantado (REIBP) no tienen que presentar la declaración informativa de 2024 a 2027."
+   ],
+   "datos": [
+    "bienes-personales-minimo-no-imponible"
+   ]
+  },
+  {
+   "id": "otros-ingresos",
+   "titulo": "¿Y si tengo otros ingresos?",
+   "texto": [
+    "Si además del sueldo tenés ingresos propios (alquileres, trabajos por tu cuenta fuera del monotributo, inversiones), puede que tengas que presentar la declaración de Ganancias completa y pagar la diferencia. En ese caso conviene hacerlo con un contador."
+   ]
+  },
+  {
+   "id": "cuando-vence",
+   "titulo": "¿Cuándo vence?",
+   "texto": [
+    "ARCA fija las fechas todos los años según la terminación de tu CUIT. Suelen caer a mitad de año, y a veces las prorroga. Las fechas vigentes están siempre en la agenda de vencimientos."
+   ],
+   "destino": [
+    "herramientas.html",
+    "Ver la agenda de vencimientos"
+   ]
+  }
+ ],
+ "preguntas": [
+  [
+   "¿Los empleados tienen que presentar Ganancias?",
+   "Solo si sus ingresos brutos del año superaron el monto que fija ARCA (por 2025, $ 196.963.134,52): en ese caso presentan una declaración informativa."
+  ],
+  [
+   "¿Quién paga Bienes Personales?",
+   "Quien al 31 de diciembre tiene bienes que superan el mínimo (por 2025, $ 384.728.044,57), y solo sobre la parte que lo supera."
+  ],
+  [
+   "¿La casa donde vivo paga Bienes Personales?",
+   "No, mientras valga hasta $ 1.346.548.155,99 (año 2025)."
+  ],
+  [
+   "¿Cuándo vence la declaración de Ganancias y Bienes Personales?",
+   "ARCA publica las fechas cada año según la terminación del CUIT; suelen ser a mitad de año. Están en nuestra agenda de vencimientos."
+  ]
+ ]
+}

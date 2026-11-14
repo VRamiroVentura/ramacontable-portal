@@ -6,7 +6,7 @@ Las claves públicas de Supabase se toman de las variables de entorno
 SUPABASE_URL y SUPABASE_PUBLISHABLE_KEY (en GitHub vienen de los Secrets).
 """
 import unicodedata
-import html, json, os, re, shutil, glob, datetime, urllib.request
+import html, json, os, re, shutil, glob, datetime, urllib.request, urllib.parse
 
 RAIZ = os.path.dirname(os.path.abspath(__file__))
 VERSION = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%d%H%M")  # evita que el navegador muestre archivos viejos
@@ -409,7 +409,10 @@ def pagina_guias(guias, notas, catalogo):
         items += "".join(f'<li class="prox"><b>{e(c["titulo"])}</b><span>Próximamente</span></li>' for c in prox)
         bloques += f'<section class="rama-guias" id="{k}"><h2>{e(titulo)}</h2><ul class="lista-guias">{items}</ul></section>'
     otras = '<p class="ayuda">¿Buscás novedades de la profesión? <a href="profesion.html">Ver notas de Profesión →</a></p>'
-    otras = "".join(f'<div class="dato-vigente ef-aviso"><b>¿No sos contador?</b> <a href="{g["ruta"]}.html">{e(g["titulo"])} →</a></div>' for g in EXPLICADO) + otras
+    if EXPLICADO:
+        otras = (f'<section class="ef-bloque-guias"><h2>{e(SECCION_FACIL)}, {e(SECCION_FACIL_SUB)}</h2><p class="ayuda">Para empleados, emprendedores y monotributistas: explicado fácil, sin palabras raras.</p><div class="chips">'
+                 + "".join(f'<a href="{g["ruta"]}.html">{e(g["titulo"].split("?")[0].lstrip("¿").split(":")[0])}</a>' for g in EXPLICADO)
+                 + f'<a href="{RUTA_FACIL}.html">Todas →</a></div></section>') + otras
     cuerpo = f'<div class="grilla"><section><h1 class="titsec">Guías prácticas</h1><p class="ayuda">Guías completas de sueldos, impuestos y temas contables, basadas en la norma oficial y actualizadas cuando cambia algo. Debajo de cada una, la comunidad suma sus explicaciones y casos prácticos.</p>{bloques}{otras}</section>{lateral(notas)}</div>'
     return pagina("Guías prácticas de sueldos, impuestos y contabilidad | Ramacontable", cuerpo, "guias",
                   "Guías prácticas para contadores y liquidadores: vacaciones, liquidación final, Ganancias, IVA, Monotributo, Ingresos Brutos y más.", "guias.html", migas=[("Guías", "guias.html")])
@@ -524,7 +527,7 @@ def pagina(titulo, cuerpo, actual="", descripcion="", ruta="", extra_head="", mi
         "sueldos": [("sueldos.html", "Novedades de sueldos"), ("convenios.html", "Escalas por convenio"), ("guias.html#sueldos", "Guías de sueldos"),
                     ("sueldo-comercio.html", "Calculadora de sueldo de Comercio"), ("datos-al-dia.html#sueldos", "Datos del día de sueldos"), ("vencimiento-931.html", "Vencimientos del F.931"), ("comparador-escalas.html", "Aumentos vs. inflación")],
         "impuestos": [("impuestos.html", "Novedades de impuestos")] + [(f"impuesto-{s}.html", n) for s, n, _, _ in IMPUESTOS] + [("provincias-y-municipios.html", "Provincias y municipios"), ("guias.html#impuestos", "Guías de impuestos"), ("datos-al-dia.html#impuestos", "Datos del día de impuestos")],
-        "guias": [(g["ruta"] + ".html", "Monotributo explicado fácil") for g in EXPLICADO] + [(f"guias.html#{k}", v) for k, v in GRUPOS_GUIAS.items()] + [("guias.html", "Todas las guías"), ("glosario.html", "Glosario")],
+        "guias": ([(RUTA_FACIL + ".html", f"{SECCION_FACIL} ({SECCION_FACIL_SUB})")] if EXPLICADO else []) + [(f"guias.html#{k}", v) for k, v in GRUPOS_GUIAS.items()] + [("guias.html", "Todas las guías"), ("glosario.html", "Glosario")],
         "datos-al-dia": [x for gid, nombre, items in grupos_datos() for x in [("#g", nombre)] + [(f"{sl}.html", ti) for sl, ti, _ in items][:7]],
     }
     # Google corta los títulos largos y las descripciones de más de ~160 caracteres
@@ -570,7 +573,7 @@ def pagina(titulo, cuerpo, actual="", descripcion="", ruta="", extra_head="", mi
 <footer class="pie"><div class="wrap">
 <a class="logo" href="index.html">{LOGO_SVG}<span>ramacontable</span></a>
 <p>Novedades de la profesión contable explicadas claro.</p>
-<p class="secs">{" · ".join(f'<a href="{k}.html">{v}</a>' for k, v in SECCIONES.items())} · <a href="guias.html">Guías</a>{"".join(f' · <a href="{g["ruta"]}.html">Monotributo explicado fácil</a>' for g in EXPLICADO)} · <a href="calculadoras.html">Calculadoras</a> · <a href="datos-al-dia.html">Datos del día</a></p>
+<p class="secs">{" · ".join(f'<a href="{k}.html">{v}</a>' for k, v in SECCIONES.items())} · <a href="guias.html">Guías</a>{f' · <a href="{RUTA_FACIL}.html">{SECCION_FACIL}</a>' if EXPLICADO else ""} · <a href="calculadoras.html">Calculadoras</a> · <a href="datos-al-dia.html">Datos del día</a></p>
 <div class="redes">{redes}</div>
 <p><a href="mailto:{MAIL}">{MAIL}</a></p>
 <p class="legal">Información de carácter general. Se recomienda verificar siempre en las fuentes oficiales. Cada profesional es responsable de su aplicación. · <a href="terminos.html">Términos y privacidad</a> · © {anio} Ramacontable</p>
@@ -720,7 +723,7 @@ def sitemaps(notas, convenios=()):
     fijas = ["aguinaldo", "convenios", "guias", "calculadoras", "feriados", "sueldo-comercio", "sueldo-casas-particulares", "actualizacion", "dias-habiles",
              "plazo-fijo", "prestamos", "vacaciones", "liquidacion-final", "horas-extras", "iva", "conversor-dolar", "monotributo-categoria", "intereses-arca",
              "actualizacion-alquiler", "embargo-sueldo", "cuando-cambia-cada-dato", "glosario", "comparador-escalas", "agenda-vencimientos",
-             "retencion-ganancias"] + [g["ruta"] for g in EXPLICADO] + JURIS_URLS + PARITARIAS_URLS + FERIADOS_URLS + [f"impuesto-{i[0]}" for i in IMPUESTOS]
+             "retencion-ganancias"] + [g["ruta"] for g in EXPLICADO] + ([RUTA_FACIL] if EXPLICADO else []) + JURIS_URLS + PARITARIAS_URLS + FERIADOS_URLS + [f"impuesto-{i[0]}" for i in IMPUESTOS]
     urls = [f"<url><loc>{base}</loc><lastmod>{hoy}</lastmod></url>"] + [
         f"<url><loc>{base}{k}.html</loc><lastmod>{hoy}</lastmod></url>" for k in diarias if k not in PAGINAS_FINAS] + [
         f"<url><loc>{base}{k}.html</loc></url>" for k in fijas if k not in PAGINAS_FINAS] + [
@@ -1277,7 +1280,7 @@ def pagina_explicado_facil(g, notas, videos):
     vals, vig = _valores_mono()
     hoy = datetime.date.today()
     recat = next(d for d in (datetime.date(hoy.year, 2, 5), datetime.date(hoy.year, 8, 5), datetime.date(hoy.year + 1, 2, 5)) if d >= hoy)
-    indice, cuerpo, grupo_act = "", "", None
+    indice, cuerpo, grupo_act, calc_js = "", "", None, set()
     for i, sec in enumerate(g["secciones"], 1):
         if sec.get("grupo") and sec["grupo"] != grupo_act:
             grupo_act = sec["grupo"]
@@ -1288,6 +1291,14 @@ def pagina_explicado_facil(g, notas, videos):
         video = (f'<div class="ef-video"><iframe src="https://www.youtube.com/embed/{vid}" title="{e(sec["titulo"])}" loading="lazy" '
                  'allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>') if vid else ""
         txt = "".join(f"<p>{e(t)}</p>" for t in sec.get("texto") or [])
+        if sec.get("tabla"):
+            txt += tabla_html(sec["tabla"])
+        if sec.get("calculadora"):
+            h_calc, js = calculadora_embebida(sec["calculadora"])
+            txt += h_calc
+            calc_js |= set(js)
+        if sec.get("datos"):
+            txt += caja_datos(sec["datos"])
         clave = "".join(f"<li>{e(c)}</li>" for c in sec.get("clave") or [])
         caja = ""
         filas = [vals[k] for k in sec.get("valores") or [] if k in vals]
@@ -1308,14 +1319,16 @@ def pagina_explicado_facil(g, notas, videos):
                    + (f'<div class="ef-clave"><b>Lo clave</b><ul>{clave}</ul></div>' if clave else "") + f"{caja}{disc}{boton}</section>")
     qs = [{"p": p_, "r": r_} for p_, r_ in g.get("preguntas") or []]
     contenido = f"""<div class="grilla"><article class="nota explicado" data-nota="{e(g["ruta"])}"><div class="nota-contenido">
-<p class="miga"><a href="guias.html">Guías</a> / Explicado fácil</p>
-<p class="ante">Explicado fácil · Para no contadores</p>
+<p class="miga"><a href="guias.html">Guías</a> / <a href="{RUTA_FACIL}.html">{e(SECCION_FACIL)}</a></p>
+<p class="ante">{e(SECCION_FACIL)} · {e(SECCION_FACIL_SUB)}</p>
 <h1>{e(g["titulo"])}</h1>
 <p class="encorto ef-para"><b>¿Para quién es?</b> {e(g["para_quien"])}</p>
+{f'<p class="ef-pro"><a href="{e(g["profesional"][0])}">{e(g["profesional"][1])} →</a></p>' if g.get("profesional") else ""}
 <nav class="ef-indice"><b>En esta guía</b><ol>{indice}</ol></nav>
 {cuerpo}
 {preguntas_html({"preguntas": qs})}
-<p class="aviso">Información general para orientarte, según lo que publica ARCA. Cada caso puede tener particularidades: ante la duda, consultá con un contador.</p>
+{caja_contacto(g.get("contacto") or g["titulo"])}
+<p class="aviso">Información general para orientarte. Cada caso puede tener particularidades: ante la duda, consultá con un contador.</p>
 </div>{bloque_aportes({"slug": g["ruta"], "titulo": g["titulo"]}, None)}</article>{lateral(notas)}</div>"""
     url = sitio_url() + g["ruta"] + ".html"
     ld = [{"@context": "https://schema.org", "@type": "Article", "headline": g["titulo"][:110], "description": g["descripcion"], "inLanguage": "es-AR",
@@ -1328,17 +1341,87 @@ def pagina_explicado_facil(g, notas, videos):
             "thumbnailUrl": f"https://i.ytimg.com/vi/{videos[t]}/hqdefault.jpg", "embedUrl": f"https://www.youtube.com/embed/{videos[t]}",
             "uploadDate": hoy.isoformat()} for sec in g["secciones"] for t in (sec.get("tema_ids") or [])[:1] if t in videos]
     head = "".join(f'<script type="application/ld+json">{json.dumps(x, ensure_ascii=False).replace("</", "<\\/")}</script>' for x in ld)
+    contenido += "".join(f'<script src="{x}"></script>' for x in sorted(calc_js))
     return pagina(f'{g["seo_titulo"]} | Ramacontable', contenido, "guias", g["descripcion"], g["ruta"] + ".html", head,
-                  [("Guías", "guias.html"), ("Explicado fácil", g["ruta"] + ".html")])
+                  [("Guías", "guias.html"), (SECCION_FACIL, RUTA_FACIL + ".html"), (g["titulo"][:60], g["ruta"] + ".html")])
+
+
+def calculadora_embebida(nombre):
+    """El formulario de una calculadora del portal (paginas/<nombre>.html) dentro de otra página, con sus mismos scripts.
+    Devuelve (html, [scripts])."""
+    try:
+        t = open(os.path.join(RAIZ, "paginas", nombre + ".html"), encoding="utf-8").read()
+    except OSError:
+        return f'<p><a class="btn" href="{nombre}.html">Abrir la calculadora →</a></p>', []
+    m = re.search(r'(<form id="calc[^"]*".*?</form>)\s*(<section id="resultado[^"]*"[^>]*>\s*</section>)', t, re.S)
+    if not m:
+        return f'<p><a class="btn" href="{nombre}.html">Abrir la calculadora →</a></p>', []
+    js = re.findall(r'<script src="([^"]+)"></script>', t)
+    return (f'<div class="ef-calc">{m.group(1)}{m.group(2)}<p class="ayuda"><a href="{nombre}.html">Abrir la calculadora completa →</a></p></div>'), js
+
+
+def caja_datos(slugs):
+    """Valores de hoy de datos del portal (se actualizan solos), con link a cada página."""
+    filas = []
+    for sl in slugs:
+        t = next((x for x in TEMAS_RESP if x["slug"] == sl), None)
+        v = ajustar_tramo((RESP.get(sl) or {}).get("datos") or {}).get("valor") if t else None
+        if t and v:
+            filas.append(f'<li><a href="{sl}.html">{e(t.get("titulo_corto") or t["titulo"].split(":")[0])}</a>: <b>{e(_corto(v, 60))}</b></li>')
+    return ('<div class="ef-valores"><b>Valores de hoy</b><ul>' + "".join(filas) + '</ul><small>Se actualizan solos cuando salen los nuevos.</small></div>') if filas else ""
+
+
+def caja_contacto(tema):
+    """Botón para que la gente escriba su consulta (abre un mail con el asunto puesto)."""
+    asunto = urllib.parse.quote(f"Consulta: {tema}")
+    return (f'<section class="ef-contacto"><h2>¿Te quedó una duda?</h2><p>Escribinos tu consulta y te orientamos. '
+            f'Contanos tu caso con el mayor detalle posible (sin datos personales sensibles como claves o números de cuenta).</p>'
+            f'<p><a class="btn" href="mailto:{MAIL}?subject={asunto}">✉️ Escribinos tu consulta</a></p></section>')
+
+
+SECCION_FACIL = "Guías fáciles"
+SECCION_FACIL_SUB = "para no profesionales"
+RUTA_FACIL = "guias-faciles"
+
+
+def pagina_guias_para_todos(notas):
+    """Portada de la sección de guías para no contadores."""
+    items = "".join(f'<a class="ult sec-sueldos" href="{g["ruta"]}.html"><b>{e(g["titulo"])}</b><span class="ult-res">{e(g.get("tarjeta") or g["descripcion"])}</span></a>'
+                    for g in EXPLICADO)
+    cuerpo = (f'<div class="grilla"><section><p class="miga"><a href="guias.html">Guías</a></p><h1 class="titsec">{e(SECCION_FACIL)}, {e(SECCION_FACIL_SUB)}</h1>'
+              '<p class="ayuda">Explicado fácil, sin palabras raras: para empleados, emprendedores, monotributistas y cualquiera que quiera entender '
+              'sus vacaciones, su aguinaldo, sus impuestos o su recibo de sueldo. Cada guía tiene ejemplos, los valores de hoy y un botón para escribirnos.</p>'
+              f'<div class="ult-g">{items}</div>'
+              '<p class="ayuda" style="margin-top:1.2em">¿Sos contador o liquidás sueldos? <a href="guias.html">Ver las guías profesionales →</a></p>'
+              f'</section>{lateral(notas)}</div>')
+    return pagina(f"{SECCION_FACIL} para no profesionales: sueldo, impuestos y trámites | Ramacontable", cuerpo, "guias",
+                  "Guías explicadas fácil para empleados, emprendedores y monotributistas: vacaciones, aguinaldo, monotributo, Ganancias y más, con ejemplos y calculadoras.",
+                  RUTA_FACIL + ".html", migas=[("Guías", "guias.html"), (SECCION_FACIL, RUTA_FACIL + ".html")])
+
+
+def con_anio(x, salto=None):
+    """Reemplaza {anio} y {anio_ant} en textos de guías permanentes. Con salto «MM-DD», desde esa fecha ya muestra el año que viene
+    (ej. Ganancias en el sueldo pasa a 2027 en diciembre). Así la dirección queda fija y el título se actualiza solo."""
+    hoy = datetime.date.today()
+    anio = hoy.year + (1 if salto and hoy.strftime("%m-%d") >= salto else 0)
+    if isinstance(x, str):
+        return x.replace("{anio}", str(anio)).replace("{anio_ant}", str(anio - 1))
+    if isinstance(x, list):
+        return [con_anio(v, salto) for v in x]
+    if isinstance(x, dict):
+        return {k: con_anio(v, salto) for k, v in x.items()}
+    return x
 
 
 def cargar_explicado():
     out = []
     for ruta in sorted(glob.glob(os.path.join(RAIZ, "explicado", "*.json"))):
         try:
-            out.append(json.load(open(ruta, encoding="utf-8")))
+            g = json.load(open(ruta, encoding="utf-8"))
+            out.append(con_anio(g, g.get("salto_anio")))
         except Exception as ex:
             print("Aviso: no pude leer", ruta, ex)
+    out.sort(key=lambda g: (g.get("orden", 99), g["ruta"]))
     return out
 
 
@@ -1905,6 +1988,7 @@ def caja_dato_vigente(n):
             f'{e(d.get("valor") or "en verificación")}. <a href="{t["slug"]}.html">Ver la tabla vigente →</a></div>')
 
 
+SEO_SALTO = {"guia-ganancias-cuarta-categoria": "12-01"}   # desde esa fecha el {anio} del título ya es el año que viene
 SEO_NOTAS = {   # slug → (título para Google, descripción). Se eligen mirando las búsquedas reales de Search Console.
     "anses-bases-imponibles-tope-jubilatorio-noviembre-2026": (
         "Tope MOPRE noviembre 2026: base máxima $ 4.861.685,38 (ANSES)",
@@ -1912,13 +1996,33 @@ SEO_NOTAS = {   # slug → (título para Google, descripción). Se eligen mirand
     "guia-categorias-comercio": (
         "Categorías de Comercio (CCT 130/75): qué puesto va en cada una",
         "Maestranza, administrativos, cajeros, vendedores y auxiliares: qué tareas entran en cada categoría del convenio de Comercio y dónde ver la escala vigente."),
+    # guías profesionales: títulos con lo que busca un contador o liquidador (la gente común va a «Guías fáciles»)
     "guia-sac-aguinaldo": (
-        "Aguinaldo (SAC) 2026: cómo se calcula, proporcional y fecha de pago",
-        "Cómo se calcula el aguinaldo: 50% de la mejor remuneración del semestre, cálculo proporcional por días trabajados, fechas de pago y calculadora gratis."),
+        "SAC (aguinaldo): cálculo, proporcional y licencias según la LCT",
+        "Cálculo del SAC (arts. 121 a 123 LCT): mejor remuneración del semestre, proporcional por días trabajados, licencias, fechas de pago y caso práctico."),
+    "guia-ganancias-cuarta-categoria": (
+        "Ganancias cuarta categoría {anio}: retenciones y deducciones",
+        "Régimen de retención de Ganancias sobre sueldos para empleadores y liquidadores: escalas, deducciones personales y generales, SIRADIG y liquidación anual."),
+    "guia-siradig": (
+        "SIRADIG Trabajador: cómo cargar el formulario 572 web",
+        "Paso a paso del SIRADIG Trabajador (F.572 web): cargas de familia, deducciones generales, comprobantes, plazos y envío al empleador."),
+    "guia-ganancias-personas-humanas": (
+        "Ganancias personas humanas: declaración jurada anual",
+        "Quiénes deben presentar la declaración jurada anual de Ganancias de personas humanas, la DDJJ simplificada, deducciones y vencimientos."),
+    "guia-bienes-personales": (
+        "Bienes Personales: mínimo, alícuotas y declaración jurada",
+        "Quiénes pagan Bienes Personales, mínimo no imponible, alícuotas y cómo se presenta la declaración jurada."),
 }
 
 
 GUIA_SAC = [False]   # se prende si la guía del aguinaldo está publicada
+
+
+def caja_facil(n):
+    """En la guía profesional, el acceso a la versión explicada fácil del mismo tema."""
+    url = f"nota-{n.get('slug')}.html"
+    g = next((x for x in EXPLICADO if (x.get("profesional") or [""])[0] == url or url in (x.get("profesionales_extra") or [])), None)
+    return (f'<p class="ef-pro">¿Buscás la versión simple, sin palabras técnicas? <a href="{g["ruta"]}.html">{e(g["titulo"])} →</a></p>') if g else ""
 
 
 def caja_guia(n, notas=()):
@@ -1942,14 +2046,15 @@ def caja_guia(n, notas=()):
 
 def pagina_nota(n, notas, aportes=None):
     if n.get("slug") in SEO_NOTAS:
-        n = dict(n, seo_titulo=SEO_NOTAS[n["slug"]][0], descripcion_seo=SEO_NOTAS[n["slug"]][1])
+        salto = SEO_SALTO.get(n["slug"])
+        n = dict(n, seo_titulo=con_anio(SEO_NOTAS[n["slug"]][0], salto), descripcion_seo=con_anio(SEO_NOTAS[n["slug"]][1], salto))
     verif = ("Elaborada con fuentes oficiales." if n.get("verificada")
              else "Pendiente de verificación con fuente oficial.")
     t_dato = dato_de_nota(n)
     extra_calc = bloque_aguinaldo(n, notas) + ('<div class="dato-vigente"><b>Calculalo:</b> <a href="aguinaldo.html">calculadora de aguinaldo</a> · '
                   '<a href="tope-aportes-base-maxima.html">tope de aportes vigente</a> · <a href="retencion-ganancias.html">retención de Ganancias</a>'
                   + ('' if n.get("slug") == "guia-sac-aguinaldo" or not GUIA_SAC[0] else ' · <a href="nota-guia-sac-aguinaldo.html">guía completa del aguinaldo</a>') + '</div>'
-                  if "aguinaldo" in (n.get("titulo", "") + " " + n.get("slug", "")).lower() else "") + caja_guia(n, notas)
+                  if "aguinaldo" in (n.get("titulo", "") + " " + n.get("slug", "")).lower() else "") + caja_guia(n, notas) + caja_facil(n)
     cuerpo = extra_calc + enlazar("".join(
         (f'<p class="dato-vigente">La tabla completa y actualizada está en <a href="{t_dato["slug"]}.html">{e(t_dato["titulo"])}</a>.</p>' if t_dato
          else "") if tabla_dudosa(b) else bloque(b) for b in n["cuerpo"]), f"nota-{n['slug']}.html")
@@ -2343,7 +2448,7 @@ def portada_inicio(notas, guias, convenios):
     chips = lambda xs: "".join(f'<a href="{u}">{e(t)}</a>' for u, t in xs)
     recursos = f"""<section class="ini-recursos"><h2>Lo más consultado</h2>
 <div class="ini-rec"><b>📊 Escalas</b><div class="chips">{chips([(f"escala-{c['slug']}.html", c["nombre"]) for c in conv[:6]] + [("convenios.html", f"Todas ({len(convenios)}) →")])}</div></div>
-<div class="ini-rec"><b>📚 Guías</b><div class="chips">{chips([(f"nota-{s_}.html", t_) for s_, t_ in top_guias] + [(g["ruta"] + ".html", "Monotributo explicado fácil") for g in EXPLICADO] + [("guias.html", "Todas →")])}</div></div>
+<div class="ini-rec"><b>📚 Guías</b><div class="chips">{chips([(f"nota-{s_}.html", t_) for s_, t_ in top_guias] + ([(RUTA_FACIL + ".html", "🙋 " + SECCION_FACIL)] if EXPLICADO else []) + [("guias.html", "Todas →")])}</div></div>
 <div class="ini-rec"><b>🧮 Calculadoras</b><div class="chips">{chips([("aguinaldo.html", "Aguinaldo"), ("liquidacion-final.html", "Liquidación final"), ("vacaciones.html", "Vacaciones"), ("intereses-arca.html", "Intereses de ARCA"), ("monotributo-categoria.html", "Categoría de Monotributo"), ("calculadoras.html", "Todas →")])}</div></div>
 <div class="ini-rec"><b>📅 Calendario</b><div class="chips">{chips([("feriados.html", "Feriados " + str(hoy.year))] + [(u + ".html", "Feriados " + u[-4:]) for u in FERIADOS_URLS if u[-4:] != str(hoy.year)] + [("herramientas.html", "Vencimientos"), ("cuando-cambia-cada-dato.html", "Cuándo cambia cada dato")])}</div></div>
 <div class="ini-rec"><b>📍 Provincias</b><div class="chips">{chips([(j["ruta"] + ".html", j["titulo_corto"]) for j in JURIS][:6] + [("provincias-y-municipios.html", "Todas →")])}</div></div>
@@ -2571,6 +2676,7 @@ def main():
         vids = videos_capitulos()
         for g in EXPLICADO:
             escribir(g["ruta"] + ".html", pagina_explicado_facil(g, notas, vids))
+        escribir(RUTA_FACIL + ".html", pagina_guias_para_todos(notas))
     for j in JURIS:
         escribir(j["ruta"] + ".html", pagina_jurisdiccion(j, notas))
         for pg in j.get("paginas") or []:

@@ -23,6 +23,9 @@
     "desde": "ARTICULO 150",
     "hasta": "ARTICULO 158"
    }
+  ],
+  "rehacer_anual": [
+   "09-01"
   ]
  },
  {
@@ -75,6 +78,10 @@
     "desde": "ARTICULO 121",
     "hasta": "ARTICULO 124"
    }
+  ],
+  "rehacer_anual": [
+   "05-01",
+   "11-01"
   ]
  },
  {
@@ -138,21 +145,30 @@
   "titulo": "Ganancias cuarta categoría: retenciones a empleados",
   "seccion": "impuestos",
   "buscar": "ganancias cuarta categoria retencion",
-  "oficial": []
+  "oficial": [],
+  "rehacer_anual": [
+   "01-15"
+  ]
  },
  {
   "slug": "siradig",
   "titulo": "SIRADIG: cómo cargar deducciones",
   "seccion": "impuestos",
   "buscar": "siradig deducciones",
-  "oficial": []
+  "oficial": [],
+  "rehacer_anual": [
+   "01-15"
+  ]
  },
  {
   "slug": "ganancias-personas-humanas",
   "titulo": "Ganancias personas humanas: declaración jurada anual",
   "seccion": "impuestos",
   "buscar": "ganancias personas humanas declaracion jurada",
-  "oficial": []
+  "oficial": [],
+  "rehacer_anual": [
+   "03-15"
+  ]
  },
  {
   "slug": "ganancias-sociedades",
@@ -166,7 +182,10 @@
   "titulo": "Bienes Personales: mínimo, alícuotas y cómo presentar",
   "seccion": "impuestos",
   "buscar": "bienes personales",
-  "oficial": []
+  "oficial": [],
+  "rehacer_anual": [
+   "03-15"
+  ]
  },
  {
   "slug": "iva",
@@ -186,7 +205,11 @@
   "titulo": "Monotributo: categorías, recategorización y exclusión",
   "seccion": "impuestos",
   "buscar": "monotributo recategorizacion",
-  "oficial": []
+  "oficial": [],
+  "rehacer_anual": [
+   "01-20",
+   "07-20"
+  ]
  },
  {
   "slug": "autonomos",
