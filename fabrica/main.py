@@ -14,6 +14,18 @@ from . import fuentes, gemini, mail, util
 
 FUENTES_EXTRA = [{"nombre": "ARBA", "tipo": "oficial", "url": "https://web.arba.gov.ar/noticias"}, {"nombre": "Gobierno nacional (argentina.gob.ar)", "tipo": "oficial", "url": "https://www.argentina.gob.ar/noticias", "filtro": ["arca", "afip", "anses", "monotribut", "ganancias", "impuest", "iva", "salario", "jubil", "asignaci", "auh", "bcra", "banco central", "feriado", "decreto", "resolucion general", "aportes", "contribuciones", "trabajo", "empleo", "paritari", "convenio", "srt", "riesgos del trabajo", "aduana", "retencion", "percepcion"]}, {"nombre": "Tributum", "tipo": "portal", "url": "https://tributum.news/feed/"}, {"nombre": "Estudio Vilaplana", "tipo": "portal", "url": "https://www.estudiovilaplana.com.ar/feed/"}, {"nombre": "iProfesional Impuestos", "tipo": "apoyo", "url": "https://www.iprofesional.com/rss/impuestos.xml", "filtro": ["arca", "afip", "anses", "monotribut", "ganancias", "iva", "bienes personales", "ingresos brutos", "arba", "agip", "impuesto", "boletin oficial", "resolucion general", "decreto", "convenio", "paritaria", "escala", "salari", "sueldo", "aguinaldo", "indemniz", "aportes", "contribuciones", "seguridad social", "art ", "feriado", "vencimiento", "bcra", "comunicacion a", "reforma laboral"]}, {"nombre": "Calcular Sueldo", "tipo": "apoyo", "url": "https://calcularsueldo.com.ar/feed/", "filtro": ["arca", "afip", "anses", "monotribut", "ganancias", "iva", "bienes personales", "ingresos brutos", "arba", "agip", "impuesto", "boletin oficial", "resolucion general", "decreto", "convenio", "paritaria", "escala", "salari", "sueldo", "aguinaldo", "indemniz", "aportes", "contribuciones", "seguridad social", "art ", "feriado", "vencimiento", "bcra", "comunicacion a", "reforma laboral"]}, {"nombre": "Econoblog", "tipo": "apoyo", "url": "https://www.econoblog.com.ar/feed/", "filtro": ["arca", "afip", "anses", "monotribut", "ganancias", "iva", "bienes personales", "ingresos brutos", "arba", "agip", "impuesto", "boletin oficial", "resolucion general", "decreto", "convenio", "paritaria", "escala", "salari", "sueldo", "aguinaldo", "indemniz", "aportes", "contribuciones", "seguridad social", "art ", "feriado", "vencimiento", "bcra", "comunicacion a", "reforma laboral"]}]
 
+# Diarios (pedido de Ramiro, 16/11/2026): tipo «diario». NUNCA arrancan una nota: las notas las disparan los blogs contables
+# y las fuentes oficiales; los diarios solo sirven de segunda fuente (doble chequeo). Además, para el doble chequeo se busca en
+# Google Noticias si lo publicó algún diario grande (Clarín, La Nación, Infobae, Ámbito, Cronista, etc.): fuentes.confirmar_en_diarios.
+# Feeds chequeados el 16/11/2026 (EconoJournal, Cronista, Clarín y TN no dejan leer su RSS).
+_FILTRO_DIARIOS = next(f["filtro"] for f in FUENTES_EXTRA if f["nombre"] == "iProfesional Impuestos")
+FUENTES_EXTRA += [{"nombre": n, "tipo": "diario", "url": u, "filtro": _FILTRO_DIARIOS} for n, u in [
+    ("Economis", "https://economis.com.ar/feed/"),
+    ("Ámbito Economía", "https://www.ambito.com/rss/pages/economia.xml"),
+    ("Infobae Economía", "https://www.infobae.com/arc/outboundfeeds/rss/category/economia/"),
+    ("La Nación Economía", "https://www.lanacion.com.ar/arc/outboundfeeds/rss/category/economia/"),
+]]
+
 CONFIABLE = "Ignacio Online"  # lo que publica Ignacio se toma como correcto (pedido de Ramiro); se vigila si después lo edita o borra
 # Blogs de confianza (pedido de Ramiro): con una sola nota de ellos alcanza para publicar; se vigila si la editan o la borran.
 # Los de menor confianza (tipo "apoyo") siguen necesitando dos blogs o la fuente oficial. Se puede cambiar con "fuentes_confiables" en config.json.
@@ -496,7 +508,14 @@ class Fabrica:
                       "fuente": f["fuente"], "tipo": f["tipo"]} for f in previos.values() if not f.get("usado")]
         if self.rapido:
             esperando = [f for f in esperando if f.get("tipo") == "oficial"]
+        # los diarios solo confirman: se guardan 2 días y como mucho 40 (para no inflar el pedido a Gemini)
+        lim_d = (util.ahora() - timedelta(days=2)).isoformat()
+        esperando = [f for f in esperando if f.get("tipo") != "diario" or str(previos.get(f["url"], {}).get("visto") or "") >= lim_d]
         items = nuevos + esperando
+        dia_ = [it for it in items if it.get("tipo") == "diario"]
+        if len(dia_) > 40:
+            fuera = {id(x) for x in dia_[40:]}
+            items = [it for it in items if id(it) not in fuera]
         util.log(f"{len(nuevos)} novedades nuevas y {len(esperando)} esperando segunda fuente")
         if self.activo and self.db and nuevos:
             self.db.upsert("radar", [{"url": it["url"], "fuente": it["fuente"], "tipo": it["tipo"], "titulo": it["titulo"][:300],
@@ -523,13 +542,21 @@ class Fabrica:
                 self.marcar(urls, g.get("tema"), None)
                 continue
             oficial = any(m["tipo"] == "oficial" for m in miembros)
-            portales = {m["fuente"] for m in miembros if m["tipo"] != "oficial"}
+            portales = {m["fuente"] for m in miembros if m["tipo"] not in ("oficial", "diario")}
+            diarios = {m["fuente"] for m in miembros if m["tipo"] == "diario"}
             if not oficial and not portales:
+                # solo diarios: no arrancan notas; quedan en el radar para confirmar si después lo publica un blog contable
                 continue
             # Las notas propias de un medio (investigaciones, encuestas, opinión) no se replican:
             # solo novedades normativas u oficiales, o temas que ya publicaron varios portales.
             # (pedido de Ramiro: con un solo blog no se replican; si la sacan dos o más blogs distintos se arma pero queda en revisión)
             propia_varios = False
+            if not oficial and not diarios and len(portales) == 1 and not (portales & self.confiables):
+                # doble chequeo: ¿lo publicó algún diario grande? (Google Noticias)
+                extra = fuentes.confirmar_en_diarios(g.get("tema") or miembros[0]["titulo"], [m["titulo"] for m in miembros])
+                if extra:
+                    diarios = {x["fuente"] for x in extra}
+                    self.observaciones.append((g.get("tema") or "", "Confirmado en diarios: " + ", ".join(f"{x['fuente']} («{x['titulo'][:80]}»)" for x in extra[:3])))
             if g.get("clase") == "propia" and not oficial:
                 if len(portales) >= 2:
                     propia_varios = True
@@ -545,8 +572,8 @@ class Fabrica:
             if not oficial and not principales:
                 # blogs de apoyo solos: alcanza si coinciden dos distintos, o si uno cita la fuente oficial y se puede chequear
                 apoyos = {m["fuente"] for m in miembros if m["tipo"] == "apoyo"}
-                if len(apoyos) >= 2:
-                    self.observaciones.append((g.get("tema") or "", f"Lo confirman dos blogs de apoyo ({', '.join(sorted(apoyos))})"))
+                if len(apoyos) >= 2 or (apoyos and diarios):
+                    self.observaciones.append((g.get("tema") or "", f"Lo confirman {', '.join(sorted(apoyos | diarios))}"))
                 else:
                     citada = None
                     for m in [x for x in miembros if x["tipo"] == "apoyo"][:2]:
@@ -574,7 +601,9 @@ class Fabrica:
                 if citada and not citada.get("pdf"):
                     miembros = miembros + [citada]
                     oficial = True
-            if not oficial and not de_confianza and len(portales) < int(self.cfg.get("portales_minimos", 2)):
+            if not oficial and not de_confianza and len(portales) < int(self.cfg.get("portales_minimos", 2)) and diarios:
+                self.observaciones.append((g.get("tema") or "", f"Un solo blog ({', '.join(sorted(portales))}); lo confirman diarios: {', '.join(sorted(diarios))}"))
+            elif not oficial and not de_confianza and len(portales) < int(self.cfg.get("portales_minimos", 2)):
                 citada = None
                 for m in [x for x in miembros if x["tipo"] == "portal"][:2]:
                     try:

@@ -319,3 +319,52 @@ def estado(url):
         return getattr(r, "status_code", None)
     except Exception:  # noqa
         return None
+
+
+# ---------- Doble chequeo en diarios grandes (Google Noticias) ----------
+DIARIOS_GRANDES = ("clarín", "clarin", "la nación", "la nacion", "infobae", "ámbito", "ambito", "el cronista", "cronista", "iprofesional",
+                   "perfil", "página/12", "pagina/12", "pagina12", "tn", "todo noticias", "a24", "el economista", "bae negocios", "la política online",
+                   "chequeado", "telam", "noticias argentinas", "econojournal", "economis", "rosario3", "la voz", "los andes", "el día", "el dia",
+                   "0221", "infocielo", "minuto uno", "canal 26", "c5n", "mdz", "letra p", "forbes argentina")
+_VACIAS = set("de la el los las del en y a por para con que se un una al es su sus lo como mas más sobre desde hasta hoy nuevo nueva nuevos nuevas cuales cuáles qué que".split())
+
+
+def _claves(txt):
+    return {w for w in re.findall(r"[a-z0-9/]{3,}", _norm(txt)) if w not in _VACIAS}
+
+
+def confirmar_en_diarios(tema, titulos=(), dias=4):
+    """Busca en Google Noticias (Argentina) si diarios grandes publicaron el mismo tema en los últimos días.
+    Devuelve [{fuente, titulo, url}] de los que coinciden en al menos 3 palabras clave (o en el número de norma)."""
+    import urllib.parse
+    claves = _claves(tema) | set().union(*[_claves(t) for t in titulos[:2]]) if titulos else _claves(tema)
+    normas = {w for w in claves if re.fullmatch(r"\d{2,5}/\d{2,4}", w)}
+    vistas_ = []
+    for w in re.findall(r"[a-z0-9/]{3,}", _norm(tema)):  # en el orden del tema, sin repetir ni números sueltos
+        if w not in _VACIAS and w not in normas and not w.isdigit() and w not in vistas_:
+            vistas_.append(w)
+    palabras = vistas_
+    base = sorted(normas)[:2]
+    salida, vistos, consulta = [], set(), ""
+    for n in (5, 3):  # primero más preciso; si no aparece nada, con menos palabras (Google busca todas)
+        consulta = " ".join(base + palabras[:max(1, n - len(base))])
+        if not consulta:
+            return []
+        url = "https://news.google.com/rss/search?" + urllib.parse.urlencode({"q": f"{consulta} when:{dias}d", "hl": "es-419", "gl": "AR", "ceid": "AR:es-419"})
+        r = _bajar(url)
+        if r is None:
+            return []
+        for it in re.findall(r"<item>(.*?)</item>", r.text, re.S)[:30]:
+            tit = unescape(re.sub(r"<[^>]+>", "", (re.search(r"<title>(.*?)</title>", it, re.S) or [None, ""])[1]))
+            fuente = unescape((re.search(r"<source[^>]*>(.*?)</source>", it, re.S) or [None, ""])[1]).strip()
+            link = (re.search(r"<link>(.*?)</link>", it, re.S) or [None, ""])[1].strip()
+            if not fuente or not any(_norm(fuente).startswith(d) or d == _norm(fuente) for d in DIARIOS_GRANDES):
+                continue
+            comunes = _claves(tit) & claves
+            if ((normas and normas & _claves(tit)) or len(comunes) >= 3) and fuente not in vistos:
+                vistos.add(fuente)
+                salida.append({"fuente": fuente, "titulo": tit.rsplit(" - ", 1)[0], "url": link})
+        if salida:
+            break
+    util.log(f"Doble chequeo en diarios «{consulta}»:", ", ".join(x["fuente"] for x in salida) or "sin coincidencias")
+    return salida
