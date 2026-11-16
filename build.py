@@ -1053,6 +1053,8 @@ def pagina_respuesta(t, r, notas, aportes=None, extra=""):
             f"<tr><td>{fecha_corta(h['fecha'])}</td><td>{e(h['valor'])}</td><td>{e(h.get('norma') or '')}</td></tr>" for h in hist) + "</tbody></table></div>"
     # «guia» en respuestas/temas.json: explicación fija verificada (qué es, quién entra, cómo se paga), además del dato que cambia
     cuerpo += "".join(bloque(x) for x in t.get("guia") or [])
+    if t["slug"] == "ganancias-deducciones-sueldos":
+        cuerpo += bloque_ganancias_anual()
     faq = preguntas_html({"preguntas": (d.get("preguntas") or []) + (t.get("preguntas_fijas") or [])})
     fuentes_html = ("<p class=\"fuente\"><b>Fuentes:</b> " + " · ".join(
         f'<a href="{e(f["url"])}" rel="nofollow noopener" target="_blank">{e(f["nombre"])}</a>' for f in (r.get("fuentes") or [])) + "</p>") if r else ""
@@ -1301,6 +1303,34 @@ def grupos_datos():
     return g
 
 
+def ganancias_anual():
+    """respuestas/ganancias-anual.json: tabla ANUAL de ARCA (liquidación anual y final, declaración jurada de personas humanas)."""
+    try:
+        return json.load(open(os.path.join(RAIZ, "respuestas", "ganancias-anual.json"), encoding="utf-8"))
+    except Exception:
+        return None
+
+
+def bloque_ganancias_anual():
+    g = ganancias_anual()
+    if not g:
+        return ""
+    pesos = lambda x: "$ " + f"{x:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    filas = [["Concepto", f"Importe anual {g['periodo']}"], ["Ganancia no imponible", pesos(g["ganancia_no_imponible"])],
+             ["Cónyuge o conviviente", pesos(g["conyuge"])], ["Hijo", pesos(g["hijo"])], ["Hijo incapacitado para el trabajo", pesos(g["hijo_incapacitado"])],
+             ["Deducción especial: trabajo en relación de dependencia y jubilados", pesos(g["especial_dependencia"])],
+             ["Deducción especial: trabajo por cuenta propia (autónomos)", pesos(g["especial_cuenta_propia"])],
+             ["Deducción especial: nuevos profesionales y emprendedores", pesos(g["especial_nuevos_profesionales"])]]
+    esc_ = [["Ganancia neta imponible anual", "Pagarán", "Más el", "Sobre el excedente de"]] + [
+        [f"De {pesos(t['desde'])} a {pesos(t['hasta'])}" if t["hasta"] else f"Más de {pesos(t['desde'])}", pesos(t["fijo"]), f"{t['pct']}%", pesos(t["desde"])] for t in g["escala"]]
+    fuentes = " · ".join(f'<a href="{e(f["url"])}" rel="nofollow noopener" target="_blank">{e(f["nombre"])}</a>' for f in g.get("fuentes") or [])
+    return (f'<h2 id="anual">Tabla anual {g["periodo"]}: liquidación anual y declaración jurada</h2>'
+            f'<p>Arriba están los valores de la tabla de retención mensual (julio a diciembre, acumulados a diciembre), que usa el empleador para calcular lo que retiene cada mes. '
+            f'Para la liquidación anual y final y para la declaración jurada anual de personas humanas (autónomos, alquileres, inversiones), ARCA publica una tabla anual con valores más altos:</p>'
+            + bloque({"tabla": filas}) + "<p>Escala del artículo 94 para la liquidación anual y final:</p>" + bloque({"tabla": esc_})
+            + f'<p class="fuente"><b>Tabla anual publicada en {e(g.get("publicada", ""))}:</b> {fuentes}</p>')
+
+
 def datos_para_calculadoras():
     """sitio/datos/datos-del-dia.json: lo que usan las calculadoras (monto, tablas y fecha de verificación)."""
     out = {}
@@ -1310,6 +1340,9 @@ def datos_para_calculadoras():
         if d.get("valor"):
             out[t["slug"]] = {"valor": d.get("valor"), "monto": d.get("monto"), "estructurado": d.get("estructurado"),
                               "mes_vigente": d.get("mes_vigente"), "norma": d.get("norma"), "revisado": str(r.get("revisado") or "")[:10]}
+    g = ganancias_anual()
+    if g:
+        out["ganancias-anual"] = {"estructurado": {k: v for k, v in g.items() if not k.startswith("_")}, "norma": "Tabla anual de ARCA " + g["periodo"]}
     return out
 
 
@@ -2793,7 +2826,7 @@ def main():
                  "Términos de uso, política de privacidad y tratamiento de datos de Ramacontable, la comunidad contable con novedades, guías y calculadoras.", "terminos.html"))
     with open(os.path.join(RAIZ, "paginas", "como-trabajamos.html"), encoding="utf-8") as f:
         escribir("como-trabajamos.html", pagina("Quiénes somos y cómo trabajamos | Ramacontable", f.read(), "",
-                 "Ramacontable es una comunidad de contadores públicos que colaboran para estar al día. De dónde sale cada dato, cómo se verifica y cómo pedir una corrección.",
+                 "Ramacontable es una comunidad de contadores públicos que colaboran para estar al día con las novedades, y ayudar a colegas, estudiantes y emprendedores.",
                  "como-trabajamos.html"))
     with open(os.path.join(RAIZ, "paginas", "aguinaldo.html"), encoding="utf-8") as f:
         escribir("aguinaldo.html", pagina("Calculadora de aguinaldo diciembre 2026 (SAC): cálculo paso a paso | Ramacontable", f.read(), "",
