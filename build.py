@@ -310,8 +310,11 @@ def tabla_html(t):
 
 
 # Cómo se busca cada convenio en Google: la sigla primero si es la forma habitual («escala UOCRA», «escala UOM»)
-NOMBRE_BUSQUEDA = {"uocra": "UOCRA", "uom": "UOM", "sanidad": "Sanidad (FATSA)", "gastronomicos": "Gastronómicos UTHGRA",
-                   "encargados-edificios": "Encargados de edificio (SUTERH)", "rurales": "UATRE (rurales)", "comercio": "Empleados de Comercio"}
+NOMBRE_BUSQUEDA = {  # según las sugerencias de Google («escala uocra noviembre 2026», «escala comercio», «escala smata acara»…)
+    "uocra": "UOCRA", "uom": "UOM", "comercio": "Comercio", "sanidad": "Sanidad (FATSA)", "gastronomicos": "Gastronómicos (UTHGRA)",
+    "encargados-edificios": "SUTERH encargados de edificio", "rurales": "UATRE (rurales)", "smata-concesionarias": "SMATA ACARA (concesionarias)",
+    "smata-faatra": "SMATA FAATRA (talleres)", "casas-particulares": "Casas Particulares", "quimicos": "Químicos y petroquímicos",
+    "pasteleros-heladerias": "Pasteleros y heladerías"}
 CONV_IDX = {}
 
 
@@ -357,6 +360,7 @@ def pagina_convenio(c, notas, aportes=None):
 <p class="ante">{e(c['cct'])} | {e(c['partes'])}</p>
 <h1>{e(titulo_vis)}</h1>
 <p class="firma">Redacción Ramacontable · Actualizado {fecha_larga(str(c.get('actualizado') or datetime.date.today().isoformat())[:10])}</p>
+{f'<p class="intro-escala">Esta es la <b>escala salarial {e(nombre_busqueda(c))} {e(periodo)}</b> ({e(c["cct"])}) con los valores por categoría y las sumas no remunerativas del último acuerdo. Se actualiza sola cuando sale una paritaria nueva.</p>' if periodo else ""}
 <div class="encorto"><b>Quiénes están comprendidos</b><p>{e(c.get('descripcion',''))}</p></div>
 <h2>Escala vigente</h2>{escala}
 {seccion("Qué cambió con el último acuerdo", c.get("novedades"))}
@@ -386,7 +390,8 @@ def pagina_convenio(c, notas, aportes=None):
     seo_t = _titulo_seo(f"Escala {sig} {periodo} ({cct_c}): básicos y sumas NR", f"Escala {sig} {periodo} ({cct_c}): básicos y NR",
                         f"Escala {sig} {periodo} ({cct_c})", f"Escala {sig} {periodo}: básicos y NR ({cct_c})", f"Escala salarial {sig} ({cct_c}): básicos y NR", f"Escala {c['nombre']} {periodo} ({c['cct']}): básicos, NR y cómo liquidar", f"Escala {c['nombre']} {periodo} ({c['cct']}): básicos y NR",
                         f"Escala {c['nombre']} {periodo}: básicos y NR", f"Escala {c['nombre']} ({c['cct']})", f"Escala salarial {nom_c} {periodo}", f"Escala salarial {nom_c}")
-    desc = f"Escala salarial vigente de {c['nombre']} ({c['cct']}): valores por categoría, sumas no remunerativas, aportes y cómo se liquida."
+    desc = (f"Escala {sig} {periodo} ({cct_c}): valores por categoría, sumas no remunerativas y cómo se liquida, con el último acuerdo." if periodo
+            else f"Escala salarial vigente de {c['nombre']} ({c['cct']}): valores por categoría, sumas no remunerativas, aportes y cómo se liquida.")
     ld = {"@context": "https://schema.org", "@type": "Article", "headline": titulo_vis[:110], "description": desc,
           "dateModified": str(c.get("actualizado") or datetime.date.today().isoformat()), "inLanguage": "es-AR",
           "author": {"@type": "Organization", "name": "Redacción Ramacontable"}, "mainEntityOfPage": f"{sitio_url()}escala-{c['slug']}.html"}
@@ -402,8 +407,8 @@ def pagina_convenio(c, notas, aportes=None):
 
 def pagina_convenios(convenios, notas):
     items = "".join(
-        f'<a class="tarjeta conv" href="escala-{c["slug"]}.html"><div class="tx"><p class="ante">{e(c["cct"])}</p><h2>{e(c["nombre"])}</h2>'
-        f'<p class="meta">{e((c.get("escala") or {}).get("periodo") or "Escala pendiente de carga")}</p></div></a>' for c in convenios)
+        f'<a class="tarjeta conv" href="escala-{c["slug"]}.html"><div class="tx"><p class="ante">{e(c["cct"])}</p><h2>Escala {e(nombre_busqueda(c))}</h2>'
+        f'<p class="meta">{e(c["nombre"])} · {e((c.get("escala") or {}).get("periodo") or "Escala pendiente de carga")}</p></div></a>' for c in convenios)
     cuerpo = f'<div class="grilla"><section><h1 class="titsec">Convenios y escalas salariales</h1><p class="ayuda">Escalas vigentes, novedades de cada acuerdo, tratamiento de las sumas no remunerativas y cómo se liquida cada convenio.</p><div class="tarjetas">{items}</div></section>{lateral(notas)}</div>'
     return pagina("Escalas salariales por convenio 2026: Comercio, UOCRA, UOM, Sanidad y más | Ramacontable", cuerpo, "sueldos",
                   "Escalas salariales vigentes por convenio colectivo, con novedades, sumas no remunerativas y cómo liquidar.", "convenios.html",
