@@ -104,6 +104,10 @@ def gemini(sistema, usuario, temperatura=0.9):
     import time
     _queda()
     PEDIDOS[0] += 1
+    # La IA no sabe qué día es: sin esto marca como «error» normas y fechas del año en curso (ej. «Decreto 1366/2026: el 2026 no transcurrió»)
+    hoy = util.ahora().date()
+    sistema = (f"FECHA DE HOY: {hoy.day:02d}/{hoy.month:02d}/{hoy.year}. Las normas, fechas y vigencias de {hoy.year} (y de {hoy.year - 1}) son actuales y "
+               f"reales: no las marques como error ni las corrijas por el año. Solo marcá una fecha si las fuentes dicen otra.\n\n") + sistema
     for intento in range(3):
         try:
             return _gemini(sistema, usuario, temperatura)
