@@ -335,6 +335,43 @@ def caja_escala(n):
             f'valores por categoría y sumas no remunerativas →</a></p>')
 
 
+_MES_ABR = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"]
+
+
+def preguntas_escala(c):
+    """Preguntas frecuentes armadas con la tabla vigente: se rehacen solas cada vez que cambia la escala (y el mes, si la tabla es por meses)."""
+    esc = c.get("escala") or {}
+    t, per = esc.get("tabla") or [], esc.get("periodo") or ""
+    filas = [f for f in t[1:] if isinstance(f, list) and len(f) > 1 and any(re.search(r"\d", str(x)) for x in f[1:])]
+    if len(t) < 2 or not filas:
+        return []
+    cab = [str(x) for x in t[0]]
+    hoy = datetime.date.today()
+    col = next((i for i, h in enumerate(cab) if i and (_MES_ABR[hoy.month - 1] in h.lower() or MESES[hoy.month - 1] in h.lower())
+                and (str(hoy.year) in h or str(hoy.year)[2:] in h or not re.search(r"\d{2}", h))), None)
+    cuando = f"{MESES[hoy.month - 1]} {hoy.year}" if col is not None else per
+    if col is None:
+        col = next((i for i in range(1, len(cab)) if any(re.search(r"\d", str(f[i])) for f in filas if len(f) > i)), 1)
+    sig = nombre_busqueda(c)
+    def val(f):
+        v = str(f[col]).strip() if len(f) > col else ""
+        if re.fullmatch(r"\d{4,}", v):
+            return "$ " + f"{int(v):,}".replace(",", ".")
+        return ("$ " + v) if re.fullmatch(r"\d{1,3}(\.\d{3})+(,\d+)?|\d+,\d+", v) else v
+    de = f" ({cab[col]})" if len(cab) > col and cab[col] and col is not None and cuando == per else ""
+    rige = (f" Rige {esc['vigencia'][0].lower() + esc['vigencia'][1:]}." if str(esc.get("vigencia", "")).lower().startswith("desde")
+            else (f" Vigencia: {esc['vigencia']}." if esc.get("vigencia") else ""))
+    qs = [{"p": f"¿Cuál es la escala salarial {sig} {cuando}?".replace("  ", " "),
+           "r": f"La escala vigente de {c['nombre']} ({c.get('cct', '')}) para {cuando} tiene {len(filas)} {"categorías" if len(filas) > 1 else "categoría"}. "
+                + "; ".join(f"{f[0]}: {val(f)}" for f in filas[:4]) + (", y las demás están en la tabla de esta página." if len(filas) > 4 else ".")
+                + (f" Valores de la columna «{cab[col]}»." if len(cab) > col and cab[col] else "") + rige}]
+    for f in filas[:2]:
+        if val(f):
+            qs.append({"p": f"¿Cuánto cobra la categoría {f[0]} de {sig} en {cuando}?".replace("  ", " "),
+                       "r": f"Según la escala vigente ({c.get('cct', '')}), la categoría {f[0]} tiene un valor de {val(f)}{de}.{rige}"})
+    return qs
+
+
 def pagina_convenio(c, notas, aportes=None):
     esc = c.get("escala") or {}
     periodo = esc.get("periodo") or ""
@@ -351,7 +388,8 @@ def pagina_convenio(c, notas, aportes=None):
         f'<li><b>{e(h.get("periodo",""))}</b>' + (f' · <a href="nota-{e(h["nota"])}.html">ver nota</a>' if h.get("nota") else "") + "</li>" for h in hist[::-1]) + "</ul>") if hist else ""
     notas_html = ("<h2>Notas sobre este convenio</h2><ul class='historial'>" + "".join(
         f'<li><a href="nota-{n["slug"]}.html">{e(n["titulo"])}</a> <small>{fecha_larga(n["fecha"])}</small></li>' for n in relacionadas_c) + "</ul>") if relacionadas_c else ""
-    falsa_nota = {"preguntas": c.get("preguntas") or []}
+    auto_q = preguntas_escala(c)
+    falsa_nota = {"preguntas": auto_q + (c.get("preguntas") or [])}
     slug = "convenio-" + c["slug"]
     titulo_vis = f"Escala salarial {c['nombre']}" + (f" {periodo}" if periodo else "") + (f" ({c['cct']})" if c.get("cct", "").startswith("CCT") else "")
     contenido = f"""<div class="grilla"><article class="nota convenio" data-nota="{slug}" data-convenio="{e(c['slug'])}" data-actualizado="{e(str(c.get('actualizado') or ''))}">
@@ -396,9 +434,9 @@ def pagina_convenio(c, notas, aportes=None):
           "dateModified": str(c.get("actualizado") or datetime.date.today().isoformat()), "inLanguage": "es-AR",
           "author": {"@type": "Organization", "name": "Redacción Ramacontable"}, "mainEntityOfPage": f"{sitio_url()}escala-{c['slug']}.html"}
     head = f'<script type="application/ld+json">{json.dumps(ld, ensure_ascii=False).replace("</", "<\\/")}</script>'
-    if c.get("preguntas"):
+    if falsa_nota["preguntas"]:
         head += '<script type="application/ld+json">' + json.dumps({"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [
-            {"@type": "Question", "name": q["p"], "acceptedAnswer": {"@type": "Answer", "text": q["r"]}} for q in c["preguntas"]]}, ensure_ascii=False).replace("</", "<\\/") + "</script>"
+            {"@type": "Question", "name": q["p"], "acceptedAnswer": {"@type": "Answer", "text": q["r"]}} for q in falsa_nota["preguntas"]]}, ensure_ascii=False).replace("</", "<\\/") + "</script>"
     contenido = contenido.replace("</article>", '<section class="relacionadas"><h2>Paritarias por mes</h2><ul>' + "".join(
         f'<li><a href="paritarias-{c["slug"]}-{MESES[int(m[5:]) - 1]}-{m[:4]}.html">Paritarias {e(c["nombre"])} {MESES[int(m[5:]) - 1]} {m[:4]}</a></li>' for m in _meses_paginas()) + "</ul></section></article>", 1)
     return pagina(seo_t + " | Ramacontable", contenido, "sueldos", desc, f"escala-{c['slug']}.html", head,

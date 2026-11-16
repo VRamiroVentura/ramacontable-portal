@@ -47,6 +47,17 @@ def _slug_sin_anio_falso(slug, nota):
     return slug.strip("-") or "nota"
 
 
+def _tabla_ok(tabla):
+    """Una escala sirve si tiene encabezado y al menos una fila con importes."""
+    filas = [f for f in (tabla or [])[1:] if isinstance(f, list) and any(re.search(r"\d", str(x)) for x in f[1:])]
+    return isinstance(tabla, list) and len(tabla) >= 2 and len(filas) >= 1
+
+
+def _anio_periodo(txt):
+    anios = [int(x) for x in re.findall(r"(?<!\d)(20\d\d)(?!\d)", str(txt or ""))]
+    return max(anios) if anios else None
+
+
 def _bloques_ok(cuerpo):
     salida = []
     for b in cuerpo if isinstance(cuerpo, list) else []:
@@ -106,6 +117,7 @@ class Fabrica:
         self.vencimientos_info, self.vencimientos_cambio = [], False
         self.observaciones, self.alertas, self.datos_obs = [], [], []
         self.convenios = self.cargar_convenios()
+        self._ult_escala = None
 
     # ---------- memoria ----------
     def notas_recientes(self):
@@ -247,6 +259,22 @@ class Fabrica:
             esc = {"periodo": str(esc.get("periodo") or "")[:80], "vigencia": str(esc.get("vigencia") or "")[:120],
                    "tabla": [[str(x)[:80] for x in f][:10] for f in tabla[:80] if isinstance(f, list)], "aclaraciones": str(esc.get("aclaraciones") or "")[:800],
                    "doc": doc}
+        vieja = c.get("escala") or {}
+        if esc and not _tabla_ok(esc.get("tabla")):
+            util.avisar(f"Escala {c['nombre']}: el documento no trajo la tabla", f"{doc or ''} — se mantiene la escala anterior")
+            esc = None
+            self._ult_escala = "sin_tabla"
+        elif esc:
+            nuevo_a, viejo_a, hoy_ = _anio_periodo(esc.get("periodo")), _anio_periodo(vieja.get("periodo")), util.ahora().date()
+            minimo = hoy_.year - (1 if hoy_.month <= 3 else 0)
+            if (nuevo_a and nuevo_a < minimo) or (nuevo_a and viejo_a and _tabla_ok(vieja.get("tabla")) and nuevo_a < viejo_a):
+                util.avisar(f"Escala {c['nombre']}: el documento es viejo ({esc.get('periodo')})", f"{doc or ''} — no se usa; se mantiene la escala anterior")
+                esc = None
+                self._ult_escala = "vieja"
+            else:
+                self._ult_escala = "ok"
+        if not esc and not _tabla_ok(vieja.get("tabla")) and not _bloques_ok(nuevo.get("novedades")) and doc:
+            return  # nada útil para guardar: que la próxima vuelta pruebe otra fuente
         datos = {"escala": esc or c.get("escala"), "novedades": _bloques_ok(nuevo.get("novedades")), "calculo": _bloques_ok(nuevo.get("calculo")) or c.get("calculo") or [],
                  "nr": _bloques_ok(nuevo.get("nr")) or c.get("nr") or [], "recibo": _bloques_ok(nuevo.get("recibo")) or c.get("recibo") or [],
                  "preguntas": [{"p": str(q.get("p"))[:200], "r": str(q.get("r"))[:500]} for q in (nuevo.get("preguntas") or []) if isinstance(q, dict) and q.get("p") and q.get("r")][:6],
@@ -277,7 +305,12 @@ class Fabrica:
             c = json.load(open(ruta, encoding="utf-8"))
             if c.get("oficial") or c.get("buscar_portal"):
                 locales[c["slug"]] = c
-        orden = sorted((s for s in locales if s in self.convenios), key=lambda s: str(self.convenios[s].get("actualizado") or ""))
+        import random
+        # primero las que no tienen tabla (en orden al azar, para que no se trabe siempre en las mismas), después la más vieja
+        orden = sorted((s for s in locales if s in self.convenios),
+                       key=lambda s: (_tabla_ok((self.convenios[s].get("escala") or {}).get("tabla")),
+                                      "" if not _tabla_ok((self.convenios[s].get("escala") or {}).get("tabla")) else str(self.convenios[s].get("actualizado") or ""),
+                                      random.random()))
         hechos = 0
         for slug in orden:
             if hechos >= int(self.cfg.get("escalas_por_vuelta", 3)):
@@ -301,7 +334,8 @@ class Fabrica:
                 if util.ahora().hour == 9:  # una vez por día alcanza (antes salía en cada vuelta)
                     util.avisar(f"Escala de {c['nombre']}", "no encontré documento oficial ni notas de escala en los portales")
                 continue
-            ya = {(c.get("escala") or {}).get("doc"), ((c.get("propuesta") or {}).get("escala") or {}).get("doc")}
+            ya = {(c.get("escala") or {}).get("doc") if _tabla_ok((c.get("escala") or {}).get("tabla")) else None,
+                  ((c.get("propuesta") or {}).get("escala") or {}).get("doc")} - {None}
             if url in ya:
                 util.log(f"{c['nombre']}: sin escala nueva ({url})")
                 continue
@@ -316,7 +350,15 @@ class Fabrica:
             else:
                 adjunto, textos = None, [f"--- FUENTE OFICIAL (página del sindicato): {url}\n{contenido}"]
             try:
+                self._ult_escala = None
                 self.actualizar_convenio({"convenio": slug, "tema": c["nombre"]}, None, textos, adjunto, url)
+                if self._ult_escala in ("sin_tabla", "vieja") and tipo != "portal" and loc.get("buscar_portal"):
+                    # el documento oficial no sirvió: se prueba con las notas de escala de los blogs de confianza
+                    notas = [n for n in fuentes.buscar_portales(loc["buscar_portal"], 2) if "escala" in _slug(n["titulo"])]
+                    if notas:
+                        util.log(f"{c['nombre']}: pruebo con las notas de escala de los portales")
+                        textos = ["\n\n".join(f"--- FUENTE: {n['fuente']} (portal)\nTítulo: {n['titulo']}\n{n['texto']}" for n in notas[:3])]
+                        self.actualizar_convenio({"convenio": slug, "tema": c["nombre"]}, None, textos, None, notas[0]["url"])
             except gemini.SinTiempo:
                 raise
             except Exception as e:  # noqa
