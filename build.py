@@ -309,6 +309,29 @@ def tabla_html(t):
     return f'<div class="tabla"><table><thead><tr>{cab}</tr></thead><tbody>{filas}</tbody></table></div>'
 
 
+# Cómo se busca cada convenio en Google: la sigla primero si es la forma habitual («escala UOCRA», «escala UOM»)
+NOMBRE_BUSQUEDA = {"uocra": "UOCRA", "uom": "UOM", "sanidad": "Sanidad (FATSA)", "gastronomicos": "Gastronómicos UTHGRA",
+                   "encargados-edificios": "Encargados de edificio (SUTERH)", "rurales": "UATRE (rurales)", "comercio": "Empleados de Comercio"}
+CONV_IDX = {}
+
+
+def nombre_busqueda(c):
+    return NOMBRE_BUSQUEDA.get(c["slug"]) or c["nombre"]
+
+
+def caja_escala(n):
+    """En la guía de cómo liquidar un convenio, el acceso a la escala vigente (lo que más se busca)."""
+    sl = str(n.get("slug", ""))
+    if not sl.startswith("guia-liquidar-sueldo-"):
+        return ""
+    c = CONV_IDX.get(sl[len("guia-liquidar-sueldo-"):])
+    if not c:
+        return ""
+    per = (c.get("escala") or {}).get("periodo") or ""
+    return (f'<p class="ef-pro">📋 <b>Escala vigente:</b> <a href="escala-{c["slug"]}.html">Escala salarial {e(nombre_busqueda(c))} {e(per)} ({e(c.get("cct", ""))}): '
+            f'valores por categoría y sumas no remunerativas →</a></p>')
+
+
 def pagina_convenio(c, notas, aportes=None):
     esc = c.get("escala") or {}
     periodo = esc.get("periodo") or ""
@@ -327,7 +350,7 @@ def pagina_convenio(c, notas, aportes=None):
         f'<li><a href="nota-{n["slug"]}.html">{e(n["titulo"])}</a> <small>{fecha_larga(n["fecha"])}</small></li>' for n in relacionadas_c) + "</ul>") if relacionadas_c else ""
     falsa_nota = {"preguntas": c.get("preguntas") or []}
     slug = "convenio-" + c["slug"]
-    titulo_vis = f"Escala salarial {c['nombre']}" + (f" {periodo}" if periodo else "")
+    titulo_vis = f"Escala salarial {c['nombre']}" + (f" {periodo}" if periodo else "") + (f" ({c['cct']})" if c.get("cct", "").startswith("CCT") else "")
     contenido = f"""<div class="grilla"><article class="nota convenio" data-nota="{slug}" data-convenio="{e(c['slug'])}" data-actualizado="{e(str(c.get('actualizado') or ''))}">
 <div class="nota-contenido">
 <p class="miga"><a href="sueldos.html">Sueldos</a> / <a href="convenios.html">Convenios</a></p>
@@ -359,7 +382,9 @@ def pagina_convenio(c, notas, aportes=None):
 </section>
 </article>{lateral(notas)}</div>"""
     nom_c = re.sub(r"\s*\([^)]*\)\s*$", "", c["nombre"])
-    seo_t = _titulo_seo(f"Escala {c['nombre']} {periodo} ({c['cct']}): básicos, NR y cómo liquidar", f"Escala {c['nombre']} {periodo} ({c['cct']}): básicos y NR",
+    sig, cct_c = nombre_busqueda(c), re.sub(r"\s*\(.*\)$", "", c.get("cct") or "")
+    seo_t = _titulo_seo(f"Escala {sig} {periodo} ({cct_c}): básicos y sumas NR", f"Escala {sig} {periodo} ({cct_c}): básicos y NR",
+                        f"Escala {sig} {periodo} ({cct_c})", f"Escala {sig} {periodo}: básicos y NR ({cct_c})", f"Escala salarial {sig} ({cct_c}): básicos y NR", f"Escala {c['nombre']} {periodo} ({c['cct']}): básicos, NR y cómo liquidar", f"Escala {c['nombre']} {periodo} ({c['cct']}): básicos y NR",
                         f"Escala {c['nombre']} {periodo}: básicos y NR", f"Escala {c['nombre']} ({c['cct']})", f"Escala salarial {nom_c} {periodo}", f"Escala salarial {nom_c}")
     desc = f"Escala salarial vigente de {c['nombre']} ({c['cct']}): valores por categoría, sumas no remunerativas, aportes y cómo se liquida."
     ld = {"@context": "https://schema.org", "@type": "Article", "headline": titulo_vis[:110], "description": desc,
@@ -2254,7 +2279,7 @@ def pagina_nota(n, notas, aportes=None):
     extra_calc = bloque_aguinaldo(n, notas) + ('<div class="dato-vigente"><b>Calculalo:</b> <a href="aguinaldo.html">calculadora de aguinaldo</a> · '
                   '<a href="tope-aportes-base-maxima.html">tope de aportes vigente</a> · <a href="retencion-ganancias.html">retención de Ganancias</a>'
                   + ('' if n.get("slug") == "guia-sac-aguinaldo" or not GUIA_SAC[0] else ' · <a href="nota-guia-sac-aguinaldo.html">guía completa del aguinaldo</a>') + '</div>'
-                  if "aguinaldo" in (n.get("titulo", "") + " " + n.get("slug", "")).lower() else "") + caja_guia(n, notas) + caja_facil(n)
+                  if "aguinaldo" in (n.get("titulo", "") + " " + n.get("slug", "")).lower() else "") + caja_guia(n, notas) + caja_escala(n) + caja_facil(n)
     cuerpo = extra_calc + enlazar("".join(
         (f'<p class="dato-vigente">La tabla completa y actualizada está en <a href="{t_dato["slug"]}.html">{e(t_dato["titulo"])}</a>.</p>' if t_dato
          else "") if tabla_dudosa(b) else bloque(b) for b in n["cuerpo"]), f"nota-{n['slug']}.html")
@@ -2781,6 +2806,8 @@ def main():
         }) + ";")
     escribir = lambda nombre, txt: open(os.path.join(SALIDA, nombre), "w", encoding="utf-8").write(txt)
     convenios = cargar_convenios()
+    CONV_IDX.clear()
+    CONV_IDX.update({c["slug"]: c for c in convenios})
     ENLACES[:] = _destinos_enlaces(convenios)
     todas = notas
     guias = [n for n in todas if es_guia(n)]
