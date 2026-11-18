@@ -329,7 +329,13 @@
   "titulo": "Cómo liquidar un sueldo de UOM (metalúrgicos) paso a paso",
   "seccion": "sueldos",
   "buscar": "liquidacion sueldo uom metalurgicos",
-  "oficial": []
+  "oficial": [],
+  "rehacer": "2026-11-18",
+  "claves": [
+   "UOM",
+   "metalúrgic",
+   "260/75"
+  ]
  },
  {
   "slug": "liquidar-sueldo-sanidad",
@@ -344,5 +350,41 @@
   "seccion": "sueldos",
   "buscar": "liquidacion sueldo gastronomicos uthgra",
   "oficial": []
+ },
+ {
+  "slug": "liquidar-sueldo-smata-faatra",
+  "titulo": "Cómo liquidar un sueldo de talleres mecánicos (SMATA FAATRA, CCT 27/88) paso a paso",
+  "seccion": "sueldos",
+  "buscar": "liquidacion sueldo smata faatra 27/88",
+  "oficial": [],
+  "claves": [
+   "FAATRA",
+   "27/88",
+   "talleres"
+  ]
+ },
+ {
+  "slug": "liquidar-sueldo-pasteleros-heladerias",
+  "titulo": "Cómo liquidar un sueldo de heladería (Pasteleros, CCT 273/96) paso a paso",
+  "seccion": "sueldos",
+  "buscar": "liquidacion sueldo heladeros pasteleros 273/96",
+  "oficial": [],
+  "claves": [
+   "heladería",
+   "heladeros",
+   "273/96",
+   "pasteleros"
+  ]
+ },
+ {
+  "slug": "liquidar-sueldo-uecara",
+  "titulo": "Cómo liquidar un sueldo de UECARA (CCT 660/13) paso a paso",
+  "seccion": "sueldos",
+  "buscar": "liquidacion sueldo uecara 660/13",
+  "oficial": [],
+  "claves": [
+   "UECARA",
+   "660/13"
+  ]
  }
 ]
