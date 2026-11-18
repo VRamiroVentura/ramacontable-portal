@@ -4,7 +4,212 @@
  "cct": "CCT 130/75",
  "partes": "FAECYS y cámaras CAC, CAME y UDECA",
  "descripcion": "Comprende a los trabajadores de comercio de todo el país: vendedores, administrativos, cajeros, maestranza, auxiliares y personal especializado.",
- "escala": null,
+ "escala": {
+  "periodo": "Octubre a diciembre 2026",
+  "vigencia": "Desde el 1 de octubre de 2026",
+  "tabla": [
+   [
+    "Categoría",
+    "Básico oct 2026",
+    "Básico nov 2026",
+    "Básico dic 2026",
+    "No rem. oct 2026",
+    "No rem. nov 2026",
+    "No rem. dic 2026"
+   ],
+   [
+    "Maestranza A",
+    "1.208.674,00",
+    "1.233.448,08",
+    "1.278.222,17",
+    "145.000",
+    "145.000",
+    "100.000"
+   ],
+   [
+    "Maestranza B",
+    "1.212.974,48",
+    "1.237.828,76",
+    "1.282.683,04",
+    "145.000",
+    "145.000",
+    "100.000"
+   ],
+   [
+    "Maestranza C",
+    "1.229.429,60",
+    "1.254.590,70",
+    "1.299.751,80",
+    "145.000",
+    "145.000",
+    "100.000"
+   ],
+   [
+    "Auxiliar A",
+    "1.230.255,29",
+    "1.255.431,78",
+    "1.300.608,27",
+    "145.000",
+    "145.000",
+    "100.000"
+   ],
+   [
+    "Auxiliar B",
+    "1.242.488,69",
+    "1.267.893,28",
+    "1.313.297,87",
+    "145.000",
+    "145.000",
+    "100.000"
+   ],
+   [
+    "Auxiliar C",
+    "1.281.001,70",
+    "1.307.124,40",
+    "1.353.247,10",
+    "145.000",
+    "145.000",
+    "100.000"
+   ],
+   [
+    "Auxiliar especializado A",
+    "1.243.197,20",
+    "1.268.615,00",
+    "1.314.032,80",
+    "145.000",
+    "145.000",
+    "100.000"
+   ],
+   [
+    "Auxiliar especializado B",
+    "1.264.536,29",
+    "1.290.351,98",
+    "1.336.167,67",
+    "145.000",
+    "145.000",
+    "100.000"
+   ],
+   [
+    "Administrativo A",
+    "1.225.929,74",
+    "1.251.025,58",
+    "1.296.121,42",
+    "145.000",
+    "145.000",
+    "100.000"
+   ],
+   [
+    "Administrativo B",
+    "1.231.998,09",
+    "1.257.207,08",
+    "1.302.416,07",
+    "145.000",
+    "145.000",
+    "100.000"
+   ],
+   [
+    "Administrativo C",
+    "1.246.076,49",
+    "1.271.547,98",
+    "1.317.019,47",
+    "145.000",
+    "145.000",
+    "100.000"
+   ],
+   [
+    "Administrativo D",
+    "1.256.309,80",
+    "1.281.972,10",
+    "1.327.634,40",
+    "145.000",
+    "145.000",
+    "100.000"
+   ],
+   [
+    "Administrativo E",
+    "1.276.968,60",
+    "1.303.016,10",
+    "1.349.063,60",
+    "145.000",
+    "145.000",
+    "100.000"
+   ],
+   [
+    "Administrativo F",
+    "1.303.845,33",
+    "1.330.393,96",
+    "1.376.942,59",
+    "145.000",
+    "145.000",
+    "100.000"
+   ],
+   [
+    "Cajero A",
+    "1.230.255,29",
+    "1.255.431,78",
+    "1.300.608,27",
+    "145.000",
+    "145.000",
+    "100.000"
+   ],
+   [
+    "Cajero B",
+    "1.237.776,63",
+    "1.263.093,36",
+    "1.308.410,09",
+    "145.000",
+    "145.000",
+    "100.000"
+   ],
+   [
+    "Cajero C",
+    "1.258.607,23",
+    "1.284.312,36",
+    "1.330.017,49",
+    "145.000",
+    "145.000",
+    "100.000"
+   ],
+   [
+    "Vendedor A",
+    "1.230.255,29",
+    "1.255.431,78",
+    "1.300.608,27",
+    "145.000",
+    "145.000",
+    "100.000"
+   ],
+   [
+    "Vendedor B",
+    "1.266.159,86",
+    "1.292.005,82",
+    "1.337.851,78",
+    "145.000",
+    "145.000",
+    "100.000"
+   ],
+   [
+    "Vendedor C",
+    "1.276.989,28",
+    "1.303.037,16",
+    "1.349.085,04",
+    "145.000",
+    "145.000",
+    "100.000"
+   ],
+   [
+    "Vendedor D",
+    "123,48",
+    "125,99",
+    "130,51",
+    "145.000",
+    "145.000",
+    "100.000"
+   ]
+  ],
+  "aclaraciones": "Básico mensual por categoría. Las columnas «No rem.» suman las sumas no remunerativas fijas de cada mes: $ 40.000 y $ 60.000 (acuerdo 06/25) de octubre a diciembre, $ 20.000 (acuerdo 04/26) en octubre y noviembre, y una suma extraordinaria por única vez de $ 50.000 en dos cuotas de $ 25.000 (octubre y noviembre 2026). Sobre las sumas no remunerativas también se calculan antigüedad, presentismo (8,33%), aguinaldo, vacaciones, domingos, feriados y horas extras. Adicional cajeros (art. 30) en noviembre: $ 153.255,91 (A y C) y $ 603.475,10 (B); armado de vidriera (art. 23): $ 48.928,66.",
+  "doc": "https://www.seclaplata.org.ar/gremiales/escalasalarial"
+ },
  "novedades": [],
  "calculo": [],
  "nr": [],
@@ -19,5 +224,7 @@
   "acuerdo",
   "salari"
  ],
- "buscar_portal": "empleados de comercio escala salarial"
+ "buscar_portal": "empleados de comercio escala salarial",
+ "actualizado": "2026-11-18",
+ "fuente": "Escala salarial octubre-diciembre 2026 del Sindicato de Empleados de Comercio de La Plata (CCT 130/75)."
 }

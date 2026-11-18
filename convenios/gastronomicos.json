@@ -195,5 +195,13 @@
   }
  ],
  "buscar_portal": "gastronomicos uthgra escala salarial",
- "actualizado": "2026-07-28"
+ "actualizado": "2026-07-28",
+ "oficial": [
+  "https://www.uthgra.org.ar/institucional/accion-gremial/escalas/"
+ ],
+ "buscar_doc": [
+  "acuerdo",
+  "escala",
+  "salari"
+ ]
 }

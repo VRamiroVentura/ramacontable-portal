@@ -12,7 +12,13 @@
   const r2 = n => Math.round(n * 100) / 100;
   const fmt = n => '$ ' + n.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-  const col = (cab, prueba) => cab.findIndex(h => prueba(norm(h)));
+  // Si hay varias columnas que sirven (una por mes), se prefiere la del mes actual
+  const MES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'][new Date().getMonth()];
+  const col = (cab, prueba) => {
+    const ok = cab.map((h, i) => prueba(norm(h)) ? i : -1).filter(i => i >= 0);
+    return ok.find(i => norm(cab[i]).includes(MES)) ?? (ok.length ? ok[0] : -1);
+  };
+  const tablaOk = t => Array.isArray(t) && t.slice(1).filter(f => Array.isArray(f) && f.slice(1).some(x => /\d/.test(String(x)))).length >= 2;
 
   // ---------- cálculos puros (se exportan para probarlos) ----------
   function comercio({ basico, nr = 0, horas = 48, anios = 0, presentismo = true, nrAdicionales = false, osNr = true,
@@ -149,7 +155,7 @@
     fetch(`${cfg.url}/rest/v1/convenios?select=escala&slug=eq.${encodeURIComponent(E.slug)}`, { headers: { apikey: cfg.key, Authorization: 'Bearer ' + cfg.key } })
       .then(r => r.ok ? r.json() : []).then(d => {
         const nueva = d && d[0] && d[0].escala;
-        if (nueva && nueva.tabla && JSON.stringify(nueva.tabla) !== JSON.stringify(E.tabla)) { Object.assign(E, nueva); pintarCategorias(); }
+        if (nueva && tablaOk(nueva.tabla) && JSON.stringify(nueva.tabla) !== JSON.stringify(E.tabla)) { Object.assign(E, nueva); pintarCategorias(); }
       }).catch(() => {});
   }
 })();

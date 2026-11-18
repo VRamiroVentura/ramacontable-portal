@@ -11,5 +11,13 @@
  "recibo": [],
  "preguntas": [],
  "historial": [],
- "buscar_portal": "uecara 660/13 escala salarial"
+ "buscar_portal": "uecara 660/13 escala salarial",
+ "oficial": [
+  "https://uecara.org.ar/salarios/"
+ ],
+ "buscar_doc": [
+  "paritaria",
+  "acuerdo",
+  "escala"
+ ]
 }

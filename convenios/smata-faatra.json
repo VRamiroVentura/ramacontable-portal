@@ -4,7 +4,109 @@
  "cct": "CCT 27/88",
  "partes": "SMATA y FAATRA",
  "descripcion": "Comprende al personal de talleres de reparación de automotores, estaciones de servicio vinculadas y actividades afines representadas por FAATRA.",
- "escala": null,
+ "escala": {
+  "periodo": "Octubre a diciembre 2026",
+  "vigencia": "Desde el 1 de octubre de 2026",
+  "tabla": [
+   [
+    "Categoría",
+    "Básico oct, nov y dic 2026",
+    "No remunerativo mensual (oct a dic)"
+   ],
+   [
+    "Oficial inspector (por hora)",
+    "8.891,37",
+    "535,26"
+   ],
+   [
+    "Oficial de primera (por hora)",
+    "8.333,77",
+    "501,69"
+   ],
+   [
+    "Oficial (por hora)",
+    "7.996,62",
+    "481,40"
+   ],
+   [
+    "Medio oficial (por hora)",
+    "7.629,20",
+    "459,28"
+   ],
+   [
+    "Peón (por hora)",
+    "7.153,25",
+    "430,63"
+   ],
+   [
+    "Aprendiz ayudante 16 y 17 años (por hora)",
+    "6.029,88",
+    "363,00"
+   ],
+   [
+    "Aprendiz ayudante 18 y 19 años (por hora)",
+    "6.237,36",
+    "375,49"
+   ],
+   [
+    "Engrasadores, operarios ayudantes, lavadores, limpiadores y expendedores de combustible (por hora)",
+    "7.529,79",
+    "453,29"
+   ],
+   [
+    "Auxiliar de primera (mensual)",
+    "1.666.057,58",
+    "100.296,67"
+   ],
+   [
+    "Auxiliar de segunda (mensual)",
+    "1.527.282,83",
+    "91.942,43"
+   ],
+   [
+    "Auxiliar de tercera (mensual)",
+    "1.443.032,24",
+    "86.870,54"
+   ],
+   [
+    "Auxiliar de cuarta (mensual)",
+    "1.304.582,50",
+    "78.535,87"
+   ],
+   [
+    "Choferes (mensual)",
+    "1.457.583,85",
+    "87.746,55"
+   ],
+   [
+    "Maestranza (mensual)",
+    "1.309.424,10",
+    "78.827,33"
+   ],
+   [
+    "Menores de hasta 16 años (mensual)",
+    "1.119.177,58",
+    "67.374,49"
+   ],
+   [
+    "Menores de 17 hasta 18 años (mensual)",
+    "1.155.923,50",
+    "69.586,59"
+   ],
+   [
+    "Personal a sueldo, comisión y/o bonificación (mensual)",
+    "1.304.582,50",
+    "78.535,87"
+   ],
+   [
+    "IMG - Ingreso Mínimo Garantizado (mensual)",
+    "1.121.021,29",
+    "67.485,48"
+   ]
+  ],
+  "aclaraciones": "Personal jornalizado: valores por hora. Personal mensualizado: valores por mes. La suma no remunerativa se paga de octubre a diciembre 2026, se tiene en cuenta para horas extras y adicionales, paga aportes y contribuciones de obra social y al SMATA, y se incorpora al básico el 1 de enero de 2027. Las empresas que desde enero 2026 dieron sumas a cuenta de futuros aumentos pueden absorberlas hasta su concurrencia. Asignación vacacional (art. 26): 8,33 horas por mes de jornal de la categoría.",
+  "doc": "https://www.smata.com.ar/convenios-y-escalas/2026/10/20/faatra-escala-salarial-octubre-noviembre-y-diciembre-2026/"
+ },
  "novedades": [],
  "calculo": [],
  "nr": [],
@@ -20,5 +122,7 @@
   "27-88",
   "escala"
  ],
- "buscar_portal": "talleres mecánicos  escala salarial"
+ "buscar_portal": "talleres mecánicos  escala salarial",
+ "actualizado": "2026-11-18",
+ "fuente": "Acta acuerdo SMATA-FAATRA del 20/10/2026 y Anexo de escalas, CCT 27/88."
 }

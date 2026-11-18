@@ -279,6 +279,12 @@ def cargar_notas():
     return notas
 
 
+def _escala_ok(esc):
+    """Una escala sirve si su tabla tiene al menos dos filas con importes."""
+    t = (esc or {}).get("tabla") if isinstance(esc, dict) else None
+    return bool(t) and sum(1 for f in t[1:] if isinstance(f, list) and any(re.search(r"\d", str(x)) for x in f[1:])) >= 2
+
+
 def cargar_convenios():
     locales = {}
     for ruta in glob.glob(os.path.join(RAIZ, "convenios", "*.json")):
@@ -292,9 +298,9 @@ def cargar_convenios():
             req = urllib.request.Request(url + "/rest/v1/convenios?select=*", headers={"apikey": key, "Authorization": "Bearer " + key})
             for c in json.load(urllib.request.urlopen(req, timeout=30)):
                 loc = locales.get(c["slug"]) or {}
-                if not c.get("escala") and loc.get("escala"):  # escala cargada a mano en el repo mientras la fábrica no tenga una
+                if not _escala_ok(c.get("escala")) and _escala_ok(loc.get("escala")):  # escala cargada en el repo mientras la de la fábrica esté vacía
                     c = dict(c, escala=loc["escala"], historial=c.get("historial") or loc.get("historial") or [],
-                             actualizado=c.get("actualizado") or loc.get("actualizado"))
+                             actualizado=loc.get("actualizado") or c.get("actualizado"), fuente=loc.get("fuente") or c.get("fuente"))
                 locales[c["slug"]] = c
         except Exception as ex:
             print("Aviso: no se pudieron leer los convenios:", ex)
