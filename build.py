@@ -770,10 +770,10 @@ def tarjeta(n, grande=False):
 def lateral(notas):
     nicho = [c for j in JURIS if not j.get("portada", True) for c in j.get("venc_claves") or [] if c != "convenio multilateral"]
     prox = [x for x in proximos_vencimientos() if not any(re.search(r"\b" + re.escape(_N(c)) + r"\b", _N(x.get("concepto", ""))) for c in nicho)][:5]
-    caja_venc = ('<section class="caja"><h3>Vencimientos que se vienen</h3><ul class="venc">' + "".join(
+    caja_venc = ('<section class="caja"><h2 class="caja-t">Vencimientos que se vienen</h2><ul class="venc">' + "".join(
         f'<li><span>{e(x["concepto"])}{(" · " + e(x["detalle"])) if x.get("detalle") else ""}</span><b>{fecha_corta(x["fecha"])}</b></li>' for x in prox)
         + '</ul><a class="mas" href="herramientas.html">Ver todos</a></section>') if prox else \
-        '<section class="caja"><h3>Vencimientos</h3><p class="ayuda">Agenda del mes</p><a class="mas" href="herramientas.html">Ver vencimientos</a></section>'
+        '<section class="caja"><h2 class="caja-t">Vencimientos</h2><p class="ayuda">Agenda del mes</p><a class="mas" href="herramientas.html">Ver vencimientos</a></section>'
     return _lateral(notas, caja_venc)
 
 
@@ -800,11 +800,11 @@ def _lateral(notas, caja_venc):
         f'<li><a href="{t["slug"]}.html">{e(t["titulo"])}</a><b>{e(_corto(ajustar_tramo((RESP.get(t["slug"]) or {}).get("datos") or {}).get("valor")))}</b></li>'
         for t in TEMAS_RESP[:6])
     return f"""<aside class="lateral">
-<section class="caja"><h3>Datos del día</h3><ul class="datos-lat">{datos}</ul><a class="mas" href="datos-al-dia.html">Ver todos</a></section>
+<section class="caja"><h2 class="caja-t">Datos del día</h2><ul class="datos-lat">{datos}</ul><a class="mas" href="datos-al-dia.html">Ver todos</a></section>
 <a class="caja caja-calc" href="aguinaldo.html"><b>Calculadora de aguinaldo</b><span>Diciembre 2026 · paso a paso, con descuentos y neto</span></a>
 <a class="caja caja-calc" href="sueldo-comercio.html"><b>Calculadora de sueldo de Comercio</b><span>Con escala vigente, antigüedad, presentismo y neto</span></a>
 {caja_venc}
-<section class="caja" id="destacados" hidden><h3>Destacados de la comunidad</h3><ol id="ranking"></ol></section>
+<section class="caja" id="destacados" hidden><h2 class="caja-t">Destacados de la comunidad</h2><ol id="ranking"></ol></section>
 </aside>"""
 
 
@@ -1853,8 +1853,10 @@ def pagina_obligacion(slug, nombre, claves, seccion, notas):
 <p><a class="btn sec" href="agenda-vencimientos.html">Armar mi agenda por CUIT y bajarla al calendario →</a></p>
 <p class="aviso">Información de carácter general. Verificá siempre en el calendario oficial de ARCA o del organismo.</p>
 </div>{lateral(notas)}</div>"""
-    tit_pag = (f"Fecha de pago de aportes {mes_txt}: vencimiento F.931 por CUIT" if slug == "vencimiento-931"
-               else f"Vencimiento {nombre} {mes_txt} por terminación de CUIT")
+    tit_pag = (f"Vencimiento F.931 {mes_txt}: pago de aportes por CUIT" if slug == "vencimiento-931"
+               else f"Vencimiento {re.sub(r' [(][^)]*[)]$', '', nombre)} {mes_txt} por terminación de CUIT")
+    if len(tit_pag) > 62:
+        tit_pag = tit_pag.replace(" por terminación de CUIT", " por CUIT")
     desc = (f"Fecha de pago de aportes y contribuciones de {mes_txt} (período {ant}): vencimientos del F.931 según la terminación de CUIT del empleador."
             if slug == "vencimiento-931" else f"Fechas de vencimiento de {nombre} de {mes_txt} según la terminación de CUIT, confirmadas con varias fuentes.")
     return pagina(f"{tit_pag} | Ramacontable", cuerpo, "datos-al-dia", desc,
@@ -2899,7 +2901,7 @@ def main():
                  "Ramacontable es una comunidad de contadores públicos que colaboran para estar al día con las novedades, y ayudar a colegas, estudiantes y emprendedores.",
                  "como-trabajamos.html"))
     with open(os.path.join(RAIZ, "paginas", "aguinaldo.html"), encoding="utf-8") as f:
-        escribir("aguinaldo.html", pagina("Calculadora de aguinaldo diciembre 2026 (SAC): cálculo paso a paso | Ramacontable", f.read(), "",
+        escribir("aguinaldo.html", pagina("Calculadora de aguinaldo diciembre 2026 (SAC) paso a paso | Ramacontable", f.read(), "",
                  "Calculá el aguinaldo de diciembre 2026: mensualizados y jornalizados, proporcional por días, descuentos y neto, con el cálculo paso a paso.",
                  "aguinaldo.html", herramienta_ld("Calculadora de aguinaldo (SAC)", "Calculá el aguinaldo con el cálculo paso a paso, descuentos y neto.", "aguinaldo.html"),
                  [("Calculadoras", "calculadoras.html"), ("Aguinaldo", "aguinaldo.html")]))

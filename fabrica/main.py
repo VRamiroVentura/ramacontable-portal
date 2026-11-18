@@ -310,6 +310,23 @@ class Fabrica:
             else:
                 self.db.update("convenios", {"slug": f"eq.{c['slug']}"}, {"propuesta": dict(datos, historial=hist), "motivo_propuesta": motivo})
 
+    @staticmethod
+    def _notas_escala(loc, c):
+        """Notas de escala de los blogs (Ignacio Online, Contadores en Red) probando varias búsquedas, de la más precisa a la más amplia."""
+        sig = re.sub(r"[^a-z0-9 ]", " ", _slug(c.get("nombre", "")).replace("-", " ")).split()
+        consultas = [loc.get("buscar_portal") or ""] + [f"escala {c['slug'].replace('-', ' ')}", f"escala salarial {' '.join(sig[:3])}",
+                                                         f"paritarias {c['slug'].replace('-', ' ')}"]
+        vistas = set()
+        for q in consultas:
+            q = " ".join(q.split())
+            if not q or q in vistas:
+                continue
+            vistas.add(q)
+            notas = [n for n in fuentes.buscar_portales(q, 3) if "escala" in _slug(n["titulo"]) or "paritaria" in _slug(n["titulo"])]
+            if notas:
+                return notas
+        return []
+
     def revisar_escalas_oficiales(self):
         """Lee la página o el PDF oficial de cada sindicato y actualiza la escala si hay un documento nuevo."""
         locales = {}
@@ -338,7 +355,7 @@ class Fabrica:
                     util.avisar(f"No pude leer la escala oficial de {c['nombre']}", str(e))
             if not url and loc.get("buscar_portal"):
                 # sin fuente oficial (o no se pudo leer): las notas de escalas de Ignacio Online y Contadores en Red
-                notas = [n for n in fuentes.buscar_portales(loc["buscar_portal"], 2) if "escala" in _slug(n["titulo"])]
+                notas = self._notas_escala(loc, c)
                 if notas:
                     url, tipo = notas[0]["url"], "portal"
                     contenido = "\n\n".join(f"--- FUENTE: {n['fuente']} (portal)\nTítulo: {n['titulo']}\n{n['texto']}" for n in notas[:3])
@@ -366,7 +383,7 @@ class Fabrica:
                 self.actualizar_convenio({"convenio": slug, "tema": c["nombre"]}, None, textos, adjunto, url)
                 if self._ult_escala in ("sin_tabla", "vieja") and tipo != "portal" and loc.get("buscar_portal"):
                     # el documento oficial no sirvió: se prueba con las notas de escala de los blogs de confianza
-                    notas = [n for n in fuentes.buscar_portales(loc["buscar_portal"], 2) if "escala" in _slug(n["titulo"])]
+                    notas = self._notas_escala(loc, c)
                     if notas:
                         util.log(f"{c['nombre']}: pruebo con las notas de escala de los portales")
                         textos = ["\n\n".join(f"--- FUENTE: {n['fuente']} (portal)\nTítulo: {n['titulo']}\n{n['texto']}" for n in notas[:3])]

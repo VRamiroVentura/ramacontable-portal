@@ -317,7 +317,41 @@
   },
   "estructura": "estructurado: {\"categorias\": [{\"categoria\": \"texto\", \"importe\": numero}]}",
   "cuando": "Dos veces por año, junto con el Monotributo nacional (febrero y agosto)",
-  "titulo_corto": "Monotributo Unificado Córdoba"
+  "titulo_corto": "Monotributo Unificado Córdoba",
+  "guia": [
+   {
+    "h": "Cómo funciona el Monotributo Unificado en Córdoba"
+   },
+   {
+    "p": "Si sos monotributista con actividad en Córdoba, no presentás Ingresos Brutos por separado: pagás un importe fijo por mes que se suma a la cuota del Monotributo de ARCA y se paga junto con ella. La categoría es la misma que tenés en el Monotributo nacional."
+   },
+   {
+    "h": "Cómo saber cuánto pagás en total por mes"
+   },
+   {
+    "lista": [
+     "Buscá tu categoría del Monotributo (la misma letra de la A a la K).",
+     "Tomá la cuota del Monotributo nacional de esa categoría (impuesto integrado, jubilación y obra social).",
+     "Sumale el importe de Ingresos Brutos de Córdoba de la tabla de esta página: el total es lo que pagás por mes."
+    ]
+   },
+   {
+    "h": "Cuándo cambian los importes"
+   },
+   {
+    "p": "La Dirección General de Rentas de Córdoba actualiza los importes dos veces por año, con la misma actualización semestral del Monotributo (febrero y agosto). Los importes vigentes salen de la Resolución Normativa 36/2026, que sustituye el Anexo V de la Resolución Normativa 1/2023 y aplica la actualización del art. 52 de la Ley 24.977."
+   }
+  ],
+  "preguntas_fijas": [
+   {
+    "p": "¿El Monotributo Unificado de Córdoba se paga aparte?",
+    "r": "No: el importe de Ingresos Brutos de Córdoba se suma a la cuota del Monotributo de ARCA y se paga junto con ella."
+   },
+   {
+    "p": "¿Qué categoría tengo en el Monotributo Unificado de Córdoba?",
+    "r": "La misma que en el Monotributo nacional: el importe provincial depende de esa categoría."
+   }
+  ]
  },
  {
   "slug": "ingresos-brutos-santa-fe-regimen-simplificado",
@@ -474,7 +508,41 @@
   },
   "estructura": "estructurado: {\"categorias\": [{\"categoria\": \"texto\", \"importe\": numero}]}",
   "cuando": "Dos veces por año, junto con el Monotributo nacional (febrero y agosto)",
-  "titulo_corto": "Monotributo Unificado Mendoza"
+  "titulo_corto": "Monotributo Unificado Mendoza",
+  "guia": [
+   {
+    "h": "Cómo funciona el Monotributo Unificado en Mendoza"
+   },
+   {
+    "p": "Si sos monotributista con actividad en Mendoza, no presentás Ingresos Brutos por separado: pagás un importe fijo por mes que se suma a la cuota del Monotributo de ARCA y se paga junto con ella. La categoría es la misma que tenés en el Monotributo nacional."
+   },
+   {
+    "h": "Cómo saber cuánto pagás en total por mes"
+   },
+   {
+    "lista": [
+     "Buscá tu categoría del Monotributo (la misma letra de la A a la K).",
+     "Tomá la cuota del Monotributo nacional de esa categoría (impuesto integrado, jubilación y obra social).",
+     "Sumale el importe de Ingresos Brutos de Mendoza de la tabla de esta página: el total es lo que pagás por mes."
+    ]
+   },
+   {
+    "h": "Cuándo cambian los importes"
+   },
+   {
+    "p": "La Administración Tributaria Mendoza (ATM) actualiza los importes dos veces por año, con la misma actualización semestral del Monotributo (febrero y agosto). Desde agosto 2026 rige la Resolución General ATM 33/2026, que subió todas las categorías 16,85%, el mismo porcentaje que el Monotributo."
+   }
+  ],
+  "preguntas_fijas": [
+   {
+    "p": "¿El Monotributo Unificado de Mendoza se paga aparte?",
+    "r": "No: el importe de Ingresos Brutos de Mendoza se suma a la cuota del Monotributo de ARCA y se paga junto con ella."
+   },
+   {
+    "p": "¿Cuánto aumentó el Monotributo Unificado de Mendoza en agosto 2026?",
+    "r": "Un 16,85% en todas las categorías (Resolución General ATM 33/2026), el mismo porcentaje de la actualización del Monotributo."
+   }
+  ]
  },
  {
   "slug": "monotributo-unificado-entre-rios",
@@ -501,7 +569,47 @@
   },
   "estructura": "estructurado: {\"categorias\": [{\"categoria\": \"texto\", \"importe_servicios\": numero, \"importe_resto\": numero}]}",
   "cuando": "Dos veces por año, junto con el Monotributo nacional (febrero y agosto)",
-  "titulo_corto": "Monotributo Unificado Entre Ríos"
+  "titulo_corto": "Monotributo Unificado Entre Ríos",
+  "guia": [
+   {
+    "h": "Cómo funciona el Monotributo Unificado en Entre Ríos"
+   },
+   {
+    "p": "Si sos monotributista con actividad en Entre Ríos, no presentás Ingresos Brutos por separado: pagás un importe fijo por mes que se suma a la cuota del Monotributo de ARCA y se paga junto con ella. La categoría es la misma que tenés en el Monotributo nacional."
+   },
+   {
+    "h": "Cómo saber cuánto pagás en total por mes"
+   },
+   {
+    "lista": [
+     "Buscá tu categoría del Monotributo (la misma letra de la A a la K).",
+     "Tomá la cuota del Monotributo nacional de esa categoría (impuesto integrado, jubilación y obra social).",
+     "Sumale el importe de Ingresos Brutos de Entre Ríos de la tabla de esta página: el total es lo que pagás por mes."
+    ]
+   },
+   {
+    "h": "Cuándo cambian los importes"
+   },
+   {
+    "p": "ATER actualiza los importes dos veces por año, con la misma actualización semestral del Monotributo (febrero y agosto). El régimen es el Régimen Simplificado de Ingresos Brutos de la Ley 10.782, y ATER publica los valores actualizados."
+   },
+   {
+    "h": "Servicios, resto de actividades y trabajador promovido"
+   },
+   {
+    "p": "En Entre Ríos la tabla tiene dos columnas: una para locaciones y prestaciones de servicios y otra para el resto de actividades (por ejemplo, venta de cosas muebles). El trabajador promovido paga un importe propio, más bajo que la categoría A."
+   }
+  ],
+  "preguntas_fijas": [
+   {
+    "p": "¿El Monotributo Unificado de Entre Ríos se paga aparte?",
+    "r": "No: el importe del Régimen Simplificado de Ingresos Brutos se paga junto con la cuota del Monotributo nacional, con la misma categoría."
+   },
+   {
+    "p": "¿Por qué hay dos importes por categoría en Entre Ríos?",
+    "r": "Porque la tabla distingue locaciones y prestaciones de servicios del resto de actividades."
+   }
+  ]
  },
  {
   "slug": "regimen-simplificado-salta",
