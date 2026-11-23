@@ -64,5 +64,37 @@
    }
   },
   "velocidad": {}
+ },
+ {
+  "fecha": "2026-11-23",
+  "paginas": 330,
+  "indexables": 274,
+  "severidades": {
+   "🔴": 0,
+   "🟠": 2,
+   "🟡": 22
+  },
+  "conteo": {
+   "titulo-largo": 22,
+   "poco-texto-propio": 2
+  },
+  "unicidad": {
+   "Escalas por convenio": {
+    "paginas": 15,
+    "flacas": 0,
+    "promedio": 22
+   },
+   "Datos por mes": {
+    "paginas": 4,
+    "flacas": 0,
+    "promedio": 46
+   },
+   "Provincias y municipios": {
+    "paginas": 14,
+    "flacas": 2,
+    "promedio": 19
+   }
+  },
+  "velocidad": {}
  }
 ]
