@@ -42,6 +42,13 @@ jobs:
         with:
           path: sitio
       - id: deploy
+        continue-on-error: true
+        uses: actions/deploy-pages@v4
+      - name: Esperar y reintentar (GitHub a veces no encuentra el paquete recién subido)
+        if: steps.deploy.outcome == 'failure'
+        run: sleep 90
+      - id: deploy2
+        if: steps.deploy.outcome == 'failure'
         uses: actions/deploy-pages@v4
       - name: Avisar a Bing y buscadores (IndexNow)
         continue-on-error: true
