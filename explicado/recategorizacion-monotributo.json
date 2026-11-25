@@ -1,0 +1,109 @@
+{
+ "_ayuda": "Guía fácil de la recategorización del Monotributo. Fuentes (25/11/2026): ARCA «¿Cuándo y cómo me recategorizo?» (dos veces por año, hasta el 5 de febrero y el 5 de agosto; parámetros ingresos, alquileres, superficie y energía; si mantenés la categoría no hacés nada; recategorización simplificada que muestra la facturación; de oficio con notificación al Domicilio Fiscal Electrónico y apelación en 15 días), argentina.gob.ar «Recategorizarme en el Monotributo» (pasos, botón Recategorizarme, gratis, ~15 minutos; reconversión automática por movimientos bancarios) e iProfesional 24/06/2026. A propósito NO se dice: monto de la multa, desde qué mes rige la cuota nueva en la recategorización voluntaria, nivel de clave fiscal ni qué 12 meses exactos se miran en febrero (las fuentes oficiales no lo dicen). Montos de hoy con 'valores' (salen solos del dato). Búsquedas: «recategorización monotributo febrero 2027», «hasta cuándo hay que recategorizarse», «tengo que recategorizarme si no cambié de categoría», «cómo recategorizarme en el monotributo».",
+ "orden": 9,
+ "salto_anio": "08-06",
+ "ruta": "recategorizacion-monotributo",
+ "titulo": "Recategorización del Monotributo: ¿me toca? Explicado fácil",
+ "seo_titulo": "Recategorización del Monotributo {anio}: cuándo, cómo y si te toca",
+ "descripcion": "Cuándo hay que recategorizarse en el Monotributo, cómo saber si te toca cambiar de categoría, el paso a paso en ARCA y qué pasa si no lo hacés.",
+ "tarjeta": "Hasta el 5 de febrero y el 5 de agosto: cómo saber si cambiás de categoría y cómo hacerlo en ARCA.",
+ "para_quien": "Para monotributistas que no saben si tienen que hacer la recategorización, cuándo vence o cómo se hace. Sin palabras raras.",
+ "profesional": [
+  "monotributo-explicado-facil.html",
+  "Monotributo explicado fácil: la guía completa"
+ ],
+ "contacto": "recategorización del Monotributo",
+ "secciones": [
+  {
+   "id": "que-es",
+   "titulo": "¿Qué es la recategorización?",
+   "texto": [
+    "Dos veces por año tenés que revisar si seguís en la categoría correcta del Monotributo. Se mira lo que facturaste en los últimos 12 meses y, si pasaste a otra categoría (para arriba o para abajo), lo informás en ARCA.",
+    "Se hace hasta el 5 de febrero y hasta el 5 de agosto de cada año."
+   ],
+   "recategorizacion": true,
+   "clave": [
+    "Plazo: hasta el 5 de febrero y hasta el 5 de agosto.",
+    "Es gratis y se hace por internet.",
+    "Lo dice ARCA en su página de ayuda del Monotributo."
+   ]
+  },
+  {
+   "id": "me-toca",
+   "titulo": "¿Me toca recategorizarme?",
+   "texto": [
+    "Solo si cambió tu categoría. ARCA mira cuatro cosas: lo que facturaste en los últimos 12 meses, los alquileres que pagás por el local, la superficie donde trabajás y la energía eléctrica que consumiste.",
+    "Si con esos datos seguís en la misma categoría, no tenés que hacer nada: ARCA entiende que no hubo cambios.",
+    "Si te pasaste a otra categoría, sí tenés que hacer el trámite. Si bajaste, también conviene hacerlo: vas a pagar una cuota más baja."
+   ],
+   "valores": [
+    "tope_A",
+    "tope_K"
+   ],
+   "destino": [
+    "monotributo-categorias-vigentes.html",
+    "Ver los topes de todas las categorías"
+   ]
+  },
+  {
+   "id": "calculadora",
+   "titulo": "Fijate en qué categoría estás",
+   "texto": [
+    "Cargá lo que facturaste en los últimos 12 meses y te muestra en qué categoría estás con la tabla vigente."
+   ],
+   "calculadora": "monotributo-categoria"
+  },
+  {
+   "id": "ejemplo",
+   "titulo": "Un ejemplo",
+   "texto": [
+    "Sofía está en la categoría C. Revisa lo que facturó en los últimos 12 meses y ve que pasó el tope de la C, pero no el de la D. Tiene que recategorizarse a la D antes del 5 de febrero.",
+    "Lucas está en la B y en los últimos 12 meses facturó lo mismo de siempre, sin pasar el tope. No tiene que hacer nada: sigue en la B."
+   ]
+  },
+  {
+   "id": "como-se-hace",
+   "titulo": "¿Cómo se hace el trámite?",
+   "texto": [
+    "Entrás a ARCA con tu CUIT y tu clave fiscal, vas al Monotributo y tocás «Recategorizarme». El sistema te muestra lo que facturaste en el año; revisás los otros datos (alquileres, superficie y energía), elegís «Continuar recategorización» y confirmás la categoría.",
+    "Es gratis y lleva unos 15 minutos."
+   ],
+   "clave": [
+    "Tené a mano lo que facturaste en los últimos 12 meses.",
+    "Si alquilás el local, el monto de los alquileres.",
+    "La superficie donde trabajás y el consumo de luz del último año."
+   ]
+  },
+  {
+   "id": "si-no-lo-hago",
+   "titulo": "¿Qué pasa si no lo hago y me tocaba?",
+   "texto": [
+    "ARCA puede recategorizarte de oficio: si detecta compras, gastos o movimientos bancarios que superan el límite de tu categoría, te pasa a la que corresponde y te avisa por el Domicilio Fiscal Electrónico. Además, te puede reclamar la diferencia de cuota.",
+    "Si no estás de acuerdo, tenés 15 días desde que te llega la notificación para presentar tu descargo por Presentaciones Digitales.",
+    "Lo más simple es hacerla vos a tiempo."
+   ]
+  }
+ ],
+ "preguntas": [
+  [
+   "¿Hasta cuándo hay que recategorizarse en el Monotributo?",
+   "Hasta el 5 de febrero y hasta el 5 de agosto de cada año."
+  ],
+  [
+   "¿Tengo que recategorizarme si sigo en la misma categoría?",
+   "No. Si con tus ingresos, alquileres, superficie y energía seguís en la misma categoría, no tenés que hacer nada."
+  ],
+  [
+   "¿Qué se mira para la recategorización?",
+   "Lo que facturaste en los últimos 12 meses, los alquileres, la superficie donde trabajás y la energía eléctrica consumida."
+  ],
+  [
+   "¿Cuánto cuesta recategorizarse?",
+   "Nada: es un trámite gratis que se hace en la web de ARCA con clave fiscal."
+  ],
+  [
+   "¿Qué pasa si no me recategorizo?",
+   "Si te correspondía, ARCA puede recategorizarte de oficio y reclamarte la diferencia de cuota. Te avisa por el Domicilio Fiscal Electrónico."
+  ]
+ ]
+}

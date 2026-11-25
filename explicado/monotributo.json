@@ -117,18 +117,18 @@
     "mdc-4"
    ],
    "texto": [
-    "Dos veces por año ARCA espera que revises tu categoría. Mirás lo que facturaste en los últimos 12 meses y, si cambió, te pasás a la categoría que corresponde. El botón «Recategorizarme» se habilita en enero y en julio.",
+    "Dos veces por año ARCA espera que revises tu categoría. Mirás lo que facturaste en los últimos 12 meses y, si cambió, te pasás a la categoría que corresponde. El plazo vence el 5 de febrero y el 5 de agosto.",
     "Sofía lleva la cuenta de lo que factura mes a mes y de cuánto le falta para el próximo tope. Así sabe cuándo le va a subir la cuota y no se lleva sorpresas. Si ves que vas a pasar el tope más alto, hacé la cuenta con tu contador."
    ],
    "clave": [
-    "Se hace en enero y en julio, mirando lo facturado en los últimos 12 meses. El plazo vence el 5 de febrero y el 5 de agosto.",
+    "Se hace dos veces por año, mirando lo facturado en los últimos 12 meses. El plazo vence el 5 de febrero y el 5 de agosto.",
     "Si no te recategorizás, ARCA puede hacerlo de oficio y aplicarte una multa del 50% de las diferencias.",
     "Si te recategorizás vos a tiempo, no hay multa."
    ],
    "recategorizacion": true,
    "destino": [
-    "cuando-cambia-cada-dato.html#monotributo",
-    "Ver fechas y valores de hoy"
+    "recategorizacion-monotributo.html",
+    "Guía de la recategorización paso a paso"
    ]
   },
   {
@@ -281,7 +281,7 @@
   ],
   [
    "¿Cuándo hay que recategorizarse?",
-   "En enero y en julio, mirando lo facturado en los últimos 12 meses. El plazo vence el 5 de febrero y el 5 de agosto. Si no lo hacés, ARCA puede recategorizarte de oficio con una multa del 50% de las diferencias."
+   "Dos veces por año, mirando lo facturado en los últimos 12 meses. El plazo vence el 5 de febrero y el 5 de agosto. Si no lo hacés, ARCA puede recategorizarte de oficio con una multa del 50% de las diferencias."
   ],
   [
    "Si soy empleado y además facturo, ¿pago la cuota completa?",

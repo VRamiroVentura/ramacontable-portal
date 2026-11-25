@@ -783,6 +783,19 @@ def lateral(notas):
     return _lateral(notas, caja_venc)
 
 
+# Prueba de CTR desde el 25/11/2026 (Search Console: posición 5-9 y casi 0% de clics). Grupo A: título y descripción que
+# prometen lo que Google no muestra en la búsqueda (tabla, evolución, cómo se calcula) en vez de solo el número.
+# Grupo de control: el resto de los datos (Monotributo, jubilación, IIBB Santa Fe...). Comparar CTR a las 2 semanas.
+SEO_PRUEBA = {  # la página del dato va sin mes (la búsqueda con mes la toma la página del mes, que se indexa desde el 25/11)
+    "tope-aportes-base-maxima": ("Tope de aportes y contribuciones (MOPRE): base máxima y mínima hoy",
+                                 "Base imponible máxima y mínima vigente para aportes y contribuciones: desde cuándo rige, la norma, la evolución mes a mes y qué meses ya se conocen."),
+    "salario-minimo-vital-y-movil": ("Salario mínimo vital y móvil hoy: por mes, por hora y cronograma",
+                                     "Cuánto es el salario mínimo vital y móvil vigente, el valor por hora y el cronograma mes a mes que fijó la resolución, con la evolución de los últimos aumentos."),
+    "ffep-fondo-enfermedades-profesionales": ("FFEP hoy: importe por trabajador, qué es y cómo vino cambiando",
+                                              "Cuánto es el FFEP (Fondo Fiduciario de Enfermedades Profesionales) vigente: importe por trabajador, desde qué período se aplica, la norma y su evolución."),
+}
+
+
 def _titulo_seo(*opciones, largo=65):
     """De varias formas de titular la página (de la más completa a la más corta), la primera que entra sin que Google la corte."""
     ops = [o.replace("  ", " ").strip() for o in opciones if o]
@@ -1171,6 +1184,9 @@ def pagina_respuesta(t, r, notas, aportes=None, extra=""):
     desc = (d.get("respuesta") or t["pregunta"])[:300]
     val_t = d.get("valor") or "dato vigente"
     nom_t = t.get("titulo_corto") or t["titulo"].split(":")[0]
+    if t["slug"] in SEO_PRUEBA and d.get("valor"):
+        tp, dp = SEO_PRUEBA[t["slug"]]
+        return pagina(tp.format(mes=mes), contenido, "datos-al-dia", dp.format(mes=mes), t["slug"] + ".html", head, migas_r)
     return pagina(_titulo_seo(f"{titulo_h}: {val_t}", f"{t['titulo']} ({mes}): {_corto(val_t, 40)}", f"{nom_t} {mes}: {_corto(val_t, 40)}", f"{nom_t}: {_corto(val_t, 40)}", f"{nom_t} ({mes})"), contenido, "impuestos" if t.get("seccion") == "provincias" else "datos-al-dia",
                   desc, t["slug"] + ".html", head, migas_r)
 
@@ -2020,8 +2036,9 @@ def pagina_mes(pref, slug_dato, tit, preg, mes, notas):
 </div>{lateral(notas)}</div>"""
     ld = '<script type="application/ld+json">' + json.dumps({"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [
         {"@type": "Question", "name": pregunta, "acceptedAnswer": {"@type": "Answer", "text": f"{valor}. {texto}" if valor else texto}}]}, ensure_ascii=False) + "</script>"
-    # El mes en curso ya lo cubre la página del dato (su título lleva el mes): se indexa solo el mes que viene con valor ya conocido
-    if not valor or mes <= datetime.date.today().strftime("%Y-%m"):
+    # Se indexan el mes en curso y el que viene con valor conocido (Search Console 22/11: la de diciembre del tope, 9% de clics);
+    # los meses ya pasados quedan publicados pero sin indexar
+    if not valor or mes < datetime.date.today().strftime("%Y-%m"):
         PAGINAS_FINAS.add(f"{pref}-{MESES[int(mes[5:]) - 1]}-{mes[:4]}")
     v_tit = re.sub(r"^(Máxima|Mínima) ", lambda m: m.group(1).lower() + " ", valor or "")
     return pagina(f"{titulo.split(':')[0] + ': ' + v_tit if valor else titulo} | Ramacontable", cuerpo, "datos-al-dia",
