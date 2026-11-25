@@ -95,7 +95,9 @@ def calendario_guias():
         out.append("GUÍAS FÁCILES EN REVISIÓN O PARA CREAR (calendario)")
         for a in activos:
             if a["tipo"] == "actualizar":
-                out.append(f"✏️ {a['guia']} (hasta el {a['hasta'][3:]}/{a['hasta'][:2]}): la fábrica la revisa sola cada semana; si encuentra un dato viejo te llega el ajuste y se aplica a los 7 días si no lo borrás. Foco: {a['que']}")
+                out.append(f"✏️ {a['guia']} (hasta el {a['hasta'][3:]}/{a['hasta'][:2]}): la fábrica la revisa sola cada semana; si encuentra un dato viejo te llega el ajuste y se aplica sola a la hora si no lo borrás. Foco: {a['que']}")
+            elif a["tipo"] == "revisar":
+                out.append(f"🔎 {a['guia']} (hasta el {a['hasta'][3:]}/{a['hasta'][:2]}): {a['que']}")
             else:
                 out.append(f"🆕 {a['guia']} (hasta el {a['hasta'][3:]}/{a['hasta'][:2]}): {a['que']}")
         out.append("")

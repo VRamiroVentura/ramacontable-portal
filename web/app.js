@@ -479,21 +479,22 @@
   }
   function barraAdmin(n) {
     const caja = $('.nota-contenido'); if (!caja || !esAdmin) return;
-    const est = { publicada: 'Publicada', revision: 'Para revisar (no publicada)', borrada: 'Borrada (no se ve)' }[n.estado];
+    const est = { publicada: 'Publicada', revision: 'Para revisar (si no hacés nada, se publica sola a la hora)', borrada: 'Borrada (no se ve)' }[n.estado];
     const barra = h('div', { class: 'barra-admin' },
       h('span', {}, h('b', {}, 'Administrador · '), est, n.editado_por ? ` · editada por ${n.editado_por}` : ''),
       h('div', {},
         n.estado !== 'publicada' ? h('button', { class: 'btn', onclick: () => cambiarEstado(n, 'publicada') }, '✅ Publicar') : null,
         h('button', { class: 'btn sec', onclick: () => editarNota(n) }, '✏️ Editar'),
         n.estado !== 'borrada' ? h('button', { class: 'btn sec', onclick: () => confirmarBorrar(n) }, '🗑️ Borrar') : null));
-    if (n.motivo_revision && n.estado === 'revision') {
+    const auto = /^(⚡|⏱️)/.test(String(n.motivo_revision || ''));  // publicada sola (primicia o 1 h sin respuesta)
+    if (n.motivo_revision && (n.estado === 'revision' || (n.estado === 'publicada' && auto))) {
       // 🔴 = datos que pueden arruinar la nota: se muestran uno por línea, con qué chequear
       const lineas = String(n.motivo_revision).split('\n').filter(Boolean);
-      const grave = lineas[0].startsWith('🔴');
+      const grave = lineas[0].includes('🔴');
       barra.append(h('div', { class: 'motivo' + (grave ? ' motivo-grave' : '') },
         h('b', {}, grave ? lineas[0] : 'Para revisar'),
         h('ul', {}, ...(grave ? lineas.slice(1) : lineas[0].split('; ')).map(t => h('li', {}, t))),
-        h('p', { class: 'ayuda' }, 'Si está bien, tocá ✅ Publicar. Si hay que corregir, ✏️ Editar.')));
+        h('p', { class: 'ayuda' }, n.estado === 'publicada' ? 'Ya está publicada: si hay que corregir algo, ✏️ Editar; si no corresponde, 🗑️ Borrar.' : 'Si está bien, tocá ✅ Publicar. Si hay que corregir, ✏️ Editar.')));
     }
     caja.prepend(barra);
   }
@@ -529,6 +530,7 @@
       ev.preventDefault();
       const cambios = { seccion: f.seccion.value, antetitulo: f.antetitulo.value.trim(), titulo: f.titulo.value.trim(), dato: f.dato.value.trim() || null,
         encorto: f.encorto.value.trim(), fuente: f.fuente.value.trim(), cuerpo: [{ html: RCEditor.limpiar(editor.innerHTML) }] };
+      if (n.estado === 'publicada' && /^(⚡|⏱️)/.test(String(n.motivo_revision || ''))) cambios.motivo_revision = null;  // ya la revisaste: sale el aviso
       const { data, error } = await sb.from('notas').update(cambios).eq('slug', n.slug).select('*');
       if (error || !data || !data.length) { $('.error', f).textContent = 'No se pudo guardar. ' + (error ? mensajeError(error) : ''); return; }
       cerrarModal(); aviso('Nota actualizada. El cambio ya se ve en esta página.'); cargarNota();
@@ -597,10 +599,11 @@
     (cv.data || []).forEach(c => caja.append(h('a', { class: 'fila-admin', href: `escala-${c.slug}.html` },
       h('span', { class: 'est est-revision' }, '🟡 Escala para revisar'), h('b', {}, c.nombre), h('small', {}, c.motivo_propuesta || ''))));
     if (!filas.length) { caja.append(h('p', { class: 'ayuda' }, 'Todavía no hay notas en la base.')); return; }
-    const EST = { publicada: '✅ Publicada', revision: '🟡 Para revisar', borrada: '🗑️ Borrada' };
+    const EST = { publicada: '✅ Publicada', revision: '🟡 Para revisar (sale sola en 1 h)', borrada: '🗑️ Borrada' };
+    const autoPub = n => n.estado === 'publicada' && /^(⚡|⏱️)/.test(String(n.motivo_revision || ''));
     filas.forEach(n => caja.append(h('a', { class: 'fila-admin', href: n.estado === 'publicada' ? `nota-${n.slug}.html` : `nota.html?n=${n.slug}` },
-      h('span', { class: 'est est-' + n.estado }, n.estado === 'revision' && String(n.motivo_revision || '').startsWith('🔴') ? '🔴 Revisar datos' : EST[n.estado]), h('b', {}, n.titulo), h('small', {}, `${fechaLarga(n.fecha)} · ${SECC[n.seccion] || ''}`),
-      n.estado === 'revision' && n.motivo_revision ? h('small', { class: 'motivo-corto' }, String(n.motivo_revision).split('\n').slice(0, 2).join(' · ')) : null)));
+      h('span', { class: 'est est-' + n.estado }, n.estado === 'revision' && String(n.motivo_revision || '').startsWith('🔴') ? '🔴 Revisar datos (sale sola en 1 h)' : autoPub(n) ? '⚠️ Publicada sola: revisar' : EST[n.estado]), h('b', {}, n.titulo), h('small', {}, `${fechaLarga(n.fecha)} · ${SECC[n.seccion] || ''}`),
+      (n.estado === 'revision' || autoPub(n)) && n.motivo_revision ? h('small', { class: 'motivo-corto' }, String(n.motivo_revision).split('\n').slice(0, 2).join(' · ')) : null)));
   }
 
   // ---------- convenios: escala al día y edición del administrador ----------

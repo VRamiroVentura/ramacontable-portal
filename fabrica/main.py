@@ -494,6 +494,12 @@ class Fabrica:
         util.log("Modo:", "ACTIVO (publica)" if self.activo else "ENSAYO (no publica nada)")
         if self.activo:
             self.sembrar()
+            self.autopublicar_revision()
+            if self.rapido and self.db:
+                try:
+                    self.aplicar_ajustes()  # los ajustes de guías fáciles también se aplican a la hora
+                except Exception as e:  # noqa
+                    util.avisar("No pude aplicar los ajustes de guías", str(e))
         recientes = self.notas_recientes()
         previos = self.radar_previo()
         nuevos = [it for it in self.leer_fuentes() if it["url"] not in previos]
@@ -657,6 +663,11 @@ class Fabrica:
             except Exception as e:  # noqa
                 util.avisar(f"No pude escribir «{g.get('tema')}»", str(e))
                 continue
+            if fila["estado"] == "revision" and not propia_varios and self._es_primicia(miembros):
+                # pedido de Ramiro: lo que salió hoy no espera; se publica ya y los datos dudosos quedan anotados en el mail y en el panel
+                fila["estado"] = "publicada"
+                fila["motivo_revision"] = ("⚡ Primicia: se publicó al instante. Revisá: " + (fila.get("motivo_revision") or ""))[:1500]
+                self.observaciones.append(("⚡ Publicada al instante (salió hoy) con datos para chequear", f"{fila['titulo']} — {(fila.get('motivo_revision') or '')[:300]}"))
             hechas += 1
             (self.publicadas if fila["estado"] == "publicada" else self.revision).append(fila)
             try:
@@ -718,6 +729,41 @@ class Fabrica:
             self._resp_cache = (temas, previos, ipc)
             self.pedidos_datos = 0
         return self._resp_cache
+
+    @staticmethod
+    def _es_primicia(miembros):
+        """Noticia del día: alguna de sus fuentes se publicó hoy (hora argentina)."""
+        hoy = util.ahora().date()
+        for m in miembros:
+            f = fuentes._fecha(str(m.get("fecha") or "")) if m.get("fecha") else None
+            if f and (f.astimezone(util.ZONA).date() if f.tzinfo else f.date()) == hoy:
+                return True
+        return False
+
+    def autopublicar_revision(self):
+        """Pedido de Ramiro: si una nota queda en revisión y no la aceptás ni la borrás en 1 hora, se publica sola.
+        No toca guías ni ajustes de guías fáciles (esos tienen su propia regla)."""
+        if not (self.activo and self.db):
+            return
+        horas = float(self.cfg.get("horas_autopublicar", 1))
+        limite = (util.ahora() - timedelta(hours=horas)).isoformat()
+        try:
+            filas = self.db.select("notas", {"select": "slug,titulo,motivo_revision,tipo", "estado": "eq.revision", "tipo": "eq.nota",
+                                             "slug": "not.like.ajuste-*", "creado": f"lte.{limite}", "limit": "50"})
+        except Exception as e:  # noqa
+            util.log("No pude leer las notas en revisión:", util.ocultar(str(e)))
+            return
+        for f in filas or []:
+            previo = f.get("motivo_revision") or ""
+            motivo = (f"⏱️ Publicada sola: pasó {horas:g} h sin respuesta del panel. Revisá: " + previo)[:1500]
+            try:
+                self.db.update("notas", {"slug": f"eq.{f['slug']}"}, {"estado": "publicada", "motivo_revision": motivo})
+            except Exception as e:  # noqa
+                util.log("No pude publicar", f["slug"], util.ocultar(str(e)))
+                continue
+            self.vencimientos_cambio = True  # fuerza republicar la web
+            self.observaciones.append(("⏱️ Publicada sola a la hora", f"{f['titulo']} — {(previo or 'sin motivo')[:300]}"))
+            util.log("Publicada sola (1 h sin respuesta):", f["slug"])
 
     @staticmethod
     def _dia(v):
@@ -1105,12 +1151,11 @@ class Fabrica:
                 if self.activo:  # queda anotado que esta semana ya se revisó (borrada: no se ve en ningún lado)
                     self.db.upsert("notas", [dict(marca, motivo_revision="Sin cambios: " + (f"{len(malos)} propuesta(s) descartada(s) por el control" if malos else "las fuentes no muestran datos nuevos"))], "slug")
                 continue
-            dias = int(self.cfg.get("dias_ajuste", 7))
-            cuando = hoy + timedelta(days=dias)
+            cuando = util.ahora() + timedelta(hours=float(self.cfg.get("horas_ajuste", 1)))
             sitio = self.cfg.get("sitio_url", "")
             fila = dict(marca, estado="revision", verificada=False,
                         antetitulo="Ajuste de guía fácil", titulo=f"Ajuste propuesto: {guia['titulo']}"[:200],
-                        encorto=f"La fábrica encontró {len(ok)} dato(s) para actualizar en {sitio}{a['guia']}. Se aplica solo el {cuando.day}/{cuando.month}.",
+                        encorto=f"La fábrica encontró {len(ok)} dato(s) para actualizar en {sitio}{a['guia']}. Se aplica sola el {cuando.day}/{cuando.month} a las {cuando:%H:%M} si no hacés nada.",
                         cuerpo=[{"p": f"Guía: {sitio}{a['guia']} (archivo {archivo})."},
                                 {"tabla": [["Dice", "Pasa a decir", "Fuente"]] + [[c["actual"], c["nuevo"], c["url"]] for c in ok]},
                                 *[{"p": f"• {c.get('por_que') or ''} — Cita: «{c['cita']}» ({c['url']})"} for c in ok],
@@ -1118,7 +1163,7 @@ class Fabrica:
                         fuente=", ".join(sorted({it["fuente"] for it in items if it["url"] in {c["url"] for c in ok}})),
                         fuentes=[{"nombre": it["fuente"], "url": it["url"], "titulo": it["titulo"]} for it in items if it["url"] in {c["url"] for c in ok}],
                         actualiza=archivo,
-                        motivo_revision=(f"✏️ Se aplica SOLO el {cuando.day}/{cuando.month} si no hacés nada. "
+                        motivo_revision=(f"✏️ Se aplica SOLA el {cuando.day}/{cuando.month} a las {cuando:%H:%M} si no hacés nada. "
                                          f"✅ Publicar = aplicarlo ya (en la próxima vuelta). 🗑️ Borrar = no aplicarlo. "
                                          + " | ".join(f"«{c['actual']}» → «{c['nuevo']}»" for c in ok))[:1500])
             self.revision.append(fila)
@@ -1128,16 +1173,16 @@ class Fabrica:
     def aplicar_ajustes(self):
         """Aplica los ajustes con fecha cumplida (o publicados por el administrador): cambia el JSON de la guía en el repo
         (commit con GITHUB_TOKEN) y pide republicar la web. Los borrados en el panel no se aplican nunca."""
-        filas = self.db.select("notas", {"select": "slug,fecha,estado,cuerpo,actualiza,tema", "slug": "like.ajuste-*",
+        filas = self.db.select("notas", {"select": "slug,fecha,creado,estado,cuerpo,actualiza,tema", "slug": "like.ajuste-*",
                                          "estado": "in.(revision,publicada)", "limit": "50"})
         if not filas:
             return
-        dias = int(self.cfg.get("dias_ajuste", 7))
+        horas = float(self.cfg.get("horas_ajuste", 1))
         hoy = util.ahora().date()
         repo, token = os.getenv("GITHUB_REPOSITORY"), util.secreto("GITHUB_TOKEN")
         for f in filas:
-            vence = self._dia(f["fecha"])
-            if f["estado"] != "publicada" and (not vence or vence + timedelta(days=dias) > hoy):
+            creado = fuentes._fecha(str(f.get("creado") or ""))
+            if f["estado"] != "publicada" and (not creado or creado + timedelta(hours=horas) > util.ahora()):
                 continue
             archivo = f.get("actualiza") or ""
             tabla = next((b["tabla"] for b in f.get("cuerpo") or [] if "tabla" in b), None)
