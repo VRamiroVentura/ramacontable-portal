@@ -285,6 +285,20 @@ def _escala_ok(esc):
     return bool(t) and sum(1 for f in t[1:] if isinstance(f, list) and any(re.search(r"\d", str(x)) for x in f[1:])) >= 2
 
 
+def _fin_escala(esc):
+    """Último mes que cubre una escala (año, mes): por los encabezados de la tabla o por el texto del período. (0, 0) si no se sabe."""
+    if not isinstance(esc, dict):
+        return (0, 0)
+    t = esc.get("tabla") or []
+    meses_cab = [_mes_col(h) for h in (t[0] if t else [])]
+    meses_cab = [x for x in meses_cab if x]
+    per = str(esc.get("periodo") or "").lower()
+    anios = [int(a) for a in re.findall(r"20\d{2}", per)]
+    meses_per = [i + 1 for pos, i in sorted((per.rfind(n), i) for i, n in enumerate(MESES) if n in per)]
+    fin_per = (anios[-1], meses_per[-1]) if anios and meses_per else (0, 0)
+    return max(meses_cab + [fin_per])
+
+
 def cargar_convenios():
     locales = {}
     for ruta in glob.glob(os.path.join(RAIZ, "convenios", "*.json")):
@@ -298,7 +312,8 @@ def cargar_convenios():
             req = urllib.request.Request(url + "/rest/v1/convenios?select=*", headers={"apikey": key, "Authorization": "Bearer " + key})
             for c in json.load(urllib.request.urlopen(req, timeout=30)):
                 loc = locales.get(c["slug"]) or {}
-                if not _escala_ok(c.get("escala")) and _escala_ok(loc.get("escala")):  # escala cargada en el repo mientras la de la fábrica esté vacía
+                # escala del repo si la de la fábrica está vacía o es más vieja (p. ej. Comercio: julio en la base y octubre-diciembre en el repo)
+                if _escala_ok(loc.get("escala")) and (not _escala_ok(c.get("escala")) or _fin_escala(loc["escala"]) > _fin_escala(c.get("escala"))):
                     c = dict(c, escala=loc["escala"], historial=c.get("historial") or loc.get("historial") or [],
                              actualizado=loc.get("actualizado") or c.get("actualizado"), fuente=loc.get("fuente") or c.get("fuente"))
                 locales[c["slug"]] = c
@@ -544,7 +559,8 @@ def pagina_convenio(c, notas, aportes=None):
     falsa_nota = {"preguntas": auto_q + (c.get("preguntas") or [])}
     slug = "convenio-" + c["slug"]
     titulo_vis = f"Escala salarial {c['nombre']}" + (f" {periodo}" if periodo else "") + (f" ({c['cct']})" if c.get("cct", "").startswith("CCT") else "")
-    contenido = f"""<div class="grilla"><article class="nota convenio" data-nota="{slug}" data-convenio="{e(c['slug'])}" data-actualizado="{e(str(c.get('actualizado') or ''))}">
+    contenido = f"""<div class="grilla"><article class="nota convenio" data-nota="{slug}" data-convenio="{e(c['slug'])}" data-actualizado="{e(str(c.get('actualizado') or ''))}" data-fin="{"%d-%02d" % _fin_escala(esc)}">
+<script type="application/json" id="escala-pagina">{json.dumps(esc, ensure_ascii=False).replace("</", "<\\/")}</script>
 <div class="nota-contenido">
 <p class="miga"><a href="sueldos.html">Sueldos</a> / <a href="convenios.html">Convenios</a></p>
 <p class="ante">{e(c['cct'])} | {e(c['partes'])}</p>

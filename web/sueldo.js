@@ -18,6 +18,28 @@
     const ok = cab.map((h, i) => prueba(norm(h)) ? i : -1).filter(i => i >= 0);
     return ok.find(i => norm(cab[i]).includes(MES)) ?? (ok.length ? ok[0] : -1);
   };
+  // Último mes que cubre una escala («2026-12»): por los encabezados de la tabla o por el período. Igual que _fin_escala de build.py.
+  const finEscala = esc => {
+    if (!esc) return '0000-00';
+    const AB = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+    const ME = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+    const p2 = n => String(n).padStart(2, '0');
+    const col = h => {
+      h = String(h).toLowerCase(); let m;
+      if ((m = h.match(/\b(\d{2})\/(\d{2})\/(\d{2})\b/)) && +m[2] >= 1 && +m[2] <= 12) return `20${m[3]}-${m[2]}`;
+      if ((m = h.match(/\b(\d{1,2})\/(20\d{2})\b/)) && +m[1] >= 1 && +m[1] <= 12) return `${m[2]}-${p2(m[1])}`;
+      for (let i = 0; i < 12; i++) {
+        m = h.match(new RegExp(AB[i] + '[a-zé]*\\.?\\s*(?:de\\s*)?(?:y\\s*\\w+\\s*)?-?\\s*(20\\d{2}|\\d{2})\\b'));
+        if (m) { const y = +m[1]; return `${y < 100 ? y + 2000 : y}-${p2(i + 1)}`; }
+      }
+      return null;
+    };
+    const out = ((esc.tabla || [])[0] || []).map(col).filter(Boolean);
+    const per = String(esc.periodo || '').toLowerCase(), anios = per.match(/20\d{2}/g);
+    const ms = ME.map((n, i) => [per.lastIndexOf(n), i]).filter(x => x[0] >= 0).sort((a, b) => a[0] - b[0]);
+    if (anios && ms.length) out.push(`${anios[anios.length - 1]}-${p2(ms[ms.length - 1][1] + 1)}`);
+    return out.sort().pop() || '0000-00';
+  };
   const tablaOk = t => Array.isArray(t) && t.slice(1).filter(f => Array.isArray(f) && f.slice(1).some(x => /\d/.test(String(x)))).length >= 2;
 
   // ---------- cálculos puros (se exportan para probarlos) ----------
@@ -155,7 +177,7 @@
     fetch(`${cfg.url}/rest/v1/convenios?select=escala&slug=eq.${encodeURIComponent(E.slug)}`, { headers: { apikey: cfg.key, Authorization: 'Bearer ' + cfg.key } })
       .then(r => r.ok ? r.json() : []).then(d => {
         const nueva = d && d[0] && d[0].escala;
-        if (nueva && tablaOk(nueva.tabla) && JSON.stringify(nueva.tabla) !== JSON.stringify(E.tabla)) { Object.assign(E, nueva); pintarCategorias(); }
+        if (nueva && tablaOk(nueva.tabla) && finEscala(nueva) >= finEscala(E) && JSON.stringify(nueva.tabla) !== JSON.stringify(E.tabla)) { Object.assign(E, nueva); pintarCategorias(); }
       }).catch(() => {});
   }
 })();
