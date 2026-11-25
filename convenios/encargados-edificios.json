@@ -4,12 +4,182 @@
  "cct": "CCT 589/10",
  "partes": "SUTERH, FATERYH y entidades de propietarios",
  "descripcion": "Comprende a trabajadores de edificios de renta y propiedad horizontal: encargados, ayudantes, suplentes y personal de vigilancia.",
- "escala": null,
+ "escala": {
+  "periodo": "Noviembre 2026",
+  "vigencia": "Remuneraciones de noviembre 2026",
+  "tabla": [
+   [
+    "Función",
+    "1ª categoría",
+    "2ª categoría",
+    "3ª categoría",
+    "4ª categoría"
+   ],
+   [
+    "Encargado permanente con vivienda",
+    "1.365.810",
+    "1.308.901",
+    "1.251.992",
+    "1.138.175"
+   ],
+   [
+    "Encargado permanente sin vivienda",
+    "1.557.719",
+    "1.492.814",
+    "1.427.909",
+    "1.298.099"
+   ],
+   [
+    "Ayudante permanente con vivienda",
+    "1.365.810",
+    "1.308.901",
+    "1.251.992",
+    "1.138.175"
+   ],
+   [
+    "Ayudante permanente sin vivienda",
+    "1.557.719",
+    "1.492.814",
+    "1.427.909",
+    "1.298.099"
+   ],
+   [
+    "Ayudante media jornada",
+    "778.859",
+    "746.407",
+    "713.955",
+    "649.050"
+   ],
+   [
+    "Personal asimilado con vivienda",
+    "1.365.810",
+    "1.308.901",
+    "1.251.992",
+    "1.138.175"
+   ],
+   [
+    "Personal asimilado sin vivienda",
+    "1.557.719",
+    "1.492.814",
+    "1.427.909",
+    "1.298.099"
+   ],
+   [
+    "Mayordomo con vivienda",
+    "1.406.420",
+    "1.347.819",
+    "1.289.219",
+    "1.172.017"
+   ],
+   [
+    "Mayordomo sin vivienda",
+    "1.610.256",
+    "1.543.162",
+    "1.476.068",
+    "1.341.880"
+   ],
+   [
+    "Intendente",
+    "1.864.803",
+    "1.864.803",
+    "1.864.803",
+    "1.864.803"
+   ],
+   [
+    "Personal con más de una función con vivienda",
+    "1.365.810",
+    "1.308.901",
+    "1.251.992",
+    "1.138.175"
+   ],
+   [
+    "Personal con más de una función sin vivienda",
+    "1.557.719",
+    "1.492.814",
+    "1.427.909",
+    "1.298.099"
+   ],
+   [
+    "Encargado guardacoches con vivienda",
+    "1.191.112",
+    "1.191.112",
+    "1.191.112",
+    "1.191.112"
+   ],
+   [
+    "Encargado guardacoches sin vivienda",
+    "1.274.000",
+    "1.274.000",
+    "1.274.000",
+    "1.274.000"
+   ],
+   [
+    "Personal de vigilancia nocturna",
+    "1.385.019",
+    "1.385.019",
+    "1.385.019",
+    "1.385.019"
+   ],
+   [
+    "Personal de vigilancia diurna",
+    "1.305.114",
+    "1.305.114",
+    "1.305.114",
+    "1.305.114"
+   ],
+   [
+    "Personal de vigilancia media jornada",
+    "652.557",
+    "652.557",
+    "652.557",
+    "652.557"
+   ],
+   [
+    "Encargado no permanente con vivienda",
+    "762.675",
+    "762.675",
+    "762.675",
+    "762.675"
+   ],
+   [
+    "Encargado no permanente sin vivienda",
+    "810.901",
+    "810.901",
+    "810.901",
+    "810.901"
+   ],
+   [
+    "Ayudante temporario",
+    "1.283.096",
+    "1.283.096",
+    "1.283.096",
+    "1.283.096"
+   ],
+   [
+    "Ayudante temporario media jornada",
+    "641.548",
+    "641.548",
+    "641.548",
+    "641.548"
+   ]
+  ],
+  "aclaraciones": "Valores mensuales vigentes en todo el país (acta del 4/9/2026, que cubre de septiembre 2026 a febrero 2027; las partes vuelven a reunirse en diciembre). Personal jornalizado de no más de 18 horas (art. 7 inc. p): $ 14.263,30 la hora. Suplente con horario: $ 62.283,90 por día. Adicional remuneratorio mensual de $ 45.000 para todas las categorías, proporcional a cada una. Adicionales: retiro de residuos por unidad $ 2.552,20; clasificación de residuos $ 43.958,90; valor vivienda $ 9.376,20; antigüedad 1% por año $ 12.981 (Res. 106/09) y 2% por año $ 25.962 (art. 11); limpieza de cocheras $ 34.828,80; movimiento de coches hasta 20 unidades $ 51.567,70; jardín $ 34.828,80; limpieza de piletas $ 58.590,70; viáticos $ 96.998,60; zona desfavorable 50%; título de encargado integral 10%. La planilla de noviembre no trae sumas no remunerativas.",
+  "doc": "https://suterh.org.ar/planilla-salarial-noviembre-2026/"
+ },
  "novedades": [],
  "calculo": [],
  "nr": [],
  "recibo": [],
  "preguntas": [],
  "historial": [],
- "buscar_portal": "encargados de edificio escala salarial"
+ "buscar_portal": "encargados de edificio escala salarial",
+ "actualizado": "2026-11-25",
+ "fuente": "Planilla salarial noviembre 2026 del SUTERH (CCT 589/10).",
+ "oficial": [
+  "https://suterh.org.ar/"
+ ],
+ "buscar_doc": [
+  "planilla-salarial",
+  "escala-salarial"
+ ]
 }

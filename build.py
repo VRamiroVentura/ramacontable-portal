@@ -355,7 +355,7 @@ def preguntas_escala(c):
     hoy = datetime.date.today()
     col = next((i for i, h in enumerate(cab) if i and (_MES_ABR[hoy.month - 1] in h.lower() or MESES[hoy.month - 1] in h.lower())
                 and (str(hoy.year) in h or str(hoy.year)[2:] in h or not re.search(r"\d{2}", h))), None)
-    cuando = f"{MESES[hoy.month - 1]} {hoy.year}" if col is not None else per
+    cuando = f"{MESES[hoy.month - 1]} {hoy.year}" if col is not None else (per[:1].lower() + per[1:])
     if col is None:
         col = next((i for i in range(1, len(cab)) if any(re.search(r"\d", str(f[i])) for f in filas if len(f) > i)), 1)
     sig = nombre_busqueda(c)
@@ -423,13 +423,16 @@ def resumen_escala(c, notas):
     # categoría de referencia: la primera con valor mensual (más de $ 100.000) en esa columna
     ref = next((f for f in filas if len(f) > col and (_imp(f[col]) or 0) > 100000 and "imgr" not in str(f[0]).lower()
                 and "mínimo" not in str(f[0]).lower()), None)
-    sig, cuando = nombre_busqueda(c), (f"{MESES[hoy.month - 1]} {hoy.year}" if any(ym == (hoy.year, hoy.month) for _, ym in meses) else (esc.get("periodo") or "la escala vigente"))
+    sig, cuando = nombre_busqueda(c), (f"{MESES[hoy.month - 1]} {hoy.year}" if any(ym == (hoy.year, hoy.month) for _, ym in meses) else ((esc.get("periodo") or "")[:1].lower() + (esc.get("periodo") or "")[1:] or "la escala vigente"))
     partes = []
     if ref:
         b = _imp(ref[col])
         nr_col = next((i for i in range(1, len(cab)) if "no rem" in cab[i].lower() and (_mes_col(cab[i]) == _mes_col(cab[col]) or not _mes_col(cab[i]))), None)
         nr = _imp(ref[nr_col]) if nr_col is not None and len(ref) > nr_col else None
-        txt = (f"Por ejemplo, la categoría <b>{e(ref[0])}</b> de {e(sig)} tiene en {e(cuando)} un básico de <b>$ {_num(b)}</b>. "
+        es_mes = any(ym == (hoy.year, hoy.month) for _, ym in meses)
+        nom_cat = re.sub(r"^categor[ií]a\s+", "", str(ref[0]), flags=re.I)
+        cat_txt = f"la categoría <b>{e(nom_cat)}</b>"
+        txt = (f"Por ejemplo, {cat_txt} de {e(sig)} tiene {'en' if es_mes else 'en el período'} {e(cuando)} un básico de <b>$ {_num(b)}</b>. "
                f"Sobre lo remunerativo se descuentan los aportes de ley: 11% de jubilación, 3% de PAMI y 3% de obra social (17% en total), "
                f"así que de ese básico quedan unos <b>$ {_num(b * 0.83)}</b>, sin contar antigüedad, presentismo ni otros adicionales del convenio "
                f"y antes de la cuota sindical.")
@@ -454,6 +457,71 @@ def resumen_escala(c, notas):
     links.append('<a href="aguinaldo.html">Calculadora de aguinaldo</a>')
     return (f'<h2>Cómo leer la escala {e(sig)}</h2>' + "".join(partes)
             + '<ul class="escala-links">' + "".join(f"<li>{x}</li>" for x in links) + "</ul>")
+
+
+def pagina_indices_facpce(notas):
+    """Índices FACPCE para el ajuste por inflación contable (RT 6, Res. JG 539/18), desde tablas/indices-facpce.json (copiado de la planilla oficial)."""
+    ruta = os.path.join(RAIZ, "tablas", "indices-facpce.json")
+    if not os.path.exists(ruta):
+        return None
+    d = json.load(open(ruta, encoding="utf-8"))
+    ser = sorted(d["serie"], key=lambda x: x["mes"])
+    idx = {x["mes"]: x["indice"] for x in ser}
+    nom = lambda m: f"{MESES[int(m[5:]) - 1]} {m[:4]}"
+    f4 = lambda v: f"{v:,.4f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    pc = lambda a, b: f"{(b / a - 1) * 100:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".") + "%"
+    def mes_ant(m, k=1):
+        y, mm = int(m[:4]), int(m[5:]) - k
+        while mm < 1:
+            y, mm = y - 1, mm + 12
+        return f"{y}-{mm:02d}"
+    ult = ser[-1]["mes"]
+    anio = ult[:4]
+    v = idx[ult]
+    men = pc(idx[mes_ant(ult)], v) if mes_ant(ult) in idx else "—"
+    ia = pc(idx[mes_ant(ult, 12)], v) if mes_ant(ult, 12) in idx else "—"
+    acu = pc(idx[f"{int(anio) - 1}-12"], v) if f"{int(anio) - 1}-12" in idx else "—"
+    filas = "".join(
+        f"<tr><td>{nom(x['mes']).capitalize()}</td><td>{f4(x['indice'])}</td>"
+        f"<td>{pc(idx[mes_ant(x['mes'])], x['indice']) if mes_ant(x['mes']) in idx else '—'}</td>"
+        f"<td>{pc(idx[mes_ant(x['mes'], 12)], x['indice']) if mes_ant(x['mes'], 12) in idx else '—'}</td></tr>" for x in ser[::-1])
+    opciones = "".join(f'<option value="{x["mes"]}">{nom(x["mes"]).capitalize()}</option>' for x in ser[::-1])
+    datos_js = json.dumps(idx)
+    titulo = f"Índices FACPCE {anio} para ajuste por inflación (RT 6): tabla mensual"
+    qs = [{"p": f"¿Cuál es el último índice FACPCE?", "r": f"El de {nom(ult)}: {f4(v)}. Variación mensual {men} e interanual {ia}."},
+          {"p": "¿Cómo se calcula el coeficiente de reexpresión?", "r": "Se divide el índice del mes de cierre por el índice del mes de origen de la partida. Por ejemplo, para reexpresar a octubre un importe de enero, se divide el índice de octubre por el de enero."},
+          {"p": "¿Qué índice se usa para el ajuste por inflación contable?", "r": "El que define la Resolución de Junta de Gobierno FACPCE 539/18: el IPC nacional del INDEC empalmado con el IPIM para los períodos anteriores."},
+          {"p": "¿Cuándo sale el índice del mes que viene?", "r": d.get("proximo") or "FACPCE lo publica después de que el INDEC difunde el IPC del mes."}]
+    cuerpo = f"""<div class="grilla"><article class="nota calc">
+<p class="ante">Ajuste por inflación | RT 6 · Res. JG FACPCE 539/18</p>
+<h1>{e(titulo)}</h1>
+<p class="firma">Redacción Ramacontable · Último índice: {nom(ult)}</p>
+<div class="encorto"><b>En corto</b><p>El índice FACPCE de {nom(ult)} es <b>{f4(v)}</b>: {men} de variación mensual, {ia} interanual y {acu} en lo que va de {anio}. {e(d.get("proximo") or "")}</p></div>
+<h2>Calculá el coeficiente de reexpresión</h2>
+<form id="calc-facpce" class="form-calc" novalidate><div class="fila2"><label>Mes de origen<select name="origen">{opciones}</select></label>
+<label>Mes de cierre<select name="cierre">{opciones}</select></label></div>
+<label>Importe a reexpresar (opcional)<input name="monto" inputmode="decimal" placeholder="Ej.: 1.000.000"></label>
+<button class="btn ancho">Calcular</button></form>
+<section id="resultado-facpce" class="resultado" hidden></section>
+<h2>Tabla de índices mes a mes</h2>
+<div class="tabla"><table><thead><tr><th>Mes</th><th>Índice</th><th>Variación mensual</th><th>Variación interanual</th></tr></thead><tbody>{filas}</tbody></table></div>
+<h2>Cómo se usa</h2>
+<p>Para reexpresar una partida en moneda de cierre se multiplica su importe por el coeficiente: índice del mes de cierre dividido por el índice del mes de origen. El índice es el que define la Resolución de Junta de Gobierno 539/18 de la FACPCE para aplicar la RT 6: el IPC nacional del INDEC, empalmado con el IPIM para los períodos anteriores.</p>
+<p>Las variaciones mensual e interanual las calculamos con los índices de la planilla oficial. La planilla completa, con la serie desde enero de 1993, está en la <a href="{e(d.get("fuente", ""))}" rel="nofollow noopener" target="_blank">página de índices de la FACPCE</a>.</p>
+<p><a class="btn" href="nota-guia-ajuste-inflacion-contable.html">Guía del ajuste por inflación contable →</a></p>
+{preguntas_html({"preguntas": qs})}
+<p class="aviso">Información de carácter general, copiada de la planilla oficial de la FACPCE. Verificá siempre en la fuente antes de cerrar un balance.</p>
+</article>{lateral(notas)}</div>
+<script>(function(){{var I={datos_js};var f=document.getElementById('calc-facpce');if(!f)return;f.origen.value=(Number('{ult[:4]}')-1)+'-12';f.cierre.value='{ult}';var o=document.getElementById('resultado-facpce');
+function num(t){{t=String(t||'').replace(/\$|\s/g,'');if(!t)return 0;if(/,\d{{1,4}}$/.test(t)||(t.indexOf('.')>=0&&t.indexOf(',')>=0))return Number(t.replace(/\./g,'').replace(',','.'));if(/^\d{{1,3}}(\.\d{{3}})+$/.test(t))return Number(t.replace(/\./g,''));return Number(t.replace(',','.'))}}
+f.addEventListener('submit',function(ev){{ev.preventDefault();var a=I[f.origen.value],b=I[f.cierre.value];if(!a||!b)return;var c=b/a,m=num(f.monto.value);
+var fm=function(n,d){{return n.toLocaleString('es-AR',{{minimumFractionDigits:d,maximumFractionDigits:d}})}};
+o.innerHTML='<p class="res-grande">Coeficiente: <b>'+fm(c,4)+'</b></p><p class="ayuda">Índice de cierre '+fm(b,4)+' ÷ índice de origen '+fm(a,4)+' (variación '+fm((c-1)*100,2)+'%).</p>'+(m>0?'<p class="res-grande">Importe reexpresado: <b>$ '+fm(m*c,2)+'</b></p>':'');o.hidden=false}});}})();</script>"""
+    ld = ('<script type="application/ld+json">' + json.dumps({"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [
+        {"@type": "Question", "name": q["p"], "acceptedAnswer": {"@type": "Answer", "text": q["r"]}} for q in qs]}, ensure_ascii=False).replace("</", "<\\/") + "</script>")
+    desc = f"Índice FACPCE de {nom(ult)}: {f4(v)} ({men} mensual, {ia} interanual). Tabla mes a mes para el ajuste por inflación contable (RT 6) y calculadora del coeficiente."
+    return pagina(_titulo_seo(titulo, f"Índices FACPCE {anio} (RT 6): tabla mensual y coeficiente", f"Índices FACPCE {anio} (RT 6)"), cuerpo, "impuestos", desc[:160],
+                  "indices-facpce.html", ld, [("Impuestos", "impuestos.html"), ("Índices FACPCE", "indices-facpce.html")])
 
 
 def pagina_convenio(c, notas, aportes=None):
@@ -949,7 +1017,7 @@ def sitemaps(notas, convenios=()):
     fijas = ["aguinaldo", "convenios", "guias", "calculadoras", "feriados", "sueldo-comercio", "sueldo-casas-particulares", "actualizacion", "dias-habiles",
              "plazo-fijo", "prestamos", "vacaciones", "liquidacion-final", "horas-extras", "iva", "conversor-dolar", "monotributo-categoria", "intereses-arca",
              "actualizacion-alquiler", "embargo-sueldo", "cuando-cambia-cada-dato", "glosario", "comparador-escalas", "agenda-vencimientos",
-             "retencion-ganancias", "como-trabajamos", "monotributo-o-responsable-inscripto", "feriado-trabajado"] + [g["ruta"] for g in EXPLICADO] + ([RUTA_FACIL] if EXPLICADO else []) + JURIS_URLS + PARITARIAS_URLS + FERIADOS_URLS + [f"impuesto-{i[0]}" for i in IMPUESTOS]
+             "retencion-ganancias", "como-trabajamos", "monotributo-o-responsable-inscripto", "feriado-trabajado", "indices-facpce"] + [g["ruta"] for g in EXPLICADO] + ([RUTA_FACIL] if EXPLICADO else []) + JURIS_URLS + PARITARIAS_URLS + FERIADOS_URLS + [f"impuesto-{i[0]}" for i in IMPUESTOS]
     urls = [f"<url><loc>{base}</loc><lastmod>{hoy}</lastmod></url>"] + [
         f"<url><loc>{base}{k}.html</loc><lastmod>{hoy}</lastmod></url>" for k in diarias if k not in PAGINAS_FINAS] + [
         f"<url><loc>{base}{k}.html</loc></url>" for k in fijas if k not in PAGINAS_FINAS] + [
@@ -994,7 +1062,7 @@ def llms_txt(notas, convenios):
     l += ["", "## Calculadoras"] + [f"- [{t}]({base}{a}.html)" for a, t in [
         ("sueldo-comercio", "Sueldo de Comercio"), ("sueldo-casas-particulares", "Casas particulares"), ("aguinaldo", "Aguinaldo"),
         ("liquidacion-final", "Liquidación final e indemnización"), ("vacaciones", "Vacaciones"), ("horas-extras", "Horas extras"),
-        ("feriado-trabajado", "Feriado trabajado"), ("actualizacion", "Actualización por CER, UVA, dólar, inflación y tasas"), ("dias-habiles", "Días hábiles"),
+        ("feriado-trabajado", "Feriado trabajado"), ("indices-facpce", "Índices FACPCE para ajuste por inflación (RT 6)"), ("actualizacion", "Actualización por CER, UVA, dólar, inflación y tasas"), ("dias-habiles", "Días hábiles"),
         ("plazo-fijo", "Plazo fijo"), ("prestamos", "Préstamos"), ("iva", "IVA"), ("conversor-dolar", "Conversor de dólar"),
         ("monotributo-categoria", "Categoría del Monotributo"), ("intereses-arca", "Intereses resarcitorios de ARCA"),
         ("actualizacion-alquiler", "Actualización de alquiler (ICL / IPC)"), ("embargo-sueldo", "Embargo de sueldo (Decreto 484/87)"),
@@ -2334,7 +2402,7 @@ def _destinos_enlaces(convenios):
             if nombre and len(nombre) > 3:
                 d.append((nombre, f"escala-{c['slug']}.html"))
     d += [("aguinaldo", "aguinaldo.html"), ("UVA", "valor-uva-hoy.html"), ("CER", "cer-hoy.html"),
-          ("indemnización", "liquidacion-final.html"), ("liquidación final", "liquidacion-final.html"), ("horas extras", "horas-extras.html"),
+          ("indemnización", "liquidacion-final.html"), ("liquidación final", "liquidacion-final.html"), ("horas extras", "horas-extras.html"), ("índices FACPCE", "indices-facpce.html"), ("índice FACPCE", "indices-facpce.html"),
           ("vacaciones", "vacaciones.html"), ("dólar blue", "dolar-blue-hoy.html"), ("dólar MEP", "dolar-mep-hoy.html"),
           ("contado con liquidación", "dolar-ccl-hoy.html"), ("dólar tarjeta", "dolar-tarjeta-hoy.html"), ("dólar oficial", "dolar-oficial-hoy.html"),
           ("ICL", "icl-alquileres-hoy.html"), ("BADLAR", "tasa-badlar-hoy.html"), ("TAMAR", "tasa-tamar-hoy.html"), ("días hábiles", "dias-habiles.html"), ("plazo fijo", "plazo-fijo.html")]
@@ -2733,7 +2801,7 @@ def pagina_buscar(notas, guias, convenios):
         add(g["titulo"], g["ruta"] + ".html", g["descripcion"], "Guía")
     for a, t in [("aguinaldo", "Calculadora de aguinaldo (SAC)"), ("sueldo-comercio", "Calculadora de sueldo de Comercio"), ("sueldo-casas-particulares", "Calculadora de sueldo de casas particulares"),
                  ("liquidacion-final", "Calculadora de liquidación final e indemnización"), ("vacaciones", "Calculadora de vacaciones"), ("horas-extras", "Calculadora de horas extras"),
-                 ("feriado-trabajado", "Calculadora de feriado trabajado"), ("retencion-ganancias", "Calculadora de retención de Ganancias"), ("monotributo-categoria", "Calculadora de categoría del Monotributo"), ("embargo-sueldo", "Calculadora de embargo de sueldo"),
+                 ("feriado-trabajado", "Calculadora de feriado trabajado"), ("indices-facpce", "Índices FACPCE para ajuste por inflación (RT 6)"), ("retencion-ganancias", "Calculadora de retención de Ganancias"), ("monotributo-categoria", "Calculadora de categoría del Monotributo"), ("embargo-sueldo", "Calculadora de embargo de sueldo"),
                  ("intereses-arca", "Calculadora de intereses de ARCA"), ("actualizacion-alquiler", "Calculadora de actualización de alquiler"), ("actualizacion", "Actualización de montos por inflación, CER, UVA y dólar"),
                  ("conversor-dolar", "Conversor de dólar"), ("iva", "Calculadora de IVA"), ("dias-habiles", "Calculadora de días hábiles"), ("plazo-fijo", "Simulador de plazo fijo"), ("prestamos", "Calculadora de préstamos"),
                  ("agenda-vencimientos", "Agenda de vencimientos por CUIT"), ("feriados", "Feriados del año"), ("herramientas", "Vencimientos del mes"), ("glosario", "Glosario contable"),
@@ -3147,6 +3215,9 @@ def main():
              ("agenda-vencimientos.html", "Agenda de vencimientos por CUIT", "Cargá la terminación de CUIT de tus clientes y mirá solo sus vencimientos de ARCA, con descarga al calendario."),
              ("retencion-ganancias.html", "Calculadora de retención de Ganancias sobre el sueldo 2026", "Estimá cuánto te retienen de Ganancias por mes en el sueldo, con las deducciones y la escala vigentes."),
              ("embargo-sueldo.html", "Calculadora de embargo de sueldo 2026 (Decreto 484/87)", "Calculá cuánto se puede embargar de un sueldo según el salario mínimo vigente: inembargable hasta 1 SMVM, 10% y 20% del excedente.")]
+    h_facpce = pagina_indices_facpce(notas)
+    if h_facpce:
+        escribir("indices-facpce.html", h_facpce)
     for archivo, titulo, desc in CALCS:
         with open(os.path.join(RAIZ, "paginas", archivo), encoding="utf-8") as f:
             escribir(archivo, pagina(titulo + " | Ramacontable", f.read(), "", desc, archivo, herramienta_ld(titulo, desc, archivo),

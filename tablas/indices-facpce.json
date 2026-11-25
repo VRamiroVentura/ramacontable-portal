@@ -1,0 +1,144 @@
+{
+ "_ayuda": "Índice FACPCE para RT 6 (Res. JG 539/18): IPC nacional empalmado con IPIM. Copiado de la planilla oficial Indice-FACPCE-Res.-JG-539-18-2026-10.xlsx (facpce.org.ar/indices-facpce). Cada mes FACPCE publica el nuevo (el de noviembre 2026, el 16/12/2026): agregar una fila {mes, indice} con 4 decimales y cambiar 'proximo'. La planilla trae la serie desde enero 1993; acá se carga desde 2024.",
+ "fuente": "https://www.facpce.org.ar/indices-facpce/",
+ "planilla": "https://www.facpce.org.ar/wp-content/uploads/2026/11/Indice-FACPCE-Res.-JG-539-18-2026-10.xlsx",
+ "proximo": "El índice de noviembre de 2026 se publica en la web de FACPCE el 16/12/2026, según el calendario de difusión del INDEC.",
+ "serie": [
+  {
+   "mes": "2024-01",
+   "indice": 4261.5324
+  },
+  {
+   "mes": "2024-02",
+   "indice": 4825.7881
+  },
+  {
+   "mes": "2024-03",
+   "indice": 5357.0929
+  },
+  {
+   "mes": "2024-04",
+   "indice": 5830.2271
+  },
+  {
+   "mes": "2024-05",
+   "indice": 6073.7165
+  },
+  {
+   "mes": "2024-06",
+   "indice": 6351.7145
+  },
+  {
+   "mes": "2024-07",
+   "indice": 6607.7479
+  },
+  {
+   "mes": "2024-08",
+   "indice": 6883.4412
+  },
+  {
+   "mes": "2024-09",
+   "indice": 7122.2421
+  },
+  {
+   "mes": "2024-10",
+   "indice": 7313.9542
+  },
+  {
+   "mes": "2024-11",
+   "indice": 7491.4314
+  },
+  {
+   "mes": "2024-12",
+   "indice": 7694.0075
+  },
+  {
+   "mes": "2025-01",
+   "indice": 7864.1257
+  },
+  {
+   "mes": "2025-02",
+   "indice": 8052.9927
+  },
+  {
+   "mes": "2025-03",
+   "indice": 8353.3158
+  },
+  {
+   "mes": "2025-04",
+   "indice": 8585.6078
+  },
+  {
+   "mes": "2025-05",
+   "indice": 8714.4871
+  },
+  {
+   "mes": "2025-06",
+   "indice": 8855.5681
+  },
+  {
+   "mes": "2025-07",
+   "indice": 9023.973
+  },
+  {
+   "mes": "2025-08",
+   "indice": 9193.2441
+  },
+  {
+   "mes": "2025-09",
+   "indice": 9384.0922
+  },
+  {
+   "mes": "2025-10",
+   "indice": 9603.8623
+  },
+  {
+   "mes": "2025-11",
+   "indice": 9841.3581
+  },
+  {
+   "mes": "2025-12",
+   "indice": 10121.3715
+  },
+  {
+   "mes": "2026-01",
+   "indice": 10413.0309
+  },
+  {
+   "mes": "2026-02",
+   "indice": 10714.6255
+  },
+  {
+   "mes": "2026-03",
+   "indice": 11077.0608
+  },
+  {
+   "mes": "2026-04",
+   "indice": 11363.0904
+  },
+  {
+   "mes": "2026-05",
+   "indice": 11607.3937
+  },
+  {
+   "mes": "2026-06",
+   "indice": 11826.4103
+  },
+  {
+   "mes": "2026-07",
+   "indice": 12076.3937
+  },
+  {
+   "mes": "2026-08",
+   "indice": 12276.766
+  },
+  {
+   "mes": "2026-09",
+   "indice": 12514.1508
+  },
+  {
+   "mes": "2026-10",
+   "indice": 12785.9321
+  }
+ ]
+}

@@ -96,6 +96,104 @@
    "hasta": "06-15",
    "que": "Revisar cambios de la reforma laboral en liquidación final e indemnizaciones.",
    "buscar": "liquidacion final despido indemnizacion"
+  },
+  {
+   "tipo": "revisar",
+   "guia": "respuestas/ganancias-anual.json (tabla anual de Ganancias)",
+   "desde": "01-10",
+   "hasta": "02-15",
+   "que": "ARCA publica la tabla anual nueva (deducciones del art. 30 y escala del art. 94 para liquidación anual): cargar los valores en respuestas/ganancias-anual.json."
+  },
+  {
+   "tipo": "revisar",
+   "guia": "respuestas/ganancias-anual.json (tabla anual de Ganancias)",
+   "desde": "07-10",
+   "hasta": "08-15",
+   "que": "ARCA actualiza la tabla anual con el ajuste del semestre: cargar los valores nuevos en respuestas/ganancias-anual.json."
+  },
+  {
+   "tipo": "revisar",
+   "guia": "tablas/indices-facpce.json (índices FACPCE para RT 6)",
+   "desde": "01-14",
+   "hasta": "01-22",
+   "que": "FACPCE publica a mediados de mes el índice del mes anterior (después del IPC del INDEC): agregá la fila nueva en tablas/indices-facpce.json (mes y valor con 4 decimales, de la planilla de facpce.org.ar/indices-facpce) y actualizá «proximo»."
+  },
+  {
+   "tipo": "revisar",
+   "guia": "tablas/indices-facpce.json (índices FACPCE para RT 6)",
+   "desde": "02-14",
+   "hasta": "02-22",
+   "que": "FACPCE publica a mediados de mes el índice del mes anterior (después del IPC del INDEC): agregá la fila nueva en tablas/indices-facpce.json (mes y valor con 4 decimales, de la planilla de facpce.org.ar/indices-facpce) y actualizá «proximo»."
+  },
+  {
+   "tipo": "revisar",
+   "guia": "tablas/indices-facpce.json (índices FACPCE para RT 6)",
+   "desde": "03-14",
+   "hasta": "03-22",
+   "que": "FACPCE publica a mediados de mes el índice del mes anterior (después del IPC del INDEC): agregá la fila nueva en tablas/indices-facpce.json (mes y valor con 4 decimales, de la planilla de facpce.org.ar/indices-facpce) y actualizá «proximo»."
+  },
+  {
+   "tipo": "revisar",
+   "guia": "tablas/indices-facpce.json (índices FACPCE para RT 6)",
+   "desde": "04-14",
+   "hasta": "04-22",
+   "que": "FACPCE publica a mediados de mes el índice del mes anterior (después del IPC del INDEC): agregá la fila nueva en tablas/indices-facpce.json (mes y valor con 4 decimales, de la planilla de facpce.org.ar/indices-facpce) y actualizá «proximo»."
+  },
+  {
+   "tipo": "revisar",
+   "guia": "tablas/indices-facpce.json (índices FACPCE para RT 6)",
+   "desde": "05-14",
+   "hasta": "05-22",
+   "que": "FACPCE publica a mediados de mes el índice del mes anterior (después del IPC del INDEC): agregá la fila nueva en tablas/indices-facpce.json (mes y valor con 4 decimales, de la planilla de facpce.org.ar/indices-facpce) y actualizá «proximo»."
+  },
+  {
+   "tipo": "revisar",
+   "guia": "tablas/indices-facpce.json (índices FACPCE para RT 6)",
+   "desde": "06-14",
+   "hasta": "06-22",
+   "que": "FACPCE publica a mediados de mes el índice del mes anterior (después del IPC del INDEC): agregá la fila nueva en tablas/indices-facpce.json (mes y valor con 4 decimales, de la planilla de facpce.org.ar/indices-facpce) y actualizá «proximo»."
+  },
+  {
+   "tipo": "revisar",
+   "guia": "tablas/indices-facpce.json (índices FACPCE para RT 6)",
+   "desde": "07-14",
+   "hasta": "07-22",
+   "que": "FACPCE publica a mediados de mes el índice del mes anterior (después del IPC del INDEC): agregá la fila nueva en tablas/indices-facpce.json (mes y valor con 4 decimales, de la planilla de facpce.org.ar/indices-facpce) y actualizá «proximo»."
+  },
+  {
+   "tipo": "revisar",
+   "guia": "tablas/indices-facpce.json (índices FACPCE para RT 6)",
+   "desde": "08-14",
+   "hasta": "08-22",
+   "que": "FACPCE publica a mediados de mes el índice del mes anterior (después del IPC del INDEC): agregá la fila nueva en tablas/indices-facpce.json (mes y valor con 4 decimales, de la planilla de facpce.org.ar/indices-facpce) y actualizá «proximo»."
+  },
+  {
+   "tipo": "revisar",
+   "guia": "tablas/indices-facpce.json (índices FACPCE para RT 6)",
+   "desde": "09-14",
+   "hasta": "09-22",
+   "que": "FACPCE publica a mediados de mes el índice del mes anterior (después del IPC del INDEC): agregá la fila nueva en tablas/indices-facpce.json (mes y valor con 4 decimales, de la planilla de facpce.org.ar/indices-facpce) y actualizá «proximo»."
+  },
+  {
+   "tipo": "revisar",
+   "guia": "tablas/indices-facpce.json (índices FACPCE para RT 6)",
+   "desde": "10-14",
+   "hasta": "10-22",
+   "que": "FACPCE publica a mediados de mes el índice del mes anterior (después del IPC del INDEC): agregá la fila nueva en tablas/indices-facpce.json (mes y valor con 4 decimales, de la planilla de facpce.org.ar/indices-facpce) y actualizá «proximo»."
+  },
+  {
+   "tipo": "revisar",
+   "guia": "tablas/indices-facpce.json (índices FACPCE para RT 6)",
+   "desde": "11-14",
+   "hasta": "11-22",
+   "que": "FACPCE publica a mediados de mes el índice del mes anterior (después del IPC del INDEC): agregá la fila nueva en tablas/indices-facpce.json (mes y valor con 4 decimales, de la planilla de facpce.org.ar/indices-facpce) y actualizá «proximo»."
+  },
+  {
+   "tipo": "revisar",
+   "guia": "tablas/indices-facpce.json (índices FACPCE para RT 6)",
+   "desde": "12-14",
+   "hasta": "12-22",
+   "que": "FACPCE publica a mediados de mes el índice del mes anterior (después del IPC del INDEC): agregá la fila nueva en tablas/indices-facpce.json (mes y valor con 4 decimales, de la planilla de facpce.org.ar/indices-facpce) y actualizá «proximo»."
   }
  ]
 }
