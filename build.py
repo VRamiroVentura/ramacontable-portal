@@ -261,6 +261,10 @@ def cargar_notas():
             n = json.load(f)
         locales[n["slug"]] = n
     remotas = notas_supabase()
+    if remotas is None and os.environ.get("SUPABASE_URL", "").strip() and os.environ.get("SUPABASE_PUBLISHABLE_KEY", "").strip():
+        # Supabase configurado pero no responde (p. ej. error 522): si se publicara igual, la web quedaría solo con las notas
+        # del repo y se borrarían todas las demás. Se corta acá: sigue online la última versión buena y se reintenta en la próxima vuelta.
+        raise SystemExit("Supabase no responde: no se publica esta vez para no borrar las notas de la web. Se reintenta en la próxima vuelta.")
     if remotas is None:
         notas = list(locales.values())
     else:
