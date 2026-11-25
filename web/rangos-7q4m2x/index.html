@@ -60,6 +60,8 @@ button.dis{opacity:.35}
     <div class="col seq" id="seq"></div>
     <h3>STACK EFECTIVO</h3>
     <div class="row"><button class="on">100 BB</button></div>
+    <h3>MODO</h3>
+    <div class="row" id="modo"></div>
     <h3>AYUDA</h3>
     <div class="row"><button id="guiaBtn">Cómo usar las tablas</button></div>
   </div>
@@ -101,11 +103,11 @@ button.dis{opacity:.35}
 <h4>3 · Leé el color</h4>
 <ul>
 <li>Cada color es una acción. La leyenda dice qué es y qué parte de <b>todas</b> las manos posibles va a esa acción.</li>
-<li>Si una celda tiene <b>varios colores</b>, es una mano <b>mixta</b>: el ancho de cada color es la frecuencia. Por ejemplo, mitad roja y mitad celeste es 3bet la mitad de las veces y call la otra mitad.</li>
-<li>Para mezclar sin pensar, usá el segundero del reloj: si la acción va el 30% de las veces, hacela cuando el segundero esté entre 0 y 17. Si preferís simplificar, jugá siempre la acción que más ocupa la celda.</li>
+<li><b>Modo Puro</b> (el que viene de entrada): cada mano tiene una sola acción, la que más se hace en la tabla original. Si una mano estaba repartida, por ejemplo 60% 3bet y 40% call, queda como 3bet.</li>
+<li><b>Modo Con frecuencias</b>: muestra la tabla original con las manos repartidas. El ancho de cada color es la frecuencia de esa acción.</li>
 <li><b>Marginal</b> (amarillo): es la parte del rango que menos gana. En la práctica, jugala contra rivales flojos o pasivos y foldeala contra regulares buenos.</li>
 <li>Celda oscura = fold. En las secuencias "→ vs 3bet / vs 4bet", las celdas más oscuras son manos que no llegaste a jugar antes.</li>
-<li>Tocá cualquier celda y abajo de la grilla ves el detalle exacto de esa mano.</li>
+<li>Tocá cualquier celda y abajo de la grilla ves qué hacer con esa mano.</li>
 </ul>
 <h4>4 · Siglas</h4>
 <ul>
@@ -165,7 +167,7 @@ if(!data)data=JSON.parse(JSON.stringify(DEFAULT));
 const save=()=>{try{localStorage.setItem("rangos_web_v1",JSON.stringify(data))}catch(e){}};
 
 const nameOf=a=>(data._names&&data._names[st.seq+a.k])||a.n;
-st={seq:"OR",hero:"SB",vs:"",ex:"",edit:false,brush:"raise"};
+st={pure:true,seq:"OR",hero:"SB",vs:"",ex:"",edit:false,brush:"raise"};
 const key=()=>st.seq+"|"+st.hero+"|"+(NOVS[st.seq]?"":st.vs)+(st.ex?"|"+st.ex:"");
 const actsNow=()=>ACTIONS[st.seq+(st.ex?"|"+st.ex:"")]||ACTIONS[st.seq];
 const $=id=>document.getElementById(id);
@@ -181,15 +183,18 @@ function render(){
   const exl=EXTRA[st.seq]||[];$("exBox").style.display=exl.length?"block":"none";
   if(exl.length){const ex=$("ex");ex.innerHTML="";exl.forEach(e=>{const b=document.createElement("button");b.textContent=e.n;if(st.ex===e.k)b.classList.add("on");b.onclick=()=>{st.ex=st.ex===e.k?"":e.k;st.brush=actsNow()[0].k;render()};ex.appendChild(b)})}
   const acts=actsNow(),r=data[key()];
+  const pureOf=v=>{let best=null,bv=0;acts.forEach(a=>{if((v[a.k]||0)>bv){bv=v[a.k];best=a.k}});if(!best||NOACT[best])return best?{[best]:100}:{};return {[best]:100}};
+  const view=h=>{const v=(r&&r.h[h])||{};return st.pure?pureOf(v):v};
+  const md=$("modo");md.innerHTML="";[["Puro",true],["Con frecuencias",false]].forEach(([n,p])=>{const b=document.createElement("button");b.textContent=n;if(st.pure===p)b.classList.add("on");b.onclick=()=>{st.pure=p;render()};md.appendChild(b)});
   // leyenda
   const lg=$("legend");lg.innerHTML="";
-  acts.forEach(a=>{let c=0;if(r)for(const h in r.h)c+=combos(h)*((r.h[h][a.k]||0)/100);if(!c)return;const nm=nameOf(a);const d=document.createElement("div");d.style.cursor="pointer";d.title="Tocá para renombrar";d.innerHTML=`<span class="sw" style="background:${a.c};outline:1px solid #444"></span>${nm.toUpperCase()}<em>${(c/1326*100).toFixed(2)}%</em>`;d.onclick=()=>{const v=prompt("Nombre para este color:",nm);if(v){data._names=data._names||{};data._names[st.seq+a.k]=v;save();render()}};lg.appendChild(d)});
+  acts.forEach(a=>{let c=0;if(r)for(const h in r.h)c+=combos(h)*((view(h)[a.k]||0)/100);if(!c)return;const nm=nameOf(a);const d=document.createElement("div");d.style.cursor="pointer";d.title="Tocá para renombrar";d.innerHTML=`<span class="sw" style="background:${a.c};outline:1px solid #444"></span>${nm.toUpperCase()}<em>${(c/1326*100).toFixed(2)}%</em>`;d.onclick=()=>{const v=prompt("Nombre para este color:",nm);if(v){data._names=data._names||{};data._names[st.seq+a.k]=v;save();render()}};lg.appendChild(d)});
   // grilla
   const gb=$("gridBox");
   if(!r&&!st.edit){gb.innerHTML=`<div class="empty">Tabla pendiente de cargar. Tocá <b>Editar</b> para pintarla.</div>`;}
   else{
     const g=document.createElement("div");g.className="grid"+(st.edit?" edit":"");
-    ALL.forEach(h=>{const v=(r&&r.h[h])||{};const d=document.createElement("div");d.className="c";let tot=0,bars="";
+    ALL.forEach(h=>{const v=view(h);const d=document.createElement("div");d.className="c";let tot=0,bars="";
       acts.forEach(a=>{const f=v[a.k]||0;if(f){if(!NOACT[a.k])tot+=f;bars+=`<i style="width:${f}%;background:${a.c}"></i>`}});
       if(!tot)d.classList.add("fold");if(r&&r.q.includes(h))d.classList.add("q");
       const num=r&&r.n&&r.n[h];d.innerHTML=`<div class="b">${bars}</div><div class="t">${h}</div>`+(num?`<span class="num">${num}</span>`:"");
@@ -223,7 +228,7 @@ $("file").onchange=e=>{const f=e.target.files[0];if(!f)return;f.text().then(t=>{
 render();
 function detail(h,v,acts){const c=combos(h);const tipo=h.length===2?"par":h[2]==="s"?"suited":"offsuit";
   const parts=acts.filter(a=>v[a.k]).map(a=>`<span class="chip" style="border-left:4px solid ${a.c}">${nameOf(a)} ${v[a.k]}%</span>`).join("");
-  $("detail").innerHTML=`<b>${h}</b> · ${tipo} · ${c} combinaciones<br>`+(parts||'<span class="chip">Fold 100%</span>');}
+  $("detail").innerHTML=`<b>${h}</b> · ${tipo} · ${c} combinaciones<br>`+(st.pure?(parts.replace(/ 100%/g,"")||'<span class="chip">Fold</span>'):(parts||'<span class="chip">Fold 100%</span>'));}
 
 }
 
