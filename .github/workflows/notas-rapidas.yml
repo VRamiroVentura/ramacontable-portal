@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write   # para aplicar los ajustes de guías fáciles a la hora
   actions: write
 
 concurrency:
