@@ -378,6 +378,84 @@ def preguntas_escala(c):
     return qs
 
 
+def _imp(v):
+    """Importe de una celda de escala («1.233.448,08», «$ 4.665,41», «211198») o None."""
+    t = str(v or "").replace("$", "").strip()
+    if re.fullmatch(r"\d{1,3}(\.\d{3})+(,\d+)?|\d+(,\d+)?", t):
+        return float(t.replace(".", "").replace(",", "."))
+    return None
+
+
+def _mes_col(h):
+    """(año, mes) de un encabezado tipo «Nov 2026», «Básico nov 2026», «01/11/26» o None."""
+    h = str(h).lower()
+    m = re.search(r"\b(\d{2})/(\d{2})/(\d{2})\b", h) or None  # 01/11/26
+    if m and 1 <= int(m.group(2)) <= 12:
+        return (2000 + int(m.group(3)), int(m.group(2)))
+    m = re.search(r"\b(\d{1,2})/(20\d{2})\b", h)  # 11/2026
+    if m and 1 <= int(m.group(1)) <= 12:
+        return (int(m.group(2)), int(m.group(1)))
+    for i, a in enumerate(_MES_ABR):
+        m = re.search(a + r"[a-zé]*\.?\s*(?:de\s*)?(?:y\s*\w+\s*)?-?\s*(20\d{2}|\d{2})\b", h)
+        if m:
+            y = int(m.group(1))
+            return (y + 2000 if y < 100 else y, i + 1)
+    return None
+
+
+def resumen_escala(c, notas):
+    """Texto propio de cada escala armado con su tabla: ejemplo de cálculo con la categoría de referencia, cuánto aumentó en el
+    período y accesos (guía de cómo liquidar, calculadora, paritarias del mes). Cambia solo cuando cambia la escala o el mes."""
+    esc = c.get("escala") or {}
+    t = esc.get("tabla") or []
+    if len(t) < 3:
+        return ""
+    cab = [str(x) for x in t[0]]
+    filas = [f for f in t[1:] if isinstance(f, list) and len(f) > 1]
+    hoy = datetime.date.today()
+    rem = [i for i in range(1, len(cab)) if "no rem" not in cab[i].lower() and "nr" != cab[i].lower().strip()]
+    meses = [(i, _mes_col(cab[i])) for i in rem if _mes_col(cab[i])]
+    col = next((i for i, ym in meses if ym == (hoy.year, hoy.month)), None)
+    if col is None:
+        col = next((i for i in rem if any(_imp(f[i]) for f in filas if len(f) > i)), None)
+    if col is None:
+        return ""
+    # categoría de referencia: la primera con valor mensual (más de $ 100.000) en esa columna
+    ref = next((f for f in filas if len(f) > col and (_imp(f[col]) or 0) > 100000 and "imgr" not in str(f[0]).lower()
+                and "mínimo" not in str(f[0]).lower()), None)
+    sig, cuando = nombre_busqueda(c), (f"{MESES[hoy.month - 1]} {hoy.year}" if any(ym == (hoy.year, hoy.month) for _, ym in meses) else (esc.get("periodo") or "la escala vigente"))
+    partes = []
+    if ref:
+        b = _imp(ref[col])
+        nr_col = next((i for i in range(1, len(cab)) if "no rem" in cab[i].lower() and (_mes_col(cab[i]) == _mes_col(cab[col]) or not _mes_col(cab[i]))), None)
+        nr = _imp(ref[nr_col]) if nr_col is not None and len(ref) > nr_col else None
+        txt = (f"Por ejemplo, la categoría <b>{e(ref[0])}</b> de {e(sig)} tiene en {e(cuando)} un básico de <b>$ {_num(b)}</b>. "
+               f"Sobre lo remunerativo se descuentan los aportes de ley: 11% de jubilación, 3% de PAMI y 3% de obra social (17% en total), "
+               f"así que de ese básico quedan unos <b>$ {_num(b * 0.83)}</b>, sin contar antigüedad, presentismo ni otros adicionales del convenio "
+               f"y antes de la cuota sindical.")
+        if nr:
+            txt += (f" Además se suman <b>$ {_num(nr)}</b> no remunerativos ({e(cab[nr_col])}): sobre esa suma no se aportan jubilación ni PAMI, "
+                    f"y lo que se descuenta de obra social o sindicato depende de lo que diga el acuerdo.")
+        partes.append(f"<p>{txt}</p>")
+        if len(meses) >= 2 and len(ref) > max(i for i, _ in meses):
+            (i0, ym0), (i1, ym1) = meses[0], meses[-1]
+            v0, v1 = _imp(ref[i0]), _imp(ref[i1])
+            if v0 and v1 and v1 > v0:
+                partes.append(f"<p>Entre <b>{MESES[ym0[1] - 1]} {ym0[0]}</b> y <b>{MESES[ym1[1] - 1]} {ym1[0]}</b> el básico de esa categoría pasa de "
+                              f"$ {_num(v0)} a $ {_num(v1)}: una suba de <b>{_num((v1 / v0 - 1) * 100)}%</b> en el período de la escala.</p>")
+    links = []
+    if any(n.get("slug") == f"guia-liquidar-sueldo-{c['slug']}" for n in notas):
+        links.append(f'<a href="nota-guia-liquidar-sueldo-{c["slug"]}.html">Cómo liquidar un sueldo de {e(sig)} paso a paso</a>')
+    calc = {"comercio": ("sueldo-comercio.html", "Calculadora de sueldo de Comercio con esta escala"),
+            "casas-particulares": ("sueldo-casas-particulares.html", "Calculadora de sueldo de casas particulares")}.get(c["slug"])
+    if calc:
+        links.append(f'<a href="{calc[0]}">{calc[1]}</a>')
+    links.append(f'<a href="paritarias-{c["slug"]}-{MESES[hoy.month - 1]}-{hoy.year}.html">Paritarias de {e(sig)} en {MESES[hoy.month - 1]} {hoy.year}</a>')
+    links.append('<a href="aguinaldo.html">Calculadora de aguinaldo</a>')
+    return (f'<h2>Cómo leer la escala {e(sig)}</h2>' + "".join(partes)
+            + '<ul class="escala-links">' + "".join(f"<li>{x}</li>" for x in links) + "</ul>")
+
+
 def pagina_convenio(c, notas, aportes=None):
     esc = c.get("escala") or {}
     periodo = esc.get("periodo") or ""
@@ -407,6 +485,7 @@ def pagina_convenio(c, notas, aportes=None):
 {f'<p class="intro-escala">Esta es la <b>escala salarial {e(nombre_busqueda(c))} {e(periodo)}</b> ({e(c["cct"])}) con los valores por categoría y las sumas no remunerativas del último acuerdo. Se actualiza sola cuando sale una paritaria nueva.</p>' if periodo else ""}
 <div class="encorto"><b>Quiénes están comprendidos</b><p>{e(c.get('descripcion',''))}</p></div>
 <h2>Escala vigente</h2>{escala}
+{resumen_escala(c, notas) if esc.get("tabla") else ""}
 {seccion("Qué cambió con el último acuerdo", c.get("novedades"))}
 {seccion("Cómo se calcula", c.get("calculo"))}
 {seccion("Sumas no remunerativas: aportes y contribuciones", c.get("nr"))}
@@ -2012,6 +2091,42 @@ def bloque_dato_mes(t, estado):
     return partes
 
 
+USO_DATO_MES = {  # para qué sirve cada dato (texto fijo verificado) y adónde seguir
+    "tope-aportes": ('Si el sueldo bruto supera la base máxima, los aportes personales se calculan sobre esa base máxima y no sobre todo el sueldo.',
+                     ("nota-guia-liquidar-sueldo-paso-a-paso.html", "Cómo liquidar un sueldo paso a paso")),
+    "salario-minimo": ('Además de ser el piso de lo que se puede pagar por una jornada completa, se usa como referencia para calcular cuánto se puede embargar de un sueldo.',
+                       ("embargo-sueldo.html", "Calculadora de embargo de sueldo")),
+    "ffep": ('Lo paga el empleador por cada trabajador y se declara en el F.931, junto con la cuota de la ART.',
+             ("vencimiento-931.html", "Vencimiento del F.931 de este mes")),
+}
+
+
+def texto_mes(pref, t, mes, valor):
+    """Texto propio de la página del mes: comparación con el mes anterior y el siguiente, para qué sirve y adónde seguir."""
+    y, m = int(mes[:4]), int(mes[5:])
+    ant = f"{y - 1}-12" if m == 1 else f"{y}-{m - 1:02d}"
+    sig = f"{y + 1}-01" if m == 12 else f"{y}-{m + 1:02d}"
+    nom = lambda x: f"{MESES[int(x[5:]) - 1]} {x[:4]}"
+    va, _, ea = valor_de_mes(t, ant)
+    vs, _, es = valor_de_mes(t, sig)
+    va = va if ea == "fijado" else None  # el historial guarda cuándo se cargó, no desde cuándo rige: solo se compara con montos ya fijados por norma
+    partes = []
+    a, b = _monto_txt(va), _monto_txt(valor)
+    if valor and va and a and b:
+        dif = (b / a - 1) * 100
+        partes.append(f"En {nom(mes)} el valor es <b>{e(_corto(valor, 60))}</b>. En {nom(ant)} era {e(_corto(va, 60))}: "
+                      + (f"sube un <b>{_num(dif)}%</b>." if dif > 0.005 else ("baja un <b>" + _num(-dif) + "%</b>." if dif < -0.005 else "no cambió.")))
+    if vs and es == "fijado":
+        partes.append(f"Para {nom(sig)} ya se conoce: <b>{e(_corto(vs, 60))}</b>.")
+    elif valor:
+        partes.append(f"El valor de {nom(sig)} todavía no se publicó: lo cargamos apenas sale.")
+    uso = USO_DATO_MES.get(pref)
+    html_ = "".join(f"<p>{x}</p>" for x in partes)
+    if uso:
+        html_ += f"<p>{e(uso[0])}</p><p><a href=\"{uso[1][0]}\">{e(uso[1][1])} →</a></p>"
+    return f"<h2>Cómo viene en {nom(mes)}</h2>{html_}" if html_ else ""
+
+
 def pagina_mes(pref, slug_dato, tit, preg, mes, notas):
     t = next((x for x in TEMAS_RESP if x["slug"] == slug_dato), None)
     if not t:
@@ -2029,6 +2144,7 @@ def pagina_mes(pref, slug_dato, tit, preg, mes, notas):
 <p class="firma">Redacción Ramacontable · Actualizado {fecha_larga(datetime.date.today().isoformat())}</p>
 {caja}
 <p><a class="btn" href="{t['slug']}.html">Ver el dato vigente hoy y su historial →</a></p>
+{texto_mes(pref, t, mes, valor)}
 {bloque_dato_mes(t, estado)}
 {bloque_evolucion(t)}
 <section class="relacionadas"><h2>Otros meses</h2><ul>{otros}</ul></section>
@@ -2038,7 +2154,7 @@ def pagina_mes(pref, slug_dato, tit, preg, mes, notas):
         {"@type": "Question", "name": pregunta, "acceptedAnswer": {"@type": "Answer", "text": f"{valor}. {texto}" if valor else texto}}]}, ensure_ascii=False) + "</script>"
     # Se indexan el mes en curso y el que viene con valor conocido (Search Console 22/11: la de diciembre del tope, 9% de clics);
     # los meses ya pasados quedan publicados pero sin indexar
-    if not valor or mes < datetime.date.today().strftime("%Y-%m"):
+    if not valor or mes < datetime.date.today().strftime("%Y-%m") or (mes == datetime.date.today().strftime("%Y-%m") and pref not in USO_DATO_MES):
         PAGINAS_FINAS.add(f"{pref}-{MESES[int(mes[5:]) - 1]}-{mes[:4]}")
     v_tit = re.sub(r"^(Máxima|Mínima) ", lambda m: m.group(1).lower() + " ", valor or "")
     return pagina(f"{titulo.split(':')[0] + ': ' + v_tit if valor else titulo} | Ramacontable", cuerpo, "datos-al-dia",
