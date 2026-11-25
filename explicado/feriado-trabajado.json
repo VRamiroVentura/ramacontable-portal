@@ -1,0 +1,159 @@
+{
+ "_ayuda": "Guía fácil de cómo se paga trabajar un feriado. Datos: LCT arts. 166 (remuneración normal más una cantidad igual), 167 (días no laborables: opción del empleador, se paga simple), 169 (jornalizados: 48 horas o 6 jornadas en los 10 días hábiles anteriores) y 201 (horas extras en feriado 100%). Mensualizados: adicional sueldo ÷ 25 (iProfesional 17/08/2026, posterior a la Ley 27.802; RePro CPCE PBA, Dr. Lovero; Ignacio Online). Feriados de diciembre 2026 y enero 2027 tomados del calendario del portal (paginas/feriados.html y feriados/2027.json): 7/12 no laborable con fines turísticos (Res. JGM 164/2025), 8/12 Inmaculada Concepción, 25/12 Navidad, 1/1/2027 Año Nuevo. Búsquedas reales: «cómo se paga el feriado trabajado», «cómo se paga el 25 de diciembre», «cómo se paga el 1 de enero», «feriado trabajado mensualizado se divide por 25 o 30», «el día no laborable se paga doble».",
+ "orden": 8,
+ "ruta": "cuanto-me-pagan-si-trabajo-un-feriado",
+ "titulo": "¿Cuánto me pagan si trabajo un feriado? Explicado fácil",
+ "seo_titulo": "Cuánto me pagan si trabajo un feriado o el 25 de diciembre ({anio})",
+ "descripcion": "Cómo se paga trabajar un feriado: doble si es feriado nacional, simple si es día no laborable. Con ejemplos, los feriados de diciembre y enero y una calculadora.",
+ "tarjeta": "Feriado nacional, día no laborable, 25 de diciembre y 1 de enero: cuánto cobrás si trabajás y si no.",
+ "para_quien": "Para cualquier persona en relación de dependencia que tiene que trabajar un feriado (o no sabe si le corresponde) y quiere saber cuánto le tienen que pagar. Sin palabras raras.",
+ "profesional": [
+  "feriados.html",
+  "Calendario de feriados 2026 y 2027 completo"
+ ],
+ "contacto": "feriados trabajados",
+ "secciones": [
+  {
+   "id": "feriado-o-no-laborable",
+   "titulo": "¿Es feriado o día no laborable?",
+   "texto": [
+    "No es lo mismo. En un feriado nacional no se trabaja, y si se trabaja se paga doble. En un día no laborable, en cambio, el que decide si se trabaja es el empleador, y si se trabaja se paga como un día común.",
+    "Por eso lo primero es fijarse qué tipo de día es."
+   ],
+   "tabla": [
+    [
+     "",
+     "Feriado nacional",
+     "Día no laborable"
+    ],
+    [
+     "¿Se trabaja?",
+     "No, salvo actividades que no pueden parar",
+     "Lo decide el empleador"
+    ],
+    [
+     "Si trabajás",
+     "Te lo pagan doble",
+     "Te lo pagan simple"
+    ],
+    [
+     "Si no trabajás",
+     "Lo cobrás igual",
+     "Lo cobrás igual"
+    ]
+   ],
+   "destino": [
+    "feriados.html",
+    "Ver el calendario de feriados"
+   ]
+  },
+  {
+   "id": "si-trabajo",
+   "titulo": "¿Cuánto me pagan si trabajo un feriado?",
+   "texto": [
+    "Te lo tienen que pagar doble: la ley dice que cobrás la remuneración normal más una cantidad igual.",
+    "Si cobrás por mes, ya tenés el feriado incluido en el sueldo. Por trabajarlo te suman un día más, que se calcula dividiendo el sueldo por 25 (no por 30).",
+    "Si cobrás por hora o por día, te pagan dobles las horas que trabajaste ese día."
+   ],
+   "clave": [
+    "Mensualizado: sueldo normal + sueldo ÷ 25.",
+    "Jornalizado: horas trabajadas × 2.",
+    "Si además hacés horas extras ese día, se pagan con un recargo del 100%.",
+    "Lo dicen los artículos 166 y 201 de la Ley de Contrato de Trabajo."
+   ]
+  },
+  {
+   "id": "ejemplo",
+   "titulo": "Un ejemplo con números",
+   "texto": [
+    "Lucía cobra $ 1.000.000 por mes (es un número de ejemplo) y trabaja el 25 de diciembre. Ese mes cobra su sueldo de $ 1.000.000 más $ 40.000 por el feriado (1.000.000 ÷ 25).",
+    "Martín cobra $ 6.500 la hora y trabaja 8 horas el 1 de enero. Por ese día le pagan 8 × $ 6.500 × 2 = $ 104.000.",
+    "Son montos brutos: después se descuentan los aportes, como con el resto del sueldo."
+   ]
+  },
+  {
+   "id": "calculadora",
+   "titulo": "Calculá cuánto te pagan",
+   "texto": [
+    "Elegí cómo cobrás, qué día es y si lo trabajaste: te muestra la cuenta paso a paso."
+   ],
+   "calculadora": "feriado-trabajado"
+  },
+  {
+   "id": "si-no-trabajo",
+   "titulo": "¿Y si no trabajo el feriado?",
+   "texto": [
+    "Lo cobrás igual. Si sos mensualizado, no te descuentan nada: el feriado ya está dentro del sueldo y no te corresponde nada extra.",
+    "Si sos jornalizado, te pagan el jornal de ese día aunque no trabajes, siempre que hayas trabajado para el mismo empleador 48 horas o 6 jornadas en los 10 días hábiles anteriores al feriado (artículo 169)."
+   ]
+  },
+  {
+   "id": "no-laborable",
+   "titulo": "¿Y el día no laborable?",
+   "texto": [
+    "El empleador decide si se trabaja. Si se trabaja, se paga como un día común, sin recargo. Si no abre, lo cobrás igual.",
+    "Por ejemplo, el lunes 7 de diciembre de 2026 es día no laborable con fines turísticos: si tu empleador abre, ese día no se paga doble."
+   ]
+  },
+  {
+   "id": "diciembre-enero",
+   "titulo": "Los feriados de diciembre y enero",
+   "tabla": [
+    [
+     "Día",
+     "Qué es",
+     "Si lo trabajás"
+    ],
+    [
+     "Lunes 7 de diciembre de 2026",
+     "Día no laborable con fines turísticos",
+     "Simple"
+    ],
+    [
+     "Martes 8 de diciembre de 2026",
+     "Feriado nacional (Inmaculada Concepción)",
+     "Doble"
+    ],
+    [
+     "Viernes 25 de diciembre de 2026",
+     "Feriado nacional (Navidad)",
+     "Doble"
+    ],
+    [
+     "Viernes 1 de enero de 2027",
+     "Feriado nacional (Año Nuevo)",
+     "Doble"
+    ]
+   ],
+   "texto": [
+    "El 24 y el 31 de diciembre no son feriados nacionales ni días no laborables, salvo que el Gobierno disponga algo distinto para ese año: se trabajan y se pagan como un día común."
+   ]
+  }
+ ],
+ "preguntas": [
+  [
+   "¿Cómo se paga el feriado trabajado?",
+   "Doble. Si sos mensualizado, cobrás tu sueldo más un día a sueldo ÷ 25. Si sos jornalizado, te pagan dobles las horas trabajadas."
+  ],
+  [
+   "¿Cómo se paga el 25 de diciembre si lo trabajo?",
+   "Es feriado nacional: se paga doble. Con un sueldo de $ 1.000.000, el adicional por trabajarlo es $ 40.000."
+  ],
+  [
+   "¿Cómo se paga el 1 de enero si lo trabajo?",
+   "También es feriado nacional, así que se paga doble, igual que el 25 de diciembre."
+  ],
+  [
+   "¿El feriado trabajado se divide por 25 o por 30?",
+   "Por 25: para los mensualizados, el adicional por trabajar el feriado es el sueldo dividido 25."
+  ],
+  [
+   "¿El día no laborable se paga doble?",
+   "No. Si el empleador decide que se trabaja, se paga como un día común, sin recargo."
+  ],
+  [
+   "¿El 24 y el 31 de diciembre son feriados?",
+   "No son feriados nacionales: se trabajan y se pagan normal, salvo que el Gobierno disponga otra cosa para ese año."
+  ]
+ ]
+}

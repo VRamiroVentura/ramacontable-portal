@@ -857,7 +857,7 @@ def sitemaps(notas, convenios=()):
     fijas = ["aguinaldo", "convenios", "guias", "calculadoras", "feriados", "sueldo-comercio", "sueldo-casas-particulares", "actualizacion", "dias-habiles",
              "plazo-fijo", "prestamos", "vacaciones", "liquidacion-final", "horas-extras", "iva", "conversor-dolar", "monotributo-categoria", "intereses-arca",
              "actualizacion-alquiler", "embargo-sueldo", "cuando-cambia-cada-dato", "glosario", "comparador-escalas", "agenda-vencimientos",
-             "retencion-ganancias", "como-trabajamos", "monotributo-o-responsable-inscripto"] + [g["ruta"] for g in EXPLICADO] + ([RUTA_FACIL] if EXPLICADO else []) + JURIS_URLS + PARITARIAS_URLS + FERIADOS_URLS + [f"impuesto-{i[0]}" for i in IMPUESTOS]
+             "retencion-ganancias", "como-trabajamos", "monotributo-o-responsable-inscripto", "feriado-trabajado"] + [g["ruta"] for g in EXPLICADO] + ([RUTA_FACIL] if EXPLICADO else []) + JURIS_URLS + PARITARIAS_URLS + FERIADOS_URLS + [f"impuesto-{i[0]}" for i in IMPUESTOS]
     urls = [f"<url><loc>{base}</loc><lastmod>{hoy}</lastmod></url>"] + [
         f"<url><loc>{base}{k}.html</loc><lastmod>{hoy}</lastmod></url>" for k in diarias if k not in PAGINAS_FINAS] + [
         f"<url><loc>{base}{k}.html</loc></url>" for k in fijas if k not in PAGINAS_FINAS] + [
@@ -902,7 +902,7 @@ def llms_txt(notas, convenios):
     l += ["", "## Calculadoras"] + [f"- [{t}]({base}{a}.html)" for a, t in [
         ("sueldo-comercio", "Sueldo de Comercio"), ("sueldo-casas-particulares", "Casas particulares"), ("aguinaldo", "Aguinaldo"),
         ("liquidacion-final", "Liquidación final e indemnización"), ("vacaciones", "Vacaciones"), ("horas-extras", "Horas extras"),
-        ("actualizacion", "Actualización por CER, UVA, dólar, inflación y tasas"), ("dias-habiles", "Días hábiles"),
+        ("feriado-trabajado", "Feriado trabajado"), ("actualizacion", "Actualización por CER, UVA, dólar, inflación y tasas"), ("dias-habiles", "Días hábiles"),
         ("plazo-fijo", "Plazo fijo"), ("prestamos", "Préstamos"), ("iva", "IVA"), ("conversor-dolar", "Conversor de dólar"),
         ("monotributo-categoria", "Categoría del Monotributo"), ("intereses-arca", "Intereses resarcitorios de ARCA"),
         ("actualizacion-alquiler", "Actualización de alquiler (ICL / IPC)"), ("embargo-sueldo", "Embargo de sueldo (Decreto 484/87)"),
@@ -2600,7 +2600,7 @@ def pagina_buscar(notas, guias, convenios):
         add(g["titulo"], g["ruta"] + ".html", g["descripcion"], "Guía")
     for a, t in [("aguinaldo", "Calculadora de aguinaldo (SAC)"), ("sueldo-comercio", "Calculadora de sueldo de Comercio"), ("sueldo-casas-particulares", "Calculadora de sueldo de casas particulares"),
                  ("liquidacion-final", "Calculadora de liquidación final e indemnización"), ("vacaciones", "Calculadora de vacaciones"), ("horas-extras", "Calculadora de horas extras"),
-                 ("retencion-ganancias", "Calculadora de retención de Ganancias"), ("monotributo-categoria", "Calculadora de categoría del Monotributo"), ("embargo-sueldo", "Calculadora de embargo de sueldo"),
+                 ("feriado-trabajado", "Calculadora de feriado trabajado"), ("retencion-ganancias", "Calculadora de retención de Ganancias"), ("monotributo-categoria", "Calculadora de categoría del Monotributo"), ("embargo-sueldo", "Calculadora de embargo de sueldo"),
                  ("intereses-arca", "Calculadora de intereses de ARCA"), ("actualizacion-alquiler", "Calculadora de actualización de alquiler"), ("actualizacion", "Actualización de montos por inflación, CER, UVA y dólar"),
                  ("conversor-dolar", "Conversor de dólar"), ("iva", "Calculadora de IVA"), ("dias-habiles", "Calculadora de días hábiles"), ("plazo-fijo", "Simulador de plazo fijo"), ("prestamos", "Calculadora de préstamos"),
                  ("agenda-vencimientos", "Agenda de vencimientos por CUIT"), ("feriados", "Feriados del año"), ("herramientas", "Vencimientos del mes"), ("glosario", "Glosario contable"),
@@ -3004,6 +3004,7 @@ def main():
              ("vacaciones.html", "Calculadora de vacaciones 2026: días y cuánto se cobra", "Calculá los días de vacaciones según antigüedad y cuánto se cobra: sueldo ÷ 25 y plus vacacional (LCT arts. 150 a 157)."),
              ("liquidacion-final.html", "Calculadora de liquidación final e indemnización por despido 2026", "Calculá la liquidación final por renuncia o despido: indemnización art. 245, preaviso, integración, SAC y vacaciones proporcionales."),
              ("horas-extras.html", "Calculadora de horas extras al 50% y al 100%", "Calculá el valor de las horas extras al 50% y al 100% a partir del sueldo y la jornada (art. 201 LCT)."),
+             ("feriado-trabajado.html", "Calculadora de feriado trabajado: cuánto se paga", "Calculá cuánto te pagan si trabajás un feriado nacional o un día no laborable: mensualizados (sueldo ÷ 25) y jornalizados (horas × 2)."),
              ("iva.html", "Calculadora de IVA: agregar o quitar IVA", "Sumá o quitá el IVA de un importe con alícuotas del 21%, 10,5%, 27% y otras."),
              ("conversor-dolar.html", "Conversor de dólar a pesos: oficial, MEP, CCL, tarjeta, cripto y blue", "Convertí pesos a dólares y dólares a pesos con las cotizaciones de hoy: oficial, mayorista, MEP, CCL, tarjeta, cripto y blue."),
              ("monotributo-categoria.html", "Calculadora de categoría del Monotributo 2026", "Cargá lo que facturaste en los últimos 12 meses y mirá en qué categoría del Monotributo estás y cuánto pagás por mes."),

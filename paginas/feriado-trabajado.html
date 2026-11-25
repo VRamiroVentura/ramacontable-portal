@@ -1,0 +1,36 @@
+<div class="grilla"><article class="nota calc">
+<p class="ante">Herramientas | Ley de Contrato de Trabajo, arts. 166 a 169</p>
+<h1>¿Cuánto me pagan si trabajo un feriado? Calculadora</h1>
+<p class="firma">Redacción Ramacontable · Feriados nacionales y días no laborables</p>
+<div class="encorto"><b>En corto</b><p>Si trabajás un feriado nacional te lo pagan doble: los mensualizados cobran su sueldo más un día a sueldo ÷ 25, y los jornalizados cobran dobles las horas trabajadas. El día no laborable se paga como un día común.</p></div>
+<form id="calc-feriado" class="form-calc" novalidate>
+<div class="fila2"><label>¿Cómo cobrás?<select name="tipo"><option value="mensual">Por mes (mensualizado)</option><option value="jornal">Por hora o por día (jornalizado)</option></select></label>
+<label>¿Qué día es?<select name="dia"><option value="feriado">Feriado nacional</option><option value="nolaborable">Día no laborable</option></select></label></div>
+<label>¿Lo trabajaste?<select name="trabajo"><option value="si">Sí, trabajé</option><option value="no">No, no trabajé</option></select></label>
+<div data-mensual><label>Sueldo mensual bruto<input name="sueldo" inputmode="decimal" placeholder="Ej.: 1.200.000"></label></div>
+<div data-jornal hidden><div class="fila2"><label>Valor de tu hora<input name="hora" inputmode="decimal" placeholder="Ej.: 6.500"></label>
+<label>Horas de tu jornada habitual<input name="jornada" inputmode="decimal" value="8"></label></div></div>
+<div data-horas hidden><label>Horas que trabajaste ese día<input name="horas" inputmode="decimal" value="8"></label></div>
+<p class="error"></p>
+<button class="btn ancho">Calcular</button>
+</form>
+<section id="resultado-feriado" class="resultado" hidden></section>
+<h2>Cómo hace la cuenta</h2>
+<div class="tabla"><table class="tabla-desc"><thead><tr><th></th><th>Feriado nacional</th><th>Día no laborable</th></tr></thead><tbody>
+<tr><td>Mensualizado que trabaja</td><td>Sueldo + un día a sueldo ÷ 25</td><td>Sueldo normal, sin recargo</td></tr>
+<tr><td>Mensualizado que no trabaja</td><td>Sueldo normal (el feriado ya está pago)</td><td>Sueldo normal</td></tr>
+<tr><td>Jornalizado que trabaja</td><td>Horas trabajadas × 2</td><td>Horas trabajadas, sin recargo</td></tr>
+<tr><td>Jornalizado que no trabaja</td><td>Jornal simple (si cumple el art. 169)</td><td>Jornal simple</td></tr>
+</tbody></table></div>
+<p>El feriado trabajado se paga con «la remuneración normal de los días laborables más una cantidad igual» (art. 166 de la Ley de Contrato de Trabajo). Para los mensualizados, el día se calcula dividiendo el sueldo por 25 y no por 30. En los días no laborables decide el empleador si se trabaja; si se trabaja, no hay recargo.</p>
+<section class="faq"><h2>Preguntas frecuentes</h2>
+<details><summary>¿Cómo se paga el feriado trabajado si soy mensualizado?</summary><p>Cobrás tu sueldo normal y un adicional de un día a sueldo ÷ 25. Con un sueldo de $ 1.000.000, el adicional es $ 40.000.</p></details>
+<details><summary>¿El día no laborable se paga doble?</summary><p>No. El empleador decide si se trabaja y, si se trabaja, se paga como un día común.</p></details>
+<details><summary>¿Y las horas extras en un feriado?</summary><p>Se pagan con un recargo del 100% (art. 201 de la Ley de Contrato de Trabajo).</p></details>
+</section>
+<p class="aviso">Herramienta de carácter general. El resultado es una estimación en montos brutos y no reemplaza el análisis profesional de cada caso. Algunos convenios colectivos tienen reglas propias para los feriados.</p>
+</article>
+<aside class="lateral"><a class="caja caja-calc" href="feriados.html"><b>Calendario de feriados</b><span>2026 y 2027</span></a><a class="caja caja-calc" href="horas-extras.html"><b>Horas extras</b><span>Al 50% y al 100%</span></a><a class="caja caja-calc" href="calculadoras.html"><b>Todas las calculadoras</b><span>Sueldos, aguinaldo y más</span></a></aside>
+</div>
+<script src="feriado.js?v=1"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "¿Cómo se paga el feriado trabajado si soy mensualizado?", "acceptedAnswer": {"@type": "Answer", "text": "Cobrás tu sueldo normal y un adicional de un día a sueldo ÷ 25. Con un sueldo de $ 1.000.000, el adicional es $ 40.000."}}, {"@type": "Question", "name": "¿El día no laborable se paga doble?", "acceptedAnswer": {"@type": "Answer", "text": "No. El empleador decide si se trabaja y, si se trabaja, se paga como un día común."}}, {"@type": "Question", "name": "¿Y las horas extras en un feriado?", "acceptedAnswer": {"@type": "Answer", "text": "Se pagan con un recargo del 100% (art. 201 de la Ley de Contrato de Trabajo)."}}]}</script>
