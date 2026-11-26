@@ -303,6 +303,21 @@ def _fin_escala(esc):
     return max(meses_cab + [fin_per])
 
 
+def _ini_escala(esc):
+    """Primer mes que cubre una escala (año, mes), por encabezados o período. (9999, 12) si no se sabe."""
+    if not isinstance(esc, dict):
+        return (9999, 12)
+    t = esc.get("tabla") or []
+    cab = [x for x in (_mes_col(h) for h in (t[0] if t else [])) if x]
+    per = str(esc.get("periodo") or "").lower()
+    anios = [int(a) for a in re.findall(r"20\d{2}", per)]
+    ms = sorted((per.find(n), i) for i, n in enumerate(MESES) if n in per)
+    ini_per = (anios[0], ms[0][1] + 1) if anios and ms else None
+    if ini_per and len(anios) == 1 and len(ms) > 1 and ms[0][1] > ms[-1][1]:
+        ini_per = (anios[0] - 1, ini_per[1])  # «noviembre a febrero 2027»
+    return min(cab + ([ini_per] if ini_per else [])) if (cab or ini_per) else (9999, 12)
+
+
 def cargar_convenios():
     locales = {}
     for ruta in glob.glob(os.path.join(RAIZ, "convenios", "*.json")):
@@ -1037,7 +1052,7 @@ def sitemaps(notas, convenios=()):
     fijas = ["aguinaldo", "convenios", "guias", "calculadoras", "feriados", "sueldo-comercio", "sueldo-casas-particulares", "actualizacion", "dias-habiles",
              "plazo-fijo", "prestamos", "vacaciones", "liquidacion-final", "horas-extras", "iva", "conversor-dolar", "monotributo-categoria", "intereses-arca",
              "actualizacion-alquiler", "embargo-sueldo", "cuando-cambia-cada-dato", "glosario", "comparador-escalas", "agenda-vencimientos",
-             "retencion-ganancias", "como-trabajamos", "monotributo-o-responsable-inscripto", "feriado-trabajado", "indices-facpce"] + [g["ruta"] for g in EXPLICADO] + ([RUTA_FACIL] if EXPLICADO else []) + JURIS_URLS + PARITARIAS_URLS + FERIADOS_URLS + [f"impuesto-{i[0]}" for i in IMPUESTOS]
+             "retencion-ganancias", "como-trabajamos", "monotributo-o-responsable-inscripto", "feriado-trabajado", "indices-facpce"] + prox_semestral_urls() + [g["ruta"] for g in EXPLICADO] + ([RUTA_FACIL] if EXPLICADO else []) + JURIS_URLS + PARITARIAS_URLS + FERIADOS_URLS + [f"impuesto-{i[0]}" for i in IMPUESTOS]
     urls = [f"<url><loc>{base}</loc><lastmod>{hoy}</lastmod></url>"] + [
         f"<url><loc>{base}{k}.html</loc><lastmod>{hoy}</lastmod></url>" for k in diarias if k not in PAGINAS_FINAS] + [
         f"<url><loc>{base}{k}.html</loc></url>" for k in fijas if k not in PAGINAS_FINAS] + [
@@ -1270,6 +1285,104 @@ def bloque_dato_hoy(t, d):
             + "".join(f"<li>{x}</li>" for x in filas) + "</ul></section>")
 
 
+def _proximo_semestral(meses_cambio):
+    """(año, mes) del próximo cambio semestral y los 6 meses de inflación que lo definen (el semestre calendario anterior)."""
+    hoy = datetime.date.today()
+    a, b = meses_cambio  # (2, 8) Monotributo · (1, 7) Ganancias
+    if hoy.month < a:
+        y, m = hoy.year, a
+    elif hoy.month < b:
+        y, m = hoy.year, b
+    else:
+        y, m = hoy.year + 1, a
+    sem = [(y - 1, k) for k in range(7, 13)] if m == a else [(y, k) for k in range(1, 7)]
+    return (y, m), sem
+
+
+def _ipc_meses():
+    """{(año, mes): % mensual} del IPC (serie del BCRA ya bajada en datos/serie-ipc.json)."""
+    try:
+        sr = json.load(open(os.path.join(SALIDA, "datos", "serie-ipc.json"), encoding="utf-8"))
+        return {(int(f[:4]), int(f[5:7])): float(v) for f, v in zip(sr["f"], sr["v"])}
+    except Exception:
+        return {}
+
+
+PROX_SEMESTRAL = {  # páginas del próximo cambio semestral (pedido de Ramiro, 26/11: adelantarse a la búsqueda)
+    "monotributo": {"meses": (2, 8), "dato": "monotributo-categorias-vigentes", "ruta": "monotributo-{mes}-{anio}",
+                    "titulo": "Monotributo {mes} {anio}: cuánto aumentan las cuotas y los topes",
+                    "regla": "Los montos del Monotributo (cuotas y topes de facturación de cada categoría) se actualizan dos veces por año, desde el 1 de febrero y el 1 de agosto, con la inflación (IPC del INDEC) acumulada del semestre anterior.",
+                    "antes": "En agosto de 2026 la suba fue del 16,85%: la inflación acumulada del primer semestre de 2026, la misma que se usó para actualizar Ganancias en julio.",
+                    "link": ("monotributo-categorias-vigentes.html", "Categorías y cuotas vigentes del Monotributo")},
+    "ganancias": {"meses": (1, 7), "dato": "ganancias-deducciones-sueldos", "ruta": "ganancias-{mes}-{anio}",
+                  "titulo": "Ganancias {mes} {anio}: cuánto suben las deducciones y la escala",
+                  "regla": "Las deducciones personales y los tramos de la escala de Ganancias para empleados y jubilados se actualizan en enero y en julio con la inflación (IPC del INDEC) del semestre anterior.",
+                  "antes": "En julio de 2026 la actualización fue del 16,85%, la inflación acumulada del primer semestre de 2026.",
+                  "link": ("ganancias-deducciones-sueldos.html", "Deducciones y escala de Ganancias vigentes")},
+}
+
+
+def pagina_proximo_semestral(clave, notas):
+    cfg = PROX_SEMESTRAL[clave]
+    (y, m), sem = _proximo_semestral(cfg["meses"])
+    mes_txt = MESES[m - 1]
+    ruta = cfg["ruta"].format(mes=mes_txt, anio=y)
+    ipc = _ipc_meses()
+    conocidos = [(k, ipc[k]) for k in sem if k in ipc]
+    nom = lambda k: f"{MESES[k[1] - 1]} {k[0]}"
+    acum = 1.0
+    for _, v in conocidos:
+        acum *= 1 + v / 100
+    partes = [f"<p>{e(cfg['regla'])}</p>", f"<p>Para {mes_txt} de {y} cuenta la inflación de <b>{nom(sem[0])} a {nom(sem[-1])}</b>.</p>"]
+    filas, estim = "", ""
+    if conocidos:
+        filas = "".join(f"<tr><td>{nom(k).capitalize()}</td><td>{_num(v)}%</td></tr>" for k, v in conocidos)
+        faltan = [nom(k) for k in sem if k not in ipc]
+        pct = _num((acum - 1) * 100)
+        partes.append(f"<p>Con la inflación ya publicada ({nom(conocidos[0][0])} a {nom(conocidos[-1][0])}), el acumulado va <b>{pct}%</b>."
+                      + (f" Faltan {', '.join(faltan)}: el porcentaje final se conoce cuando el INDEC publique {faltan[-1]}." if faltan
+                         else " Ya está toda la inflación del semestre: ese es el porcentaje de la actualización.") + "</p>")
+        d = ajustar_tramo((RESP.get(cfg["dato"]) or {}).get("datos") or {})
+        cats = sorted([c for c in ((d.get("estructurado") or {}).get("categorias") or []) if c.get("ingresos_max")], key=lambda c: c["ingresos_max"])
+        if clave == "monotributo" and cats:
+            a_, k_ = cats[0], cats[-1]
+            rows = [(f"Cuota categoría {a_['categoria']}", a_["cuota_servicios"]), (f"Tope anual categoría {a_['categoria']}", a_["ingresos_max"]),
+                    (f"Cuota categoría {k_['categoria']} (servicios)", k_["cuota_servicios"]), (f"Tope anual categoría {k_['categoria']}", k_["ingresos_max"])]
+            estim = ('<h2>Estimación con la inflación publicada hasta hoy</h2><div class="tabla"><table><thead><tr><th></th><th>Hoy</th>'
+                     f'<th>Estimado {mes_txt} {y}</th></tr></thead><tbody>'
+                     + "".join(f"<tr><td>{e(n)}</td><td>$ {_num(v)}</td><td>$ {_num(v * acum)}</td></tr>" for n, v in rows)
+                     + f'</tbody></table></div><p class="nota-chica">Estimación propia: valores de hoy × {pct}% de inflación acumulada'
+                     + (" (todavía faltan meses del semestre)" if faltan else "") + ". Los montos oficiales los publica ARCA.</p>")
+    partes.append(f"<p>{e(cfg['antes'])}</p>")
+    tabla_ipc = (f'<h2>Inflación del semestre</h2><div class="tabla"><table><thead><tr><th>Mes</th><th>IPC mensual</th></tr></thead><tbody>{filas}</tbody></table></div>' if filas else "")
+    titulo = cfg["titulo"].format(mes=mes_txt, anio=y)
+    qs = [{"p": f"¿Cuándo cambia {'el Monotributo' if clave == 'monotributo' else 'Ganancias'} en {mes_txt} {y}?",
+           "r": f"Desde el 1 de {mes_txt} de {y}, con la inflación de {nom(sem[0])} a {nom(sem[-1])}."}]
+    if conocidos:
+        qs.append({"p": f"¿Cuánto va a aumentar {'el Monotributo' if clave == 'monotributo' else 'Ganancias'} en {mes_txt} {y}?",
+                   "r": f"Con la inflación publicada hasta {nom(conocidos[-1][0])}, el acumulado va {_num((acum - 1) * 100)}%. El porcentaje final sale con la inflación de {nom(sem[-1])}."})
+    cuerpo = f"""<div class="grilla"><div class="nota-contenido"><p class="miga"><a href="datos-al-dia.html">Datos del día</a> / <a href="{cfg['link'][0]}">{e(cfg['link'][1])}</a></p>
+<h1>{e(titulo)}</h1>
+<p class="firma">Redacción Ramacontable · Actualizado {fecha_larga(datetime.date.today().isoformat())}</p>
+{''.join(partes)}
+{tabla_ipc}{estim}
+<p><a class="btn" href="{cfg['link'][0]}">{e(cfg['link'][1])} →</a></p>
+{preguntas_html({"preguntas": qs})}
+<p class="aviso">Información de carácter general. Las estimaciones son propias y se reemplazan por los valores oficiales cuando ARCA los publica.</p>
+</div>{lateral(notas)}</div>"""
+    ld = '<script type="application/ld+json">' + json.dumps({"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [
+        {"@type": "Question", "name": q["p"], "acceptedAnswer": {"@type": "Answer", "text": q["r"]}} for q in qs]}, ensure_ascii=False) + "</script>"
+    desc = (f"Cuánto suben {'las cuotas y topes del Monotributo' if clave == 'monotributo' else 'las deducciones y la escala de Ganancias'} en {mes_txt} {y}: "
+            f"inflación de {nom(sem[0])} a {nom(sem[-1])}, acumulado hasta hoy y estimación.")
+    return ruta, pagina(titulo, cuerpo, "datos-al-dia", desc[:160], ruta + ".html", ld,
+                        [("Datos del día", "datos-al-dia.html"), (titulo.split(":")[0], ruta + ".html")])
+
+
+def prox_semestral_urls():
+    return [PROX_SEMESTRAL[k]["ruta"].format(mes=MESES[_proximo_semestral(PROX_SEMESTRAL[k]["meses"])[0][1] - 1],
+                                             anio=_proximo_semestral(PROX_SEMESTRAL[k]["meses"])[0][0]) for k in PROX_SEMESTRAL]
+
+
 def mes_links(t):
     pm = next((p for p in PAGINAS_MES if p[1] == t["slug"]), None)
     if not pm:
@@ -1333,7 +1446,7 @@ def pagina_respuesta(t, r, notas, aportes=None, extra=""):
 {caja}{revisado}{hoy_blq}{rel_html}{cuerpo}{extra}{faq}{fuentes_html}
 <p class="aviso">Información de carácter general. Se recomienda verificar siempre en las fuentes oficiales. Cada profesional es responsable de su aplicación.</p>
 </div>
-{mes_links(t)}
+{mes_links(t)}{"".join(f'<p class="dato-vigente">📅 <b>Próximo cambio:</b> <a href="{r}.html">{e(PROX_SEMESTRAL[k]["titulo"].format(mes=r.split("-")[-2], anio=r.split("-")[-1]))}</a></p>' for k, r in zip(PROX_SEMESTRAL, prox_semestral_urls()) if PROX_SEMESTRAL[k]["dato"] == t["slug"])}
 <section class="relacionadas"><h2>Otros datos del día</h2><ul>{otros}</ul></section>
 {bloque_aportes(falsa_nota, aportes)}
 </article>{lateral(notas)}</div>"""
@@ -2099,7 +2212,23 @@ PAGINAS_MES = [  # (prefijo de la URL, dato del día, título, pregunta)
     ("seguro-de-desempleo", "seguro-de-desempleo-montos", "Seguro de desempleo {mes}: montos", "¿Cuánto se cobra de desempleo en {mes}?"),
     ("ffep", "ffep-fondo-enfermedades-profesionales", "FFEP {mes}: importe por trabajador", "¿Cuánto es el FFEP en {mes}?"),
     ("aportes-autonomos", "autonomos-categorias-aportes", "Aportes de autónomos {mes}: cuánto se paga por categoría", "¿Cuánto paga un autónomo en {mes}?"),
+    ("puam", "jubilacion-minima-y-bono", "PUAM {mes}: cuánto se cobra con el bono", "¿Cuánto cobra la PUAM en {mes}?"),
 ]
+
+
+def _puam(v):
+    """PUAM = 80% de la jubilación mínima (Ley 27.260); el bono lo cobran igual (Decreto del bono de cada mes)."""
+    if not v:
+        return v
+    m = _monto_txt(v)
+    if not m:
+        return None
+    bono = re.search(r"bono\s*\$\s*([\d.]+(?:,\d+)?)", str(v))
+    txt = f"$ {_num(m * 0.8)}" + (f" + bono $ {bono.group(1)}" if bono else (" + bono a confirmar" if "bono" in str(v) else ""))
+    return txt + (" (cálculo anticipado)" if "anticipado" in str(v) else "")
+
+
+TRANSFORMA_MES = {"puam": _puam}
 
 
 def _meses_paginas():
@@ -2194,6 +2323,8 @@ USO_DATO_MES = {  # para qué sirve cada dato (texto fijo verificado) y adónde 
             ("cuando-cambia-cada-dato.html", "Cuándo cambia cada dato")),
     "seguro-de-desempleo": ('Los montos del seguro de desempleo van atados al salario mínimo vital y móvil: cuando cambia el salario mínimo, cambian también.',
                             ("salario-minimo-vital-y-movil.html", "Salario mínimo vital y móvil hoy")),
+    "puam": ('La PUAM (Pensión Universal para el Adulto Mayor, Ley 27.260) es el 80% de la jubilación mínima y se actualiza con la misma movilidad mensual. Sus titulares también cobran el bono que se fija cada mes por decreto.',
+             ("aumento-jubilados-" + "{mes_url}" + ".html", "Jubilación mínima de este mes")),
     "aportes-autonomos": ('Los aportes de los autónomos se actualizan todos los meses con la movilidad jubilatoria. Cada uno paga según su categoría.',
                           ("monotributo-o-responsable-inscripto.html", "Calculadora: ¿Monotributo o Responsable Inscripto?")),
 }
@@ -2220,8 +2351,9 @@ def texto_mes(pref, t, mes, valor):
         partes.append(f"El valor de {nom(sig)} todavía no se publicó: lo cargamos apenas sale.")
     if not valor:
         d_hoy = ajustar_tramo((RESP.get(t["slug"]) or {}).get("datos") or {})
-        if d_hoy.get("valor"):
-            partes.append(f"Todavía no se publicó el valor de {nom(mes)}. El último publicado es <b>{e(_corto(d_hoy['valor'], 60))}</b>"
+        v_hoy = TRANSFORMA_MES[pref](d_hoy.get("valor")) if pref in TRANSFORMA_MES else d_hoy.get("valor")
+        if v_hoy:
+            partes.append(f"Todavía no se publicó el valor de {nom(mes)}. El último publicado es <b>{e(_corto(v_hoy, 60))}</b>"
                           + (f" (vigente desde {nom(d_hoy['mes_vigente'])})" if d_hoy.get("mes_vigente") else "") + ".")
         if t.get("cuando"):
             partes.append(f"<b>Cuándo se conoce:</b> {e(t['cuando'])}. Esta página se actualiza sola apenas sale el dato.")
@@ -2231,7 +2363,7 @@ def texto_mes(pref, t, mes, valor):
     uso = USO_DATO_MES.get(pref)
     html_ = "".join(f"<p>{x}</p>" for x in partes)
     if uso:
-        html_ += f"<p>{e(uso[0])}</p><p><a href=\"{uso[1][0]}\">{e(uso[1][1])} →</a></p>"
+        html_ += f"<p>{e(uso[0])}</p><p><a href=\"{uso[1][0].replace('{mes_url}', MESES[m - 1] + '-' + str(y))}\">{e(uso[1][1])} →</a></p>"
     return f"<h2>Cómo viene en {nom(mes)}</h2>{html_}" if html_ else ""
 
 
@@ -2241,6 +2373,9 @@ def pagina_mes(pref, slug_dato, tit, preg, mes, notas):
         return None
     mes_txt = f"{MESES[int(mes[5:]) - 1]} {mes[:4]}"
     valor, texto, estado = valor_de_mes(t, mes)
+    if pref in TRANSFORMA_MES:
+        valor = TRANSFORMA_MES[pref](valor)
+        texto = ("Es el 80% de la jubilación mínima del mes, más el bono. " + texto) if valor else texto
     etiqueta = {"vigente": "Vigente", "fijado": "Ya fijado", "anticipado": "Cálculo anticipado", "historico": "Valor de ese mes", "pendiente": "Todavía no publicado"}[estado]
     titulo = tit.format(mes=mes_txt)
     pregunta = preg.format(mes=mes_txt)
@@ -2253,8 +2388,8 @@ def pagina_mes(pref, slug_dato, tit, preg, mes, notas):
 {caja}
 <p><a class="btn" href="{t['slug']}.html">Ver el dato vigente hoy y su historial →</a></p>
 {texto_mes(pref, t, mes, valor)}
-{bloque_dato_mes(t, estado)}
-{bloque_evolucion(t)}
+{"" if pref in TRANSFORMA_MES else bloque_dato_mes(t, estado)}
+{"" if pref in TRANSFORMA_MES else bloque_evolucion(t)}
 <section class="relacionadas"><h2>Otros meses</h2><ul>{otros}</ul></section>
 <p class="aviso">Información de carácter general. Verificá siempre en la norma oficial.</p>
 </div>{lateral(notas)}</div>"""
@@ -2282,7 +2417,8 @@ def pagina_paritaria(c, mes, notas):
     esc = c.get("escala") or {}
     periodo = esc.get("periodo") or ""
     nombre_mes = MESES[int(mes[5:]) - 1]
-    cubre = bool(periodo) and nombre_mes in periodo.lower() and mes[:4] in periodo
+    ym = (int(mes[:4]), int(mes[5:]))
+    cubre = bool(periodo) and _escala_ok(esc) and _ini_escala(esc) <= ym <= _fin_escala(esc)
     hist = sorted(c.get("historial") or [], key=lambda h: str(h.get("fecha", "")), reverse=True)
     if cubre:
         estado = f"La escala vigente para {mes_txt} es la de <b>{e(periodo)}</b>."
@@ -2293,8 +2429,25 @@ def pagina_paritaria(c, mes, notas):
         estado = f"Para {mes_txt} todavía no tenemos la escala confirmada con fuentes: se publica apenas la confirmen el gremio o dos portales."
     tabla = ""
     t = esc.get("tabla") or []
+    sig = nombre_busqueda(c)
+    propio = False  # la escala trae una columna propia de este mes: la página tiene datos que no están en otro lado
     if cubre and len(t) > 1:
-        tabla = bloque({"tabla": t[:13]}) + ('<p class="nota-chica">Escala completa en la página del convenio.</p>' if len(t) > 13 else "")
+        cab = [str(x) for x in t[0]]
+        col_b = next((i for i in range(1, len(cab)) if "no rem" not in cab[i].lower() and _mes_col(cab[i]) == ym), None)
+        col_nr = next((i for i in range(1, len(cab)) if "no rem" in cab[i].lower() and _mes_col(cab[i]) == ym), None)
+        if col_b is not None:
+            propio = True
+            cols = [0, col_b] + ([col_nr] if col_nr is not None else [])
+            sub = [[f[i] if len(f) > i else "" for i in cols] for f in t]
+            tabla = (f"<h2>Escala {e(sig)} {mes_txt}</h2>" + bloque({"tabla": sub})
+                     + f'<p class="nota-chica">Valores de la columna «{e(cab[col_b])}» de la escala {e(periodo)}. '
+                     + (e(esc.get("aclaraciones", ""))[:400] + "</p>" if esc.get("aclaraciones") else "</p>"))
+            ref = next((f for f in t[1:] if len(f) > col_b and (_imp(f[col_b]) or 0) > 0), None)
+            if ref:
+                estado += (f" Por ejemplo, la categoría <b>{e(re.sub(r'^categor[ií]a\s+', '', str(ref[0]), flags=re.I))}</b> tiene en {mes_txt} "
+                           f"un valor de <b>$ {_num(_imp(ref[col_b]))}</b>.")
+        else:
+            tabla = bloque({"tabla": t[:13]}) + ('<p class="nota-chica">Escala completa en la página del convenio.</p>' if len(t) > 13 else "")
     def fila_h(h):
         pct = (_num(h["aumento_pct"]) + "%") if isinstance(h.get("aumento_pct"), (int, float)) else "-"
         link = f'<a href="nota-{h["nota"]}.html">ver nota</a>' if h.get("nota") else ""
@@ -2303,7 +2456,8 @@ def pagina_paritaria(c, mes, notas):
     h_html = (f'<h2>Últimos acuerdos</h2><div class="tabla"><table><thead><tr><th>Período</th><th>Aumento</th><th></th></tr></thead><tbody>{filas_h}</tbody></table></div>' if filas_h else "")
     rel = [n for n in notas if c["nombre"].split(" (")[0].lower() in n["titulo"].lower()][:4]
     rel_html = ("<h2>Novedades del convenio</h2><ul>" + "".join(f'<li><a href="nota-{n["slug"]}.html">{e(n["titulo"])}</a></li>' for n in rel) + "</ul>") if rel else ""
-    titulo = f"Paritarias {c['nombre']} {mes_txt}: escala salarial y aumento"
+    titulo = (f"Escala {sig} {mes_txt} ({re.sub(r'\s*\(.*\)$', '', c.get('cct') or '')}): valores por categoría" if propio
+              else f"Paritarias {c['nombre']} {mes_txt}: escala salarial y aumento")
     cuerpo = f"""<div class="grilla"><div class="nota-contenido"><p class="miga"><a href="convenios.html">Escalas por convenio</a> / <a href="escala-{c['slug']}.html">{e(c['nombre'])}</a></p>
 <h1>{e(titulo)}</h1>
 <p class="firma">Redacción Ramacontable · {e(c.get('cct') or '')} · Actualizado {fecha_larga(datetime.date.today().isoformat())}</p>
@@ -2313,12 +2467,16 @@ def pagina_paritaria(c, mes, notas):
 {h_html}{rel_html}
 <p class="aviso">Información de carácter general. Verificá siempre en el acuerdo homologado.</p>
 </div>{lateral(notas)}</div>"""
-    # repiten la escala del convenio: no se indexan nunca, para que Google junte la fuerza en escala-<convenio>.html
-    PAGINAS_FINAS.add(f"paritarias-{c['slug']}-{nombre_mes}-{mes[:4]}")
+    # Solo se indexan las del mes en curso y el que viene cuando la escala trae la columna de ese mes (datos propios: «Escala UOM enero 2027»).
+    # Las demás repiten la escala del convenio y quedan sin indexar, para que la fuerza vaya a escala-<convenio>.html
+    hoy_ym = (datetime.date.today().year, datetime.date.today().month)
+    sig_ym = (hoy_ym[0] + hoy_ym[1] // 12, hoy_ym[1] % 12 + 1)
+    if not (propio and ym in (hoy_ym, sig_ym)):
+        PAGINAS_FINAS.add(f"paritarias-{c['slug']}-{nombre_mes}-{mes[:4]}")
     tit_seo = titulo if len(titulo) <= 65 else titulo.replace(": escala salarial y aumento", ": escala y aumento")
     return pagina(f"{tit_seo} | Ramacontable", cuerpo, "sueldos",
                   f"Paritarias {c['nombre']} ({c.get('cct') or ''}) {mes_txt}: escala salarial vigente, aumentos y sumas no remunerativas.",
-                  f"paritarias-{c['slug']}-{nombre_mes}-{mes[:4]}.html", NOI, migas=[("Escalas por convenio", "convenios.html"), (titulo, f"paritarias-{c['slug']}-{nombre_mes}-{mes[:4]}.html")])
+                  f"paritarias-{c['slug']}-{nombre_mes}-{mes[:4]}.html", "", migas=[("Escalas por convenio", "convenios.html"), (titulo, f"paritarias-{c['slug']}-{nombre_mes}-{mes[:4]}.html")])
 
 
 DIAS_SEM = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"]
@@ -3258,6 +3416,9 @@ def main():
              ("agenda-vencimientos.html", "Agenda de vencimientos por CUIT", "Cargá la terminación de CUIT de tus clientes y mirá solo sus vencimientos de ARCA, con descarga al calendario."),
              ("retencion-ganancias.html", "Calculadora de retención de Ganancias sobre el sueldo 2026", "Estimá cuánto te retienen de Ganancias por mes en el sueldo, con las deducciones y la escala vigentes."),
              ("embargo-sueldo.html", "Calculadora de embargo de sueldo 2026 (Decreto 484/87)", "Calculá cuánto se puede embargar de un sueldo según el salario mínimo vigente: inembargable hasta 1 SMVM, 10% y 20% del excedente.")]
+    for k in PROX_SEMESTRAL:
+        r_, h_ = pagina_proximo_semestral(k, notas)
+        escribir(r_ + ".html", h_)
     h_facpce = pagina_indices_facpce(notas)
     if h_facpce:
         escribir("indices-facpce.html", h_facpce)

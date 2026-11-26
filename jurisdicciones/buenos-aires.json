@@ -20,7 +20,50 @@
   "buenos aires",
   "convenio multilateral"
  ],
- "fuentes": [],
+ "fuentes": [
+  {
+   "nombre": "IPS (Instituto de Previsión Social PBA)",
+   "tipo": "oficial",
+   "url": "https://www.ips.gba.gob.ar/",
+   "filtro": [
+    "cronograma",
+    "calendario de pago",
+    "haberes",
+    "aguinaldo",
+    "bono",
+    "aumento",
+    "salari",
+    "paritari",
+    "jubil",
+    "pension",
+    "ips",
+    "arba",
+    "impuest",
+    "vencimiento"
+   ]
+  },
+  {
+   "nombre": "Ministerio de Economía PBA",
+   "tipo": "oficial",
+   "url": "https://www.gba.gob.ar/economia/noticias",
+   "filtro": [
+    "cronograma",
+    "calendario de pago",
+    "haberes",
+    "aguinaldo",
+    "bono",
+    "aumento",
+    "salari",
+    "paritari",
+    "jubil",
+    "pension",
+    "ips",
+    "arba",
+    "impuest",
+    "vencimiento"
+   ]
+  }
+ ],
  "oficiales": [
   {
    "nombre": "ARBA",
