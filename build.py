@@ -2302,7 +2302,7 @@ def bloque_dato_mes(t, estado):
         partes += "<h2>Detalle vigente</h2>" + tabla_html(d["tabla"])
     if d.get("explicacion"):
         partes += "<h2>Para entenderlo</h2><ul>" + "".join(f"<li>{e(x)}</li>" for x in d["explicacion"]) + "</ul>"
-    qs = [q for q in d.get("preguntas") or [] if isinstance(q, dict) and q.get("p") and q.get("r")]
+    qs = [q for q in d.get("preguntas") or [] if isinstance(q, dict) and q.get("p") and q.get("r")] if estado == "vigente" else []
     if qs:
         partes += preguntas_html({"preguntas": qs})
     if d.get("norma"):
@@ -3069,7 +3069,8 @@ def nota_vencida(n):
 
 def es_tecnica(n):
     """Notas muy específicas que no van arriba en la portada (siguen en su sección y en la lista de abajo)."""
-    return n["slug"].startswith("boletin-oficial-sumario")
+    sl, t = n["slug"], str(n.get("titulo") or "").lower()
+    return sl.startswith("boletin-oficial-sumario") or ("sumario" in sl and "boletin" in sl) or t.startswith("sumario del boletín")
 
 
 def portada_inicio(notas, guias, convenios):
