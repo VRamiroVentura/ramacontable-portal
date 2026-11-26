@@ -621,13 +621,16 @@
     const escala = (esc.tabla && esc.tabla.length) || esc.aclaraciones
       ? `<p class="periodo"><b>Período:</b> ${E(esc.periodo || '')}${esc.vigencia ? ` · <b>Vigencia:</b> ${E(esc.vigencia)}` : ''}</p>` + tablaHtml(esc.tabla) + (esc.aclaraciones ? `<p class="ayuda">${E(esc.aclaraciones)}</p>` : '')
       : '<div class="vacio-caja"><b>Escala pendiente de carga</b>Se actualiza automáticamente con el próximo acuerdo salarial publicado.</div>';
+    const finE = finEscala(esc), hoyM = new Date().toISOString().slice(0, 7), vencida = esc.tabla && finE !== '0000-00' && finE < hoyM;
+    const MESN = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+    const avisoV = vencida ? `<div class="dato-vigente ef-aviso">⚠️ <b>Esta escala cubre hasta ${MESN[+finE.slice(5) - 1]} ${finE.slice(0, 4)}.</b> Es la última que tenemos cargada: puede haber un acuerdo posterior que todavía no se publicó o no verificamos. Antes de liquidar, confirmalo con el sindicato o la cámara.</div>` : '';
     const qs = (c.preguntas || []).length ? '<section class="faq"><h2>Preguntas frecuentes</h2>' + c.preguntas.map(q => `<details><summary>${E(q.p)}</summary><p>${E(q.r)}</p></details>`).join('') + '</section>' : '';
     const hist = (c.historial || []).length ? '<h2>Historial de escalas</h2><ul class="historial">' + c.historial.slice().reverse().map(h => `<li><b>${E(h.periodo || '')}</b>${h.nota ? ` · <a href="nota-${E(h.nota)}.html">ver nota</a>` : ''}</li>`).join('') + '</ul>' : '';
     const html = `<p class="miga"><a href="sueldos.html">Sueldos</a> / <a href="convenios.html">Convenios</a></p>
       <p class="ante">${E(c.cct)} | ${E(c.partes)}</p><h1>Escala salarial ${E(c.nombre)}${esc.periodo ? ' ' + E(esc.periodo) : ''}</h1>
       <p class="firma">Redacción Ramacontable · Actualizado ${fechaLarga(String(c.actualizado).slice(0, 10))}</p>
       <div class="encorto"><b>Quiénes están comprendidos</b><p>${E(c.descripcion || '')}</p></div>
-      <h2>Escala vigente</h2>${escala}${sec('Qué cambió con el último acuerdo', c.novedades)}${sec('Cómo se calcula', c.calculo)}
+      <h2>${vencida ? 'Última escala publicada' : 'Escala vigente'}</h2>${avisoV}${escala}${sec('Qué cambió con el último acuerdo', c.novedades)}${sec('Cómo se calcula', c.calculo)}
       ${sec('Sumas no remunerativas: aportes y contribuciones', c.nr)}${sec('Cómo figura en el recibo', c.recibo)}${qs}${hist}
       ${c.fuente ? `<p class="fuente"><b>Fuente:</b> ${E(c.fuente)}</p>` : ''}
       <p class="aviso">Información de carácter general. Se recomienda verificar siempre en el acuerdo homologado y en las fuentes oficiales. Cada profesional es responsable de su aplicación.</p>`;
@@ -686,6 +689,21 @@
     if (error || !data || !data.length) return aviso('No se pudo guardar. ' + (error ? mensajeError(error) : ''));
     aviso(aplicar ? 'Actualización aplicada.' : 'Propuesta descartada.'); cargarConvenio();
   }
+  // Escalas con importes imposibles (vieja o mal leída): mensual < $100.000 o menos de la mitad que la de referencia. Igual que _escala_creible de build.py.
+  const montoTipico = esc => {
+    const v = ((esc && esc.tabla) || []).slice(1).map(f => {
+      for (const x of (Array.isArray(f) ? f.slice(1) : [])) { const m = String(x).match(/\d[\d.]*(?:,\d+)?/); if (m) return parseFloat(m[0].replace(/\./g, '').replace(',', '.')); }
+      return null;
+    }).filter(n => n != null && isFinite(n)).sort((a, b) => a - b);
+    return v.length ? v[Math.floor(v.length / 2)] : 0;
+  };
+  const escalaCreible = (esc, ref) => {
+    const t = (esc && esc.tabla) || [];
+    const txt = ((t[0] || []).join(' ') + ' ' + t.slice(1).map(f => Array.isArray(f) ? f[0] : '').join(' ') + ' ' + (esc && esc.periodo || '')).toLowerCase();
+    const tip = montoTipico(esc), r = ref ? montoTipico(ref) : 0;
+    if (!/hora|jornal|d[ií]a/.test(txt) && tip < 100000) return false;
+    return !(r && tip < r * 0.5);
+  };
   // Último mes que cubre una escala («2026-12»): por los encabezados de la tabla o por el período. Igual que _fin_escala de build.py.
   const finEscala = esc => {
     if (!esc) return '0000-00';
@@ -716,7 +734,7 @@
     const art = $('[data-convenio]'), finPag = (art && art.dataset.fin) || '0000-00';
     let escPag = null; try { escPag = JSON.parse(($('#escala-pagina') || {}).textContent || 'null'); } catch (e) { escPag = null; }
     const tablaOkC = t => Array.isArray(t) && t.slice(1).filter(f => Array.isArray(f) && f.slice(1).some(x => /\d/.test(String(x)))).length >= 2;
-    const baseVieja = escPag && tablaOkC(escPag.tabla) && (!tablaOkC((data.escala || {}).tabla) || finEscala(data.escala) < finPag);
+    const baseVieja = escPag && tablaOkC(escPag.tabla) && (!tablaOkC((data.escala || {}).tabla) || !escalaCreible(data.escala, escPag) || finEscala(data.escala) < finPag);
     if (!baseVieja && (new Date(data.actualizado) > new Date(cfg.build || 0) || esAdmin)) pintarConvenio(data);
     if (!esAdmin) return;
     if (baseVieja) data.escala = escPag;  // al editar se parte de la escala que se ve en la página
@@ -728,6 +746,7 @@
       const p = data.propuesta, pe = (p.escala || {});
       barra.append(h('div', { class: 'propuesta' },
         h('p', { class: 'motivo' }, `La fábrica propone actualizar a «${pe.periodo || 'nuevo período'}», pero encontró dudas: ${data.motivo_propuesta || ''}`),
+        !escalaCreible(pe, escPag || data.escala) ? h('p', { class: 'motivo' }, h('b', {}, '⚠️ Ojo: los importes de esta propuesta parecen imposibles (muy bajos o menos de la mitad que la escala actual). Probablemente sea una escala vieja: no la apliques sin revisar el documento.')) : false,
         (() => { const d = h('div', {}); d.innerHTML = RCEditor.limpiar(tablaHtml(pe.tabla)); return d; })(),
         h('div', { class: 'fila-btn' },
           h('button', { class: 'btn sec', onclick: () => decidirPropuesta(data, false) }, 'Descartar'),

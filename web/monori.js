@@ -38,7 +38,9 @@
   }
 
   function comparar(d, p) {
-    const mono = est(d, 'monotributo-categorias-vigentes'), gan = est(d, 'ganancias-deducciones-sueldos'), aut = est(d, 'autonomos-categorias-aportes');
+    // Para un año completo de trabajo por cuenta propia corresponde la tabla ANUAL de ARCA; si no está, la de retención acumulada a diciembre
+    const anual = est(d, 'ganancias-anual');
+    const mono = est(d, 'monotributo-categorias-vigentes'), gan = anual || est(d, 'ganancias-deducciones-sueldos'), aut = est(d, 'autonomos-categorias-aportes');
     if (!mono || !gan || !aut) throw new Error('Los datos vigentes todavía están en verificación. Probá más tarde.');
     if (!(p.facturacion > 0)) throw new Error('Cargá cuánto facturás por año.');
     if (!(p.gastos >= 0) || p.gastos >= p.facturacion) throw new Error('Los gastos tienen que ser menores que la facturación.');
@@ -61,12 +63,12 @@
       const gastosNetos = p.gastos - credito;
       const iibb = neto * p.alicIIBB;
       const autonomos = aut.categorias.find(c => c.categoria === p.catAut).aporte * 12;
-      const deduc = gan.ganancia_no_imponible * (1 + ESPECIAL_AUT) + (p.conyuge ? gan.conyuge : 0) + p.hijos * gan.hijo;
+      const deduc = gan.ganancia_no_imponible + (gan.especial_cuenta_propia || gan.ganancia_no_imponible * ESPECIAL_AUT) + (p.conyuge ? gan.conyuge : 0) + p.hijos * gan.hijo;
       const neta = neto - gastosNetos - iibb - autonomos - deduc;
       const g = ganancias(gan.escala, neta);
       return { cobro, neto, debito, credito, iva, iibb, autonomos, gan: g, bolsillo: neto - gastosNetos - iibb - autonomos - g };
     };
-    return { m, r: ri(p.absorbe), r0: ri(0), r100: ri(1), tope: cats[cats.length - 1].ingresos_max, periodo: gan.periodo };
+    return { m, r: ri(p.absorbe), r0: ri(0), r100: ri(1), tope: cats[cats.length - 1].ingresos_max, periodo: anual ? 'tabla anual ' + anual.periodo + ' de ARCA' : gan.periodo };
   }
 
   const form = document.getElementById('calc-monori');

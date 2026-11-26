@@ -18,6 +18,21 @@
     const ok = cab.map((h, i) => prueba(norm(h)) ? i : -1).filter(i => i >= 0);
     return ok.find(i => norm(cab[i]).includes(MES)) ?? (ok.length ? ok[0] : -1);
   };
+  // Escalas con importes imposibles (vieja o mal leída): mensual < $100.000 o menos de la mitad que la de referencia. Igual que _escala_creible de build.py.
+  const montoTipico = esc => {
+    const v = ((esc && esc.tabla) || []).slice(1).map(f => {
+      for (const x of (Array.isArray(f) ? f.slice(1) : [])) { const m = String(x).match(/\d[\d.]*(?:,\d+)?/); if (m) return parseFloat(m[0].replace(/\./g, '').replace(',', '.')); }
+      return null;
+    }).filter(n => n != null && isFinite(n)).sort((a, b) => a - b);
+    return v.length ? v[Math.floor(v.length / 2)] : 0;
+  };
+  const escalaCreible = (esc, ref) => {
+    const t = (esc && esc.tabla) || [];
+    const txt = ((t[0] || []).join(' ') + ' ' + t.slice(1).map(f => Array.isArray(f) ? f[0] : '').join(' ') + ' ' + (esc && esc.periodo || '')).toLowerCase();
+    const tip = montoTipico(esc), r = ref ? montoTipico(ref) : 0;
+    if (!/hora|jornal|d[ií]a/.test(txt) && tip < 100000) return false;
+    return !(r && tip < r * 0.5);
+  };
   // Último mes que cubre una escala («2026-12»): por los encabezados de la tabla o por el período. Igual que _fin_escala de build.py.
   const finEscala = esc => {
     if (!esc) return '0000-00';
@@ -177,7 +192,7 @@
     fetch(`${cfg.url}/rest/v1/convenios?select=escala&slug=eq.${encodeURIComponent(E.slug)}`, { headers: { apikey: cfg.key, Authorization: 'Bearer ' + cfg.key } })
       .then(r => r.ok ? r.json() : []).then(d => {
         const nueva = d && d[0] && d[0].escala;
-        if (nueva && tablaOk(nueva.tabla) && finEscala(nueva) >= finEscala(E) && JSON.stringify(nueva.tabla) !== JSON.stringify(E.tabla)) { Object.assign(E, nueva); pintarCategorias(); }
+        if (nueva && tablaOk(nueva.tabla) && escalaCreible(nueva, E) && finEscala(nueva) >= finEscala(E) && JSON.stringify(nueva.tabla) !== JSON.stringify(E.tabla)) { Object.assign(E, nueva); pintarCategorias(); }
       }).catch(() => {});
   }
 })();

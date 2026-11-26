@@ -32,6 +32,18 @@ CONFIABLE = "Ignacio Online"  # lo que publica Ignacio se toma como correcto (pe
 CONFIABLES = ("Ignacio Online", "Contadores en Red", "Blog del Contador", "Tributum", "Estudio Vilaplana")
 
 
+
+def cortar_oracion(texto, maximo):
+    """Acorta sin dejar palabras por la mitad: hasta la última oración completa que entra (o la última palabra, con «…»)."""
+    texto = (texto or "").strip()
+    if len(texto) <= maximo:
+        return texto
+    corte = texto[:maximo]
+    fin = max(corte.rfind(". "), corte.rfind(".\n"))
+    if fin > maximo * 0.4:
+        return corte[:fin + 1]
+    return corte.rsplit(" ", 1)[0].rstrip(",;:") + "…"
+
 def _prompt(nombre):
     return (util.RAIZ / "prompts" / nombre).read_text(encoding="utf-8")
 
@@ -63,6 +75,42 @@ def _tabla_ok(tabla):
     """Una escala sirve si tiene encabezado y al menos una fila con importes."""
     filas = [f for f in (tabla or [])[1:] if isinstance(f, list) and any(re.search(r"\d", str(x)) for x in f[1:])]
     return isinstance(tabla, list) and len(tabla) >= 2 and len(filas) >= 1
+
+
+def _monto_tipico(tabla):
+    """Mediana del primer importe de cada fila de una escala (0 si no hay)."""
+    vals = []
+    for f in (tabla or [])[1:]:
+        for x in (f[1:] if isinstance(f, list) else []):
+            m = re.search(r"\d[\d.]*(?:,\d+)?", str(x))
+            if m:
+                try:
+                    vals.append(float(m.group(0).replace(".", "").replace(",", ".")))
+                except ValueError:
+                    pass
+                break
+    vals.sort()
+    return vals[len(vals) // 2] if vals else 0
+
+
+def _escala_imposible(esc, vieja):
+    """Motivo si la escala nueva tiene importes imposibles (mensual < $100.000, o menos de la mitad que la anterior), si no None.
+    Caso real: la escala de Gastronómicos de 2016 (básico $6.106) cargada como septiembre 2026."""
+    t = esc.get("tabla") or [[]]
+    txt = (" ".join(map(str, t[0] or [])) + " " + " ".join(str(f[0]) for f in t[1:] if isinstance(f, list) and f) + " " + str(esc.get("periodo") or "")).lower()
+    tip, ref = _monto_tipico(t), (_monto_tipico(vieja.get("tabla")) if _tabla_ok((vieja or {}).get("tabla")) else 0)
+    if not re.search(r"hora|jornal|d[ií]a", txt) and 0 < tip < 100000:
+        return f"básico típico de ${tip:,.0f}: demasiado bajo para un sueldo mensual"
+    if ref and tip < ref * 0.5:
+        return f"básico típico de ${tip:,.0f}, menos de la mitad que la escala anterior (${ref:,.0f})"
+    return None
+
+
+def _cct_distinto(c, texto):
+    """True si el texto cita algún CCT y ninguno es el del convenio (p. ej. un acta de laboratorios 42/89 para Sanidad 122/75)."""
+    propios = set(re.findall(r"\d{2,4}/\d{2}", str(c.get("cct") or "")))
+    citados = set(re.findall(r"CCT\s*(?:N[°º.]?\s*)?(\d{2,4}/\d{2})", str(texto or ""), flags=re.I))
+    return bool(propios and citados and not (propios & citados))
 
 
 def _anio_periodo(txt):
@@ -279,7 +327,13 @@ class Fabrica:
         elif esc:
             nuevo_a, viejo_a, hoy_ = _anio_periodo(esc.get("periodo")), _anio_periodo(vieja.get("periodo")), util.ahora().date()
             minimo = hoy_.year - (1 if hoy_.month <= 3 else 0)
-            if (nuevo_a and nuevo_a < minimo) or (nuevo_a and viejo_a and _tabla_ok(vieja.get("tabla")) and nuevo_a < viejo_a):
+            anio_doc = re.search(r"/uploads/(20\d{2})/", str(doc or ""))  # PDF subido en 2016 a WordPress: es viejo aunque diga otra cosa
+            imposible = _escala_imposible(esc, vieja)
+            if imposible:
+                util.avisar(f"Escala {c['nombre']}: importes imposibles", f"{imposible}. {doc or ''} — no se usa; se mantiene la escala anterior")
+                esc = None
+                self._ult_escala = "vieja"
+            elif (anio_doc and int(anio_doc.group(1)) < minimo) or (nuevo_a and nuevo_a < minimo) or (nuevo_a and viejo_a and _tabla_ok(vieja.get("tabla")) and nuevo_a < viejo_a):
                 util.avisar(f"Escala {c['nombre']}: el documento es viejo ({esc.get('periodo')})", f"{doc or ''} — no se usa; se mantiene la escala anterior")
                 esc = None
                 self._ult_escala = "vieja"
@@ -298,6 +352,8 @@ class Fabrica:
             hist.append({"periodo": per, "fecha": util.ahora().date().isoformat(), "nota": nota_slug,
                          "aumento_pct": float(ap) if isinstance(ap, (int, float)) and 0 < ap < 100 else None})
         altas, bajas = _clasificar(control, nuevo.get("dudas"))
+        if esc and _cct_distinto(c, datos["fuente"]):  # fuente de otro convenio: no se aplica sola, queda como propuesta para revisar
+            altas = list(altas) + [{"dato": f"la fuente cita otro CCT que el {c.get('cct')}: «{datos['fuente'][:120]}»", "fuente": "", "revisar": ""}]
         ok = not altas
         if ok and bajas:
             self.observaciones.append((f"Escala {c['nombre']}", "; ".join(b["dato"] for b in bajas)[:400]))
@@ -477,7 +533,7 @@ class Fabrica:
         return {
             "slug": slug, "fecha": util.ahora().date().isoformat(), "seccion": grupo.get("seccion") if grupo.get("seccion") in ("sueldos", "impuestos", "profesion") else "profesion",
             "antetitulo": str(nota.get("antetitulo", ""))[:120], "titulo": str(nota.get("titulo", ""))[:160],
-            "dato": (str(nota["dato"])[:40] if nota.get("dato") else None), "encorto": str(nota.get("encorto", ""))[:600],
+            "dato": (str(nota["dato"])[:40] if nota.get("dato") else None), "encorto": cortar_oracion(str(nota.get("encorto", "")), 700),
             "clave": (str(nota["clave"])[:80] if nota.get("clave") else None),
             "cuerpo": _bloques_ok(nota.get("cuerpo")), "fuente": str(nota.get("fuente", ""))[:300],
             "fuentes": [{"nombre": it["fuente"], "url": it["url"], "titulo": it["titulo"]} for it in items],

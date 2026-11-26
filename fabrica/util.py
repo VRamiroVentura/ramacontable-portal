@@ -69,8 +69,8 @@ def pedir(metodo, url, intentos=4, espera=5, ok=(200, 201, 202, 204), **kw):
             if r.status_code in ok:
                 return r
             ultimo = r
-            if r.status_code in (429, 500, 502, 503, 504):
-                time.sleep(espera * (i + 1))
+            if r.status_code in (429, 500, 502, 503, 504, 520, 521, 522, 523, 524):  # 52x: Supabase/Cloudflare caído un rato
+                time.sleep(espera * (i + 1) * (4 if r.status_code >= 520 else 1))
                 continue
             return r
         except requests.RequestException as e:  # noqa

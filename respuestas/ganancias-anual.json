@@ -1,0 +1,27 @@
+{
+ "_ayuda": "Tabla ANUAL de Ganancias (liquidación anual y final y declaración jurada anual de personas humanas). Distinta de la tabla de retención julio-diciembre acumulada que mantiene la fábrica en el dato ganancias-deducciones-sueldos. ARCA publica la anual con cada actualización semestral (enero y julio): cuando salga la nueva, reemplazar estos valores (aviso en guias/calendario.json). Fuente: ARCA, «Deducciones personales art. 30 liq. anual 2026» y «Tabla art. 94 liquidación anual y final 2026» (publicadas en julio 2026; copia en Tributum).",
+ "periodo": "2026",
+ "publicada": "julio 2026",
+ "fuentes": [
+  {"nombre": "ARCA: deducciones personales art. 30, liquidación anual 2026", "url": "https://www.afip.gob.ar/gananciasYBienes/ganancias/personas-humanas-sucesiones-indivisas/deducciones/documentos/Deducciones-personales-art-30-liq-anual-2026.pdf"},
+  {"nombre": "Tributum: tablas anuales 2026 y julio a diciembre 2026", "url": "https://tributum.news/ganancias-gni-deducciones-personales-escalas-arca-publico-las-nuevas-tablas-actualizadas-anuales-2026-y-julio-a-diciembre-2026/"}
+ ],
+ "ganancia_no_imponible": 6019671.36,
+ "conyuge": 5669323.06,
+ "hijo": 2859060.31,
+ "hijo_incapacitado": 5718120.60,
+ "especial_cuenta_propia": 21068849.78,
+ "especial_nuevos_profesionales": 24078685.46,
+ "especial_dependencia": 28894422.56,
+ "escala": [
+  {"desde": 0, "hasta": 2336953.69, "fijo": 0, "pct": 5},
+  {"desde": 2336953.69, "hasta": 4673907.36, "fijo": 116847.68, "pct": 9},
+  {"desde": 4673907.36, "hasta": 7010861.05, "fijo": 327173.52, "pct": 12},
+  {"desde": 7010861.05, "hasta": 10516291.59, "fijo": 607607.96, "pct": 15},
+  {"desde": 10516291.59, "hasta": 21032583.18, "fijo": 1133422.54, "pct": 19},
+  {"desde": 21032583.18, "hasta": 31548874.77, "fijo": 3131517.94, "pct": 23},
+  {"desde": 31548874.77, "hasta": 47323312.16, "fijo": 5550265.01, "pct": 27},
+  {"desde": 47323312.16, "hasta": 70984968.25, "fijo": 9809363.10, "pct": 31},
+  {"desde": 70984968.25, "hasta": null, "fijo": 17144476.49, "pct": 35}
+ ]
+}

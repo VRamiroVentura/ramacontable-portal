@@ -277,6 +277,10 @@ def cargar_notas():
                 todas[s] = n
         notas = list(todas.values())
     for n in notas:
+        ec = (n.get("encorto") or "").strip()
+        if len(ec) > 300 and ec[-1] not in ".!?…)»\"":  # «En corto» que quedó cortado a mitad de palabra: hasta la última oración completa
+            fin = ec.rfind(". ")
+            n["encorto"] = ec[:fin + 1] if fin > len(ec) * 0.4 else ec.rsplit(" ", 1)[0] + "…"
         if n.get("seccion") not in SECCIONES:   # el portal no tiene sección Economía: lo que quede así va a Profesión
             n["seccion"] = "profesion"
     notas.sort(key=lambda n: (str(n["fecha"]), n["slug"]), reverse=True)
@@ -287,6 +291,38 @@ def _escala_ok(esc):
     """Una escala sirve si su tabla tiene al menos dos filas con importes."""
     t = (esc or {}).get("tabla") if isinstance(esc, dict) else None
     return bool(t) and sum(1 for f in t[1:] if isinstance(f, list) and any(re.search(r"\d", str(x)) for x in f[1:])) >= 2
+
+
+def _monto_tipico(esc):
+    """Mediana del primer importe de cada fila (para detectar escalas viejas o mal leídas). 0 si no hay importes."""
+    t = (esc or {}).get("tabla") if isinstance(esc, dict) else None
+    vals = []
+    for f in (t or [])[1:]:
+        for x in (f[1:] if isinstance(f, list) else []):
+            m = re.search(r"\d[\d.]*(?:,\d+)?", str(x))
+            if m:
+                try:
+                    vals.append(float(m.group(0).replace(".", "").replace(",", ".")))
+                except ValueError:
+                    pass
+                break
+    vals.sort()
+    return vals[len(vals) // 2] if vals else 0
+
+
+def _escala_creible(esc, referencia=None):
+    """Descarta escalas con importes imposibles: mensuales por debajo de $100.000, o menos de la mitad que la escala de referencia
+    (los sueldos no bajan a la mitad: si pasa, la fábrica leyó una escala vieja, como la de Gastronómicos de 2016)."""
+    if not _escala_ok(esc):
+        return False
+    tip = _monto_tipico(esc)
+    t = esc.get("tabla") or [[]]
+    cab = " ".join(str(x) for x in (t[0] or [])).lower() + " " + " ".join(str(f[0]) for f in t[1:] if isinstance(f, list) and f).lower() + " " + str(esc.get("periodo") or "").lower()
+    por_hora = re.search(r"hora|jornal|d[ií]a", cab)
+    if not por_hora and tip < 100000:
+        return False
+    ref = _monto_tipico(referencia) if _escala_ok(referencia) else 0
+    return not (ref and tip < ref * 0.5)
 
 
 def _fin_escala(esc):
@@ -332,7 +368,10 @@ def cargar_convenios():
             for c in json.load(urllib.request.urlopen(req, timeout=30)):
                 loc = locales.get(c["slug"]) or {}
                 # escala del repo si la de la fábrica está vacía o es más vieja (p. ej. Comercio: julio en la base y octubre-diciembre en el repo)
-                if _escala_ok(loc.get("escala")) and (not _escala_ok(c.get("escala")) or _fin_escala(loc["escala"]) > _fin_escala(c.get("escala"))):
+                creible = _escala_creible(c.get("escala"), loc.get("escala"))
+                if not creible and _escala_ok(c.get("escala")):
+                    print(f"Aviso: la escala de {c['slug']} en la base tiene importes imposibles; se usa la del repo.")
+                if _escala_ok(loc.get("escala")) and (not creible or _fin_escala(loc["escala"]) > _fin_escala(c.get("escala"))):
                     c = dict(c, escala=loc["escala"], historial=c.get("historial") or loc.get("historial") or [],
                              actualizado=loc.get("actualizado") or c.get("actualizado"), fuente=loc.get("fuente") or c.get("fuente"))
                 locales[c["slug"]] = c
@@ -530,7 +569,7 @@ def pagina_indices_facpce(notas):
 <p class="ante">Ajuste por inflación | RT 6 · Res. JG FACPCE 539/18</p>
 <h1>{e(titulo)}</h1>
 <p class="firma">Redacción Ramacontable · Último índice: {nom(ult)}</p>
-<div class="encorto"><b>En corto</b><p>El índice FACPCE de {nom(ult)} es <b>{f4(v)}</b>: {men} de variación mensual, {ia} interanual y {acu} en lo que va de {anio}. {e(d.get("proximo") or "")}</p></div>
+<div class="encorto"><b>En corto</b><p>El índice FACPCE de {nom(ult)} es <b>{f4(v)}</b>: {men} de variación mensual, {ia} interanual y {acu} en lo que va de {anio}. {e(d.get("proximo") or "")}</p><p class="ayuda">El INDEC informa la inflación redondeada a un decimal; acá la variación sale del índice con cuatro decimales, por eso puede diferir en centésimas de la cifra oficial.</p></div>
 <h2>Calculá el coeficiente de reexpresión</h2>
 <form id="calc-facpce" class="form-calc" novalidate><div class="fila2"><label>Mes de origen<select name="origen">{opciones}</select></label>
 <label>Mes de cierre<select name="cierre">{opciones}</select></label></div>
@@ -565,6 +604,10 @@ def pagina_convenio(c, notas, aportes=None):
     if esc.get("tabla"):
         escala = (f'<p class="periodo"><b>Período:</b> {e(periodo)}' + (f' · <b>Vigencia:</b> {e(esc.get("vigencia",""))}' if esc.get("vigencia") else "") + "</p>"
                   + tabla_html(esc["tabla"]) + (f'<p class="ayuda">{e(esc.get("aclaraciones",""))}</p>' if esc.get("aclaraciones") else ""))
+        hoy_c, fin_c = datetime.date.today(), _fin_escala(esc)
+        if fin_c != (0, 0) and fin_c < (hoy_c.year, hoy_c.month):
+            escala = (f'<div class="dato-vigente ef-aviso">⚠️ <b>Esta escala cubre hasta {MESES[fin_c[1] - 1]} {fin_c[0]}.</b> Es la última que tenemos cargada: '
+                      'puede haber un acuerdo posterior que todavía no se publicó o no verificamos. Antes de liquidar, confirmalo con el sindicato o la cámara.</div>' + escala)
     else:
         escala = '<div class="vacio-caja"><b>Escala pendiente de carga</b>Se actualiza automáticamente con el próximo acuerdo salarial publicado.</div>'
         PAGINAS_FINAS.add(f"escala-{c['slug']}")  # sin tabla queda flaca: no se indexa hasta que se cargue la escala
@@ -587,7 +630,7 @@ def pagina_convenio(c, notas, aportes=None):
 <p class="firma">Redacción Ramacontable · Actualizado {fecha_larga(str(c.get('actualizado') or datetime.date.today().isoformat())[:10])}</p>
 {f'<p class="intro-escala">Esta es la <b>escala salarial {e(nombre_busqueda(c))} {e(periodo)}</b> ({e(c["cct"])}) con los valores por categoría y las sumas no remunerativas del último acuerdo. Se actualiza sola cuando sale una paritaria nueva.</p>' if periodo else ""}
 <div class="encorto"><b>Quiénes están comprendidos</b><p>{e(c.get('descripcion',''))}</p></div>
-<h2>Escala vigente</h2>{escala}
+<h2>{"Última escala publicada" if (esc.get("tabla") and (0, 0) != _fin_escala(esc) < (datetime.date.today().year, datetime.date.today().month)) else "Escala vigente"}</h2>{escala}
 {resumen_escala(c, notas) if esc.get("tabla") else ""}
 {seccion("Qué cambió con el último acuerdo", c.get("novedades"))}
 {seccion("Cómo se calcula", c.get("calculo"))}
@@ -1406,10 +1449,10 @@ def pagina_respuesta(t, r, notas, aportes=None, extra=""):
                 + (f'<p class="resp-meta">Próximo cambio: <b>{e(d["proximo"])}</b></p>' if d.get("proximo") else "")
                 + (f'<p class="resp-meta">Norma: {e(d["norma"])}</p>' if d.get("norma") else "") + "</div>")
         revisado = (f'<p class="resp-rev">✔ <b>Vigente hoy, {hoy.day}/{hoy.month}/{hoy.year}.</b> Última verificación con las fuentes: {_fecha_hora(r.get("revisado"))} ('
-                    + ", ".join(e(f["nombre"]) for f in (r.get("fuentes") or [])) + ")."
+                    + ", ".join(e(x) for x in dict.fromkeys(f["nombre"] for f in (r.get("fuentes") or []))) + ")."
                     + (f" Cuándo cambia: {e(t['cuando'])}." if t.get("cuando") else "") + "</p>")
     else:
-        caja = f'<div class="resp-caja"><span class="resp-p">{e(t["pregunta"])}</span><p>Estamos verificando el dato vigente con las fuentes oficiales. Se publica apenas lo confirmen al menos dos fuentes.</p></div>'
+        caja = f'<div class="resp-caja"><span class="resp-p">{e(t["pregunta"])}</span><p>Estamos verificando el dato vigente con las fuentes oficiales. Se publica apenas lo confirme la fuente oficial o coincidan al menos dos fuentes.</p></div>'
         revisado = ""
     cuerpo = "".join(f"<p>{e(x)}</p>" for x in d.get("explicacion") or [])
     if d.get("tabla"):
@@ -2585,7 +2628,7 @@ def pagina_datos(notas):
             bloques += f'<h2 id="{gid}">{e(nombre)}</h2><ul class="lista-datos">{lis}</ul>'
     items = [bloques + '<p><a class="btn sec" href="cuando-cambia-cada-dato.html">Ver cuándo cambia cada dato →</a></p>']
     cuerpo = f"""<div class="grilla"><div><h1>Datos del día</h1>
-<p class="ayuda">Los datos que más se consultan, en una página fija cada uno y siempre actualizados: la fábrica los rechequea todos los días contra las fuentes oficiales y solo publica lo que confirman al menos dos fuentes.</p>
+<p class="ayuda">Los datos que más se consultan, en una página fija cada uno y siempre actualizados: la fábrica los rechequea todos los días contra las fuentes oficiales y solo publica lo que confirma la fuente oficial o un portal contable de referencia, o lo que coincide en al menos dos fuentes.</p>
 {''.join(items)}</div>{lateral(notas)}</div>"""
     return pagina("Datos del día: salario mínimo, Monotributo, jubilación, dólar, UVA y más | Ramacontable", cuerpo, "datos-al-dia",
                   "Salario mínimo, jubilación mínima, AUH, Monotributo, Ganancias, UVA, CER y dólar oficial: los datos vigentes hoy, revisados todos los días.",
@@ -2739,7 +2782,9 @@ def pagina_nota(n, notas, aportes=None):
     sec = SECCIONES[n["seccion"]]
     previa = ""
     if n.get("actualiza"):
-        previa = f'<p class="actualiza">Esta nota actualiza a: <a href="nota-{e(n["actualiza"])}.html">la nota anterior sobre el tema</a></p>'
+        ant = next((x for x in notas if x.get("slug") == n["actualiza"]), None)
+        previa = (f'<p class="actualiza">Esta nota actualiza a: <a href="nota-{e(n["actualiza"])}.html">{e(ant["titulo"]) if ant else "la nota anterior sobre el tema"}</a>'
+                  + (f' <small>({fecha_larga(str(ant["fecha"])[:10])})</small>' if ant and ant.get("fecha") else "") + '</p>')
     contenido = f"""<div class="grilla"><article class="nota" data-nota="{n['slug']}" data-actualizado="{e(str(n.get('actualizado') or ''))}">
 <div class="nota-contenido">
 {portada_html(n, "nota")}
@@ -3136,7 +3181,7 @@ def portada_inicio(notas, guias, convenios):
     resto = [n for n in vigentes if n["slug"] not in usados]
     cols = ""
     for k, nombre in SECCIONES.items():
-        xs = [n for n in resto if n["seccion"] == k and not es_tecnica(n)][:2]
+        xs = [n for n in vigentes if n["seccion"] == k and not es_tecnica(n)][:2]  # las 2 más nuevas de la sección, aunque ya estén en «Lo último»
         if xs:
             usados |= {n["slug"] for n in xs}
             cols += (f'<div class="ini-sec"><h3><a href="{k}.html">{e(nombre)}</a></h3><ul>'
@@ -3299,8 +3344,20 @@ def main():
                 print("Aviso: no pude armar la portada de", n["slug"], ex)
     else:
         print("Aviso: falta Pillow; las notas se comparten con la imagen general")
+    # Notas repetidas (misma frase en el slug: «...-2026» y «...-2026-2»): todas apuntan con canonical a la más nueva, para que Google no las vea como duplicadas
+    por_base = {}
     for n in todas:
-        escribir(f"nota-{n['slug']}.html", pagina_nota(n, guias if es_guia(n) else notas, aportes.get(n['slug'])))
+        por_base.setdefault(re.sub(r"-\d$", "", n["slug"]), []).append(n)
+    canon = {}
+    for grupo in por_base.values():
+        if len(grupo) > 1:
+            nueva = max(grupo, key=lambda x: (str(x.get("fecha")), x["slug"]))
+            canon.update({x["slug"]: nueva["slug"] for x in grupo if x is not nueva})
+    for n in todas:
+        html_n = pagina_nota(n, guias if es_guia(n) else notas, aportes.get(n['slug']))
+        if n["slug"] in canon:
+            html_n = html_n.replace(f'<link rel="canonical" href="{sitio_url()}nota-{n["slug"]}.html">', f'<link rel="canonical" href="{sitio_url()}nota-{canon[n["slug"]]}.html">', 1)
+        escribir(f"nota-{n['slug']}.html", html_n)
     escribir("herramientas.html", pagina_vencimientos(notas))
     with open(os.path.join(RAIZ, "paginas", "terminos.html"), encoding="utf-8") as f:
         escribir("terminos.html", pagina("Términos y condiciones y política de privacidad | Ramacontable", f.read(), "",
