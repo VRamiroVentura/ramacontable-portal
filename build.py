@@ -2098,6 +2098,7 @@ PAGINAS_MES = [  # (prefijo de la URL, dato del día, título, pregunta)
     ("salario-minimo", "salario-minimo-vital-y-movil", "Salario mínimo vital y móvil {mes}", "¿Cuánto es el salario mínimo en {mes}?"),
     ("seguro-de-desempleo", "seguro-de-desempleo-montos", "Seguro de desempleo {mes}: montos", "¿Cuánto se cobra de desempleo en {mes}?"),
     ("ffep", "ffep-fondo-enfermedades-profesionales", "FFEP {mes}: importe por trabajador", "¿Cuánto es el FFEP en {mes}?"),
+    ("aportes-autonomos", "autonomos-categorias-aportes", "Aportes de autónomos {mes}: cuánto se paga por categoría", "¿Cuánto paga un autónomo en {mes}?"),
 ]
 
 
@@ -2131,7 +2132,8 @@ def valor_de_mes(t, mes):
         ant = (y, m - 1) if m > 1 else (y - 1, 12)
         sig = f"{y + (m // 12)}-{m % 12 + 1:02d}"
         if ipc is not None and fi and (int(fi[:4]), int(fi[5:7])) == ant and mes == sig:
-            return (f"$ {_num(d['monto'] * (1 + ipc / 100))} (cálculo anticipado)",
+            pre = str(d.get("valor") or "").split("$")[0].strip()  # «Máxima», «Categoría I:», «AUH»
+            return (f"{pre + ' ' if pre else ''}$ {_num(d['monto'] * (1 + ipc / 100))}" + (" + bono a confirmar" if "bono" in str(d.get("valor") or "") else "") + " (cálculo anticipado)",
                     f"Cálculo propio con la fórmula de movilidad (Decreto 274/2024): inflación de {MESES[ant[1] - 1]} {_num(ipc)}%. Se confirma con la resolución de ANSES.", "anticipado")
         return None, "El monto de este mes todavía no se publicó: se conoce unos días después del dato de inflación del INDEC.", "pendiente"
     for h in r.get("historial") or []:
@@ -2186,6 +2188,14 @@ USO_DATO_MES = {  # para qué sirve cada dato (texto fijo verificado) y adónde 
                        ("embargo-sueldo.html", "Calculadora de embargo de sueldo")),
     "ffep": ('Lo paga el empleador por cada trabajador y se declara en el F.931, junto con la cuota de la ART.',
              ("vencimiento-931.html", "Vencimiento del F.931 de este mes")),
+    "aumento-jubilados": ('La jubilación mínima se actualiza todos los meses por la inflación de dos meses antes (Decreto 274/2024). El bono se fija aparte, por decreto, cada mes.',
+                          ("cuando-cambia-cada-dato.html", "Cuándo cambia cada dato")),
+    "auh": ('La AUH y las asignaciones familiares se actualizan todos los meses con la misma movilidad que las jubilaciones.',
+            ("cuando-cambia-cada-dato.html", "Cuándo cambia cada dato")),
+    "seguro-de-desempleo": ('Los montos del seguro de desempleo van atados al salario mínimo vital y móvil: cuando cambia el salario mínimo, cambian también.',
+                            ("salario-minimo-vital-y-movil.html", "Salario mínimo vital y móvil hoy")),
+    "aportes-autonomos": ('Los aportes de los autónomos se actualizan todos los meses con la movilidad jubilatoria. Cada uno paga según su categoría.',
+                          ("monotributo-o-responsable-inscripto.html", "Calculadora: ¿Monotributo o Responsable Inscripto?")),
 }
 
 
@@ -2208,6 +2218,16 @@ def texto_mes(pref, t, mes, valor):
         partes.append(f"Para {nom(sig)} ya se conoce: <b>{e(_corto(vs, 60))}</b>.")
     elif valor:
         partes.append(f"El valor de {nom(sig)} todavía no se publicó: lo cargamos apenas sale.")
+    if not valor:
+        d_hoy = ajustar_tramo((RESP.get(t["slug"]) or {}).get("datos") or {})
+        if d_hoy.get("valor"):
+            partes.append(f"Todavía no se publicó el valor de {nom(mes)}. El último publicado es <b>{e(_corto(d_hoy['valor'], 60))}</b>"
+                          + (f" (vigente desde {nom(d_hoy['mes_vigente'])})" if d_hoy.get("mes_vigente") else "") + ".")
+        if t.get("cuando"):
+            partes.append(f"<b>Cuándo se conoce:</b> {e(t['cuando'])}. Esta página se actualiza sola apenas sale el dato.")
+    elif "anticipado" in str(valor):
+        partes.append("Es un cálculo anticipado: aplicamos la fórmula de movilidad con la última inflación publicada por el INDEC. "
+                      "Cuando sale la resolución oficial, el valor se reemplaza solo.")
     uso = USO_DATO_MES.get(pref)
     html_ = "".join(f"<p>{x}</p>" for x in partes)
     if uso:
@@ -2242,11 +2262,14 @@ def pagina_mes(pref, slug_dato, tit, preg, mes, notas):
         {"@type": "Question", "name": pregunta, "acceptedAnswer": {"@type": "Answer", "text": f"{valor}. {texto}" if valor else texto}}]}, ensure_ascii=False) + "</script>"
     # Se indexan el mes en curso y el que viene con valor conocido (Search Console 22/11: la de diciembre del tope, 9% de clics);
     # los meses ya pasados quedan publicados pero sin indexar
-    if not valor or mes < datetime.date.today().strftime("%Y-%m") or (mes == datetime.date.today().strftime("%Y-%m") and pref not in USO_DATO_MES):
+    # Se indexan el mes en curso y el que viene, aunque el que viene todavía no tenga valor (la página ya explica cuándo sale y el último
+    # valor): así Google la tiene antes de que la gente la busque (26/11: tope-aportes-diciembre fue la página más vista del mes)
+    hoy_m = datetime.date.today().strftime("%Y-%m")
+    if mes < hoy_m or pref not in USO_DATO_MES or (not valor and not t.get("cuando")):
         PAGINAS_FINAS.add(f"{pref}-{MESES[int(mes[5:]) - 1]}-{mes[:4]}")
     v_tit = re.sub(r"^(Máxima|Mínima) ", lambda m: m.group(1).lower() + " ", valor or "")
     return pagina(f"{titulo.split(':')[0] + ': ' + v_tit if valor else titulo} | Ramacontable", cuerpo, "datos-al-dia",
-                  f"{pregunta} {valor or ''} {texto}"[:300], f"{pref}-{MESES[int(mes[5:]) - 1]}-{mes[:4]}.html", ld + ("" if valor else NOI),
+                  f"{pregunta} {valor or ''} {texto}"[:300], f"{pref}-{MESES[int(mes[5:]) - 1]}-{mes[:4]}.html", ld,
                   [("Datos del día", "datos-al-dia.html"), (titulo, f"{pref}-{MESES[int(mes[5:]) - 1]}-{mes[:4]}.html")])
 
 
