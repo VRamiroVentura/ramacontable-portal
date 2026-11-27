@@ -17,8 +17,13 @@ Tu tarea:
      - "propia": un trabajo propio de un medio o portal: investigación, encuesta, relevamiento, estadística elaborada por ellos, informe de una consultora, análisis u opinión de un autor, entrevista, caso particular. Ejemplo: "Una de cada siete pymes industriales enfrenta embargos de ARCA" es "propia".
        También es "propia" toda nota que no nace de una norma, una actualización o una novedad oficial concreta y reciente: notas explicativas o atemporales ("qué es", "cómo hacer", "lo que tenés que saber"), consejos, listas, recopilaciones, proyecciones o estimaciones del propio blog, preguntas frecuentes y notas armadas para atraer visitas. Si dudás, es "propia".
 
+   - "prioridad": cuánta gente lo va a buscar (Ramacontable prioriza calidad y llegar antes, no cantidad):
+     - 1: ADELANTA algo que mucha gente va a buscar en los próximos días: montos o fechas del mes que viene (jubilaciones, AUH, salario mínimo, tope de aportes, autónomos, monotributo), cronogramas de pago (ANSES, provincia, municipios, aguinaldo), vencimientos y prórrogas, aumentos o bonos anunciados, escalas y acuerdos salariales nuevos, feriados. También cualquier novedad de hoy que afecta a muchos contribuyentes o empleadores.
+     - 2: novedad normativa útil para contadores o liquidadores, pero de alcance más acotado (un régimen de información, una resolución general de un sector, una provincia chica).
+     - 3: bajo interés: sumarios o listados sin contenido propio, resoluciones de alcance individual (una empresa, una persona, una designación), trámites internos de un organismo, temas muy de nicho que casi nadie busca.
+
 Respondé SOLO con JSON con esta forma:
-{"grupos": [{"tema": "...", "items": [ids], "profesion": true, "seccion": "sueldos", "repetido": false, "actualiza": null, "convenio": null, "escala": false, "clase": "novedad", "motivo": "una línea"}]}
+{"grupos": [{"tema": "...", "items": [ids], "profesion": true, "seccion": "sueldos", "repetido": false, "actualiza": null, "convenio": null, "escala": false, "clase": "novedad", "prioridad": 1, "motivo": "una línea"}]}
 Cada id de novedad tiene que aparecer en un solo grupo.
 
 

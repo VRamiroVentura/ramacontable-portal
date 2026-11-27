@@ -28,6 +28,11 @@ _SEGURIDAD = [{"category": c, "threshold": "BLOCK_ONLY_HIGH"} for c in
 class Bloqueado(RuntimeError):
     """Google rechazó el pedido por su contenido (pasa con el pedido, no con el modelo)."""
 _modelo_ok = None  # el primer modelo que anduvo en esta ejecución se reusa
+_modelo_ok_liviano = None
+_AGOTADOS = set()   # modelos que en esta vuelta dieron 404 (retirado) o 429 por cupo DIARIO: no se vuelven a probar
+_DESCUBIERTOS = None  # lista de modelos vigentes (se pide una sola vez por vuelta)
+AGOTADOS_LOG = []
+USO = {}  # pedidos que salieron bien, por modelo  # para el informe: qué modelo se quedó sin cupo y cuándo
 
 
 def _version(nombre):
@@ -98,7 +103,7 @@ def _queda(segundos=0):
         raise SinTiempo(f"se llegó al límite de {limite / 60:.0f} minutos de la vuelta")
 
 
-def gemini(sistema, usuario, temperatura=0.9):
+def gemini(sistema, usuario, temperatura=0.9, liviano=False):
     """Si Google está saturado (503/429 en todos los modelos), espera y reintenta hasta 3 veces antes de rendirse.
     Si la vuelta ya usó su tiempo, no arranca pedidos nuevos (SinTiempo)."""
     import time
@@ -110,7 +115,7 @@ def gemini(sistema, usuario, temperatura=0.9):
                f"reales: no las marques como error ni las corrijas por el año. Solo marcá una fecha si las fuentes dicen otra.\n\n") + sistema
     for intento in range(3):
         try:
-            return _gemini(sistema, usuario, temperatura)
+            return _gemini(sistema, usuario, temperatura, liviano)
         except Bloqueado:
             raise
         except RuntimeError as e:
@@ -122,18 +127,33 @@ def gemini(sistema, usuario, temperatura=0.9):
             time.sleep(60 * (intento + 1))
 
 
-def _gemini(sistema, usuario, temperatura=0.9):
-    global _modelo_ok
+def _ordenar(modelos, liviano):
+    """Flash para redactar y verificar (calidad); Lite primero para tareas livianas (agrupar, datos, vencimientos),
+    que tiene mucho más cupo gratis por día. Siempre quedan los dos tipos como respaldo."""
+    flash = [m for m in modelos if "lite" not in m][:3]
+    lite = [m for m in modelos if "lite" in m][:3]
+    return lite + flash if liviano else flash + lite
+
+
+def _gemini(sistema, usuario, temperatura=0.9, liviano=False):
+    global _modelo_ok, _modelo_ok_liviano, _DESCUBIERTOS
     clave = util.secreto("GEMINI_API_KEY")
     if not clave:
         raise RuntimeError("Falta el secreto GEMINI_API_KEY (Settings → Secrets and variables → Actions)")
-    preferidos = ([_modelo_ok] if _modelo_ok else []) + util.config().get("gemini_modelos", ["gemini-flash-latest"])
-    probados, errores, descubiertos, bloqueos = set(), [], False, 0
+    cfg = util.config()
+    if liviano:
+        preferidos = ([_modelo_ok_liviano] if _modelo_ok_liviano else []) + cfg.get("gemini_modelos_livianos", ["gemini-flash-lite-latest"]) \
+            + cfg.get("gemini_modelos", ["gemini-flash-latest"])
+    else:
+        preferidos = ([_modelo_ok] if _modelo_ok else []) + cfg.get("gemini_modelos", ["gemini-flash-latest"])
+    probados, errores, descubiertos, bloqueos = set(_AGOTADOS), [], False, 0
     cola = list(preferidos)
     while cola or not descubiertos:
         if not cola:
             descubiertos = True
-            cola = [m for m in _descubrir(clave) if m not in probados][:5]
+            if _DESCUBIERTOS is None:
+                _DESCUBIERTOS = _descubrir(clave)
+            cola = [m for m in _ordenar(_DESCUBIERTOS, liviano) if m not in probados]
             if cola:
                 util.log("Busco modelos vigentes de Gemini:", ", ".join(cola))
             continue
@@ -159,6 +179,10 @@ def _gemini(sistema, usuario, temperatura=0.9):
             continue
         if r.status_code != 200:
             errores.append(f"{modelo}: {getattr(r, 'status_code', '?')} {_mensaje(r)}")
+            crudo = str(getattr(r, "text", "") or "")
+            if r.status_code == 404 or (r.status_code == 429 and "PerDay" in crudo):
+                _AGOTADOS.add(modelo)  # retirado o sin cupo del día: no se gasta otro pedido en él en esta vuelta
+                AGOTADOS_LOG.append(f"{modelo} ({'retirado' if r.status_code == 404 else 'sin cupo diario'})")
             continue
         datos = r.json()
         cand = (datos.get("candidates") or [{}])[0]
@@ -169,9 +193,13 @@ def _gemini(sistema, usuario, temperatura=0.9):
         texto = "".join(p.get("text", "") for p in partes if not p.get("thought"))
         try:
             resultado = _json_de(texto)
-            if _modelo_ok != modelo:
-                util.log("Modelo de Gemini usado:", modelo)
-            _modelo_ok = modelo
+            if liviano:
+                _modelo_ok_liviano = modelo
+            else:
+                if _modelo_ok != modelo:
+                    util.log("Modelo de Gemini usado:", modelo)
+                _modelo_ok = modelo
+            USO[modelo] = USO.get(modelo, 0) + 1
             return resultado
         except Exception as e:  # noqa
             errores.append(f"{modelo}: respuesta sin JSON (motivo: {fin or 'desconocido'}) {str(e)[:80]}")

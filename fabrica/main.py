@@ -276,7 +276,7 @@ class Fabrica:
                   "\n\nNOTAS YA PUBLICADAS POR RAMACONTABLE (últimos 30 días):\n" +
                   json.dumps([{k: n.get(k) for k in ("slug", "titulo", "tema", "fecha")} for n in recientes if n.get("estado") != "borrada"],
                              ensure_ascii=False))
-        return gemini.gemini(_prompt("agrupar.md"), pedido, temperatura=0.2).get("grupos", [])
+        return gemini.gemini(_prompt("agrupar.md"), pedido, temperatura=0.2, liviano=True).get("grupos", [])
 
     def redactar(self, grupo, items, recientes):
         textos = []
@@ -491,7 +491,7 @@ class Fabrica:
                 util.avisar(f"Vencimientos de {nombre_mes}", f"solo encontré {len(vistos)} fuente(s); queda la agenda anterior")
                 continue
             try:
-                r = gemini.gemini(_prompt("vencimientos.md"), f"MES: {nombre_mes} {anio}\n\nFUENTES:\n" + "\n\n".join(textos), temperatura=0.1)
+                r = gemini.gemini(_prompt("vencimientos.md"), f"MES: {nombre_mes} {anio}\n\nFUENTES:\n" + "\n\n".join(textos), temperatura=0.1, liviano=True)
             except gemini.SinTiempo:
                 raise
             except Exception as e:  # noqa
@@ -609,9 +609,20 @@ class Fabrica:
         except Exception as e:  # noqa  (las novedades quedan en el radar y se procesan en la próxima vuelta)
             util.avisar("No pude agrupar las novedades (quedan para la próxima vuelta)", str(e))
             grupos = []
+        # Calidad y llegar antes: primero lo que adelanta algo que se va a buscar (prioridad 1), y lo de bajo interés (3) no se publica
+        def _prio(g):
+            try:
+                return int(g.get("prioridad") or 2)
+            except (TypeError, ValueError):
+                return 2
+        grupos = sorted(grupos, key=lambda g: (0 if g.get("escala") else _prio(g)))
         usados_slug = {n["slug"] for n in recientes}
         hechas = 0
         for g in grupos:
+            if _prio(g) >= 3 and not g.get("escala") and not g.get("actualiza"):
+                self.descartes.append((g.get("tema"), "bajo interés (prioridad 3): no se publica para cuidar la calidad y el cupo de Gemini"))
+                self.marcar([items[i]["url"] for i in g.get("items", []) if isinstance(i, int) and 0 <= i < len(items)], g.get("tema"), None)
+                continue
             miembros = [items[i] for i in g.get("items", []) if isinstance(i, int) and 0 <= i < len(items)]
             if not miembros:
                 continue
@@ -873,7 +884,7 @@ class Fabrica:
                   f"FORMATO ESTRUCTURADO: {t.get('estructura') or 'null'}\n\n"
                   f"DATO ANTERIOR: {json.dumps(prev.get('datos') or {}, ensure_ascii=False)}\n\nFUENTES:\n" + "\n\n".join(textos))
         self.pedidos_datos += 1
-        r = gemini.gemini(_prompt("respuesta.md"), pedido, temperatura=0.1)
+        r = gemini.gemini(_prompt("respuesta.md"), pedido, temperatura=0.1, liviano=True)
         nombres = {u["nombre"] for u in usadas}
         confirman = [c for c in (r.get("confirman") or []) if c in nombres]
         fuerte = any(c.startswith("Fuente oficial") or c == CONFIABLE for c in confirman) or len(set(confirman)) >= 2
@@ -1199,7 +1210,7 @@ class Fabrica:
             pedido = ("GUÍA (JSON):\n" + json.dumps({k: v for k, v in guia.items() if not k.startswith("_")}, ensure_ascii=False)
                       + "\n\nQUÉ REVISAR ESTA VEZ: " + a.get("que", "") + "\n\nFUENTES:\n"
                       + "\n\n".join(f"--- FUENTE: {it['fuente']} ({it.get('tipo', 'portal')})\nURL: {it['url']}\nTítulo: {it['titulo']}\nTexto: {it['texto']}" for it in items))
-            r = gemini.gemini(_prompt("revisar_facil.md"), pedido, temperatura=0.1)
+            r = gemini.gemini(_prompt("revisar_facil.md"), pedido, temperatura=0.1, liviano=True)
             ok, malos = self.validar_cambios((r or {}).get("cambios"), guia, items)
             for c, m in malos:
                 util.log("Ajuste descartado", a["guia"], "·", m, "·", str(c.get("actual"))[:80])
@@ -1388,7 +1399,10 @@ class Fabrica:
         md.append(f"## 🚨 Blogs de confianza que editaron o borraron ({len(self.alertas)})\n" + "".join(f"- {a['que']}: [{a['titulo']}]({a['url']}) → nuestra nota `{a['nota']}`\n" for a in self.alertas))
         md.append(f"## 📊 Datos del día sin confirmar ({len(self.datos_obs)})\n" + ("".join(f"- {t}: {o}\n" for t, o in self.datos_obs) or "Ninguno.\n"))
         md.append(f"## 📝 Publicadas con observaciones menores, no hace falta revisar ({len(self.observaciones)})\n" + "".join(f"- {t}: {o}\n" for t, o in self.observaciones))
-        md.append(f"**Pedidos a Gemini en esta vuelta:** {gemini.PEDIDOS[0]} (datos del día: {getattr(self, 'pedidos_datos', 0)})\n")
+        md.append(f"**Pedidos a Gemini en esta vuelta:** {gemini.PEDIDOS[0]} (datos del día: {getattr(self, 'pedidos_datos', 0)})"
+                  + (f" · por modelo: {', '.join(f'{k} {v}' for k, v in sorted(gemini.USO.items()))}" if gemini.USO else "") + "\n")
+        if gemini.AGOTADOS_LOG:
+            md.append(f"**⚠️ Modelos sin cupo en esta vuelta:** {', '.join(dict.fromkeys(gemini.AGOTADOS_LOG))}\n")
         md.append("## 📅 Vencimientos y datos del día\n" + ("\n".join(f"- {x}" for x in self.vencimientos_info) or "Sin cambios (ya actualizados hoy).") + "\n")
         md.append(f"## 📘 Guías\n{self.guias_info or 'Sin datos.'}\n")
         md.append(f"## ⏳ Esperando segunda fuente ({len(self.esperando)})\n" + "".join(f"- {t} ({d})\n" for t, d in self.esperando))
