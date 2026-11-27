@@ -761,7 +761,9 @@ def pagina_vencimientos(notas):
     if not bloques:
         bloques = '<div class="vacio-caja"><b>Agenda en preparación</b>La agenda del mes se actualiza automáticamente todos los días.</div>'
     cuerpo = (f'<div class="grilla"><article class="nota calc"><p class="ante">Herramientas | ARCA</p><h1>Vencimientos impositivos y previsionales</h1>'
-              f'<p class="firma">Redacción Ramacontable · Se actualiza todos los días</p>{bloques}'
+              f'<p class="firma">Redacción Ramacontable · Se actualiza todos los días</p>'
+              + (('<p class="dato-vigente">📅 Por mes: ' + " · ".join(f'<a href="{u}.html">{u.replace("vencimientos-", "").replace("-", " ").capitalize()}</a>' for u in venc_mes_urls()) + "</p>"))
+              + f'{bloques}'
               '<p class="aviso">Se publican solo las fechas confirmadas por al menos dos fuentes. Verificá siempre en la agenda oficial de ARCA según la terminación de tu CUIT.</p>'
               f'</article>{lateral(notas)}</div>')
     return pagina("Vencimientos ARCA: calendario del mes por terminación de CUIT | Ramacontable", cuerpo, "",
@@ -1091,11 +1093,11 @@ def sitemaps(notas, convenios=()):
     # lastmod solo donde la página cambia de verdad todos los días (datos, dólar, índices, portadas);
     # las calculadoras y páginas fijas van sin fecha, para que Google no aprenda a ignorar nuestras fechas
     diarias = list(SECCIONES) + ["datos-al-dia", "dolar-hoy", "herramientas"] + [t["slug"] for t in TEMAS_RESP] + [b[0] for b in BCRA_RESP] + \
-        [x[0] for x in DOLARES] + [o[0] for o in OBLIGACIONES] + urls_mes() + QUE_CAMBIA_URLS
+        [x[0] for x in DOLARES] + [o[0] for o in OBLIGACIONES] + urls_mes() + QUE_CAMBIA_URLS + venc_mes_urls()
     fijas = ["aguinaldo", "convenios", "guias", "calculadoras", "feriados", "sueldo-comercio", "sueldo-casas-particulares", "actualizacion", "dias-habiles",
              "plazo-fijo", "prestamos", "vacaciones", "liquidacion-final", "horas-extras", "iva", "conversor-dolar", "monotributo-categoria", "intereses-arca",
              "actualizacion-alquiler", "embargo-sueldo", "cuando-cambia-cada-dato", "glosario", "comparador-escalas", "agenda-vencimientos",
-             "retencion-ganancias", "como-trabajamos", "monotributo-o-responsable-inscripto", "feriado-trabajado", "indices-facpce"] + prox_semestral_urls() + [g["ruta"] for g in EXPLICADO] + ([RUTA_FACIL] if EXPLICADO else []) + JURIS_URLS + PARITARIAS_URLS + FERIADOS_URLS + [f"impuesto-{i[0]}" for i in IMPUESTOS]
+             "retencion-ganancias", "como-trabajamos", "monotributo-o-responsable-inscripto", "feriado-trabajado", "indices-facpce"] + prox_semestral_urls() + [aguinaldo_jubilados_url()] + [g["ruta"] for g in EXPLICADO] + ([RUTA_FACIL] if EXPLICADO else []) + JURIS_URLS + PARITARIAS_URLS + FERIADOS_URLS + [f"impuesto-{i[0]}" for i in IMPUESTOS]
     urls = [f"<url><loc>{base}</loc><lastmod>{hoy}</lastmod></url>"] + [
         f"<url><loc>{base}{k}.html</loc><lastmod>{hoy}</lastmod></url>" for k in diarias if k not in PAGINAS_FINAS] + [
         f"<url><loc>{base}{k}.html</loc></url>" for k in fijas if k not in PAGINAS_FINAS] + [
@@ -1257,10 +1259,23 @@ def _num(x):
     return f"{x:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
 
+def _ipc_preciso():
+    """{(año, mes): % mensual con 2 decimales} sacado del índice FACPCE (IPC nacional con 4 decimales).
+    ANSES aplica la movilidad con 2 decimales (oct-26: 2,17%), mientras la serie del BCRA trae 1 (2,2%)."""
+    try:
+        sr = json.load(open(os.path.join(RAIZ, "tablas", "indices-facpce.json"), encoding="utf-8"))["serie"]
+        return {(int(b["mes"][:4]), int(b["mes"][5:7])): round((b["indice"] / a["indice"] - 1) * 100, 2) for a, b in zip(sr, sr[1:])}
+    except Exception:
+        return {}
+
+
 def _ultimo_serie(clave):
     try:
         sr = json.load(open(os.path.join(SALIDA, "datos", f"serie-{clave}.json"), encoding="utf-8"))
-        return sr["f"][-1], sr["v"][-1]
+        f, v = sr["f"][-1], sr["v"][-1]
+        if clave == "ipc":
+            v = _ipc_preciso().get((int(f[:4]), int(f[5:7])), v)
+        return f, v
     except Exception:
         return None, None
 
@@ -1346,9 +1361,11 @@ def _ipc_meses():
     """{(año, mes): % mensual} del IPC (serie del BCRA ya bajada en datos/serie-ipc.json)."""
     try:
         sr = json.load(open(os.path.join(SALIDA, "datos", "serie-ipc.json"), encoding="utf-8"))
-        return {(int(f[:4]), int(f[5:7])): float(v) for f, v in zip(sr["f"], sr["v"])}
+        out = {(int(f[:4]), int(f[5:7])): float(v) for f, v in zip(sr["f"], sr["v"])}
     except Exception:
-        return {}
+        out = {}
+    out.update(_ipc_preciso())  # donde está el índice FACPCE, la variación con 2 decimales
+    return out
 
 
 PROX_SEMESTRAL = {  # páginas del próximo cambio semestral (pedido de Ramiro, 26/11: adelantarse a la búsqueda)
@@ -1421,6 +1438,121 @@ def pagina_proximo_semestral(clave, notas):
                         [("Datos del día", "datos-al-dia.html"), (titulo.split(":")[0], ruta + ".html")])
 
 
+def _prox_sac():
+    hoy = datetime.date.today()
+    return (hoy.year, 6) if hoy.month <= 6 else (hoy.year, 12)
+
+
+def aguinaldo_jubilados_url():
+    y, m = _prox_sac()
+    return f"aguinaldo-jubilados-{MESES[m - 1]}-{y}"
+
+
+def pagina_aguinaldo_jubilados(notas):
+    """Aguinaldo de jubilados del próximo junio o diciembre (pedido de Ramiro: adelantarse a lo que se va a buscar).
+    Regla: 50% del haber más alto del semestre (en la práctica, el del mes de pago); el bono no entra en la cuenta."""
+    y, m = _prox_sac()
+    mes_txt, ruta = MESES[m - 1], aguinaldo_jubilados_url()
+    t = next((x for x in TEMAS_RESP if x["slug"] == "jubilacion-minima-y-bono"), None)
+    valor, _, estado = valor_de_mes(t, f"{y}-{m:02d}") if t else (None, "", "pendiente")
+    haber = _monto_txt(valor) if valor else None
+    hoy_d = ajustar_tramo(((RESP.get("jubilacion-minima-y-bono") or {}).get("datos")) or {})
+    if not haber and isinstance(hoy_d.get("monto"), (int, float)):
+        haber, estado = None, "pendiente"
+    etiqueta = {"vigente": "con el haber ya confirmado", "fijado": "con el haber ya confirmado", "anticipado": "cálculo anticipado con la fórmula de movilidad"}.get(estado, "")
+    if haber:
+        tabla = (f'<div class="tabla"><table><thead><tr><th></th><th>Haber de {mes_txt}</th><th>Aguinaldo</th></tr></thead><tbody>'
+                 f'<tr><td>Jubilación mínima</td><td>$ {_num(haber)}</td><td><b>$ {_num(haber / 2)}</b></td></tr>'
+                 f'<tr><td>PUAM (80% de la mínima)</td><td>$ {_num(haber * 0.8)}</td><td><b>$ {_num(haber * 0.4)}</b></td></tr></tbody></table></div>'
+                 f'<p class="nota-chica">Haber de {mes_txt} {y} ÷ 2{" (" + etiqueta + ")" if etiqueta else ""}.'
+                 f'{" Se confirma con la resolución de ANSES." if estado == "anticipado" else ""}</p>')
+        intro = f'<p class="res-grande">Aguinaldo de la jubilación mínima en {mes_txt} {y}: <b>$ {_num(haber / 2)}</b>{" (cálculo anticipado)" if estado == "anticipado" else ""}</p>'
+    else:
+        base = hoy_d.get("monto") if isinstance(hoy_d.get("monto"), (int, float)) else None
+        tabla = (f'<p>El haber de {mes_txt} todavía no se conoce: sale con la inflación del INDEC del mes anterior. '
+                 + (f'Con el haber mínimo de hoy ($ {_num(base)}), el aguinaldo sería de $ {_num(base / 2)}; el de {mes_txt} va a ser algo mayor por la movilidad.' if base else "")
+                 + '</p>')
+        intro = ""
+    qs = [{"p": f"¿Cuánto cobran de aguinaldo los jubilados en {mes_txt} {y}?",
+           "r": (f"El 50% del haber. Con la mínima de {mes_txt} ({'cálculo anticipado' if estado == 'anticipado' else 'haber confirmado'}), el aguinaldo es $ {_num(haber / 2)}."
+                 if haber else f"El 50% del haber más alto del semestre, que en general es el de {mes_txt}.")},
+          {"p": "¿El bono entra en el cálculo del aguinaldo?", "r": "No. El bono que se paga por decreto no se computa para el aguinaldo: se cobra aparte, junto con el haber."},
+          {"p": f"¿Cuándo se cobra el aguinaldo de {mes_txt}?", "r": f"Junto con el haber de {mes_txt}, según el cronograma de pagos de ANSES por terminación de DNI."}]
+    cuerpo = f"""<div class="grilla"><div class="nota-contenido"><p class="miga"><a href="datos-al-dia.html">Datos del día</a> / <a href="jubilacion-minima-y-bono.html">Jubilación mínima y bono</a></p>
+<h1>Aguinaldo de jubilados {mes_txt} {y}: cuánto se cobra y cómo se calcula</h1>
+<p class="firma">Redacción Ramacontable · Actualizado {fecha_larga(datetime.date.today().isoformat())}</p>
+{intro}{tabla}
+<h2>Cómo se calcula</h2>
+<p>El aguinaldo (SAC) de jubilados y pensionados de ANSES es el <b>50% del haber mensual más alto del semestre</b>. Como el haber sube todos los meses por movilidad, en la práctica es la mitad del haber de {mes_txt}.</p>
+<p>Si empezaste a cobrar durante el semestre, se cobra la parte proporcional a los meses cobrados.</p>
+<p><b>El bono no entra en la cuenta:</b> se fija por decreto y no se computa para el aguinaldo. Se cobra aparte, junto con el haber y el aguinaldo.</p>
+<h2>Cuándo se cobra</h2>
+<p>Con el haber de {mes_txt}, en la fecha del cronograma de ANSES según la terminación del DNI. No hay que hacer ningún trámite.</p>
+<p><a class="btn" href="aumento-jubilados-{mes_txt}-{y}.html">Aumento de jubilados {mes_txt} {y} →</a> <a class="btn sec" href="puam-{mes_txt}-{y}.html">PUAM {mes_txt} {y}</a></p>
+{preguntas_html({"preguntas": qs})}
+<p class="aviso">Información de carácter general. Los montos anticipados son cálculos propios con la fórmula de movilidad y se confirman con la resolución de ANSES.</p>
+</div>{lateral(notas)}</div>"""
+    ld = '<script type="application/ld+json">' + json.dumps({"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [
+        {"@type": "Question", "name": q["p"], "acceptedAnswer": {"@type": "Answer", "text": q["r"]}} for q in qs]}, ensure_ascii=False) + "</script>"
+    titulo = f"Aguinaldo jubilados {mes_txt} {y}: cuánto cobra la mínima"
+    desc = (f"Aguinaldo de jubilados de {mes_txt} {y}: " + (f"la mínima cobra $ {_num(haber / 2)}" + (" (cálculo anticipado)" if estado == "anticipado" else "") + ". " if haber else "")
+            + "Cómo se calcula (50% del haber), el bono aparte y cuándo se paga.")
+    return ruta, pagina(titulo, cuerpo, "datos-al-dia", desc[:160], ruta + ".html", ld,
+                        [("Datos del día", "datos-al-dia.html"), (f"Aguinaldo jubilados {mes_txt} {y}", ruta + ".html")])
+
+
+def venc_mes_urls():
+    return [f"vencimientos-{MESES[int(m[5:]) - 1]}-{m[:4]}" for m in _meses_paginas()[-2:]]
+
+
+def pagina_vencimientos_mes(mes, notas):
+    """«Vencimientos ARCA {mes} {año}»: una página por mes (el actual y el que viene) con la agenda confirmada.
+    Sin fechas confirmadas todavía: se publica igual pero sin indexar, hasta que la fábrica las confirme."""
+    y, m = int(mes[:4]), int(mes[5:])
+    mes_txt = MESES[m - 1]
+    ruta = f"vencimientos-{mes_txt}-{y}"
+    DIAS = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"]
+    fila = next((f for f in VENC if f.get("mes") == mes), None) or {}
+    items = sorted(fila.get("items") or [], key=lambda x: (x.get("fecha", ""), x.get("concepto", "")))
+    fer = fila.get("feriados") or []
+    hoy = datetime.date.today().isoformat()
+    if items:
+        tabla = ('<div class="tabla"><table class="feriados"><thead><tr><th>Fecha</th><th>Obligación</th><th>Terminación de CUIT</th></tr></thead><tbody>' + "".join(
+            f'<tr{" class=pasado" if x["fecha"] < hoy else ""}><td>{DIAS[datetime.date.fromisoformat(x["fecha"]).weekday()].capitalize()} {int(x["fecha"][8:])}</td>'
+            f'<td>{e(x["concepto"])}</td><td>{e(x.get("detalle") or "Todas las terminaciones")}</td></tr>' for x in items) + "</tbody></table></div>")
+        claves = [(o[1], o[2], o[0]) for o in OBLIGACIONES]
+        resumen = "".join(
+            f'<li><b>{e(n)}:</b> {("el " + str(int(min(xs)[8:]))) if min(xs) == max(xs) else ("del " + str(int(min(xs)[8:])) + " al " + str(int(max(xs)[8:])))} de {mes_txt} · <a href="{u}.html">por terminación</a></li>'
+            for n, ks, u in claves for xs in [[x["fecha"] for x in items if any(k in (x["concepto"] + " " + (x.get("detalle") or "")).lower() for k in ks)]] if xs)
+        intro = (f'<p>Estos son los vencimientos de ARCA de <b>{mes_txt} de {y}</b> confirmados por al menos dos fuentes (o por el organismo), '
+                 f'ordenados por fecha y terminación de CUIT. Si una fecha cae en día inhábil, ya figura corrida.</p>'
+                 + (f'<h2>Resumen</h2><ul class="historial">{resumen}</ul>' if resumen else ""))
+    else:
+        PAGINAS_FINAS.add(ruta)  # sin fechas confirmadas: no se indexa todavía
+        tabla = (f'<div class="vacio-caja"><b>Fechas de {mes_txt} en verificación</b>Se publican acá apenas las confirmen dos fuentes '
+                 f'(los portales y ARCA suelen publicarlas hacia fin del mes anterior).</div>')
+        intro = ""
+    fer_html = ("<h2>Feriados y días no laborables</h2><ul class='historial'>" + "".join(
+        f'<li><b>{fecha_corta(x["fecha"])}</b> {e(x.get("nombre", ""))} <small>({e(x.get("tipo", ""))})</small></li>' for x in fer) + "</ul>") if fer else ""
+    qs = [{"p": f"¿Cuándo vence el F.931 en {mes_txt} {y}?",
+           "r": next((f"El {int(x['fecha'][8:])} de {mes_txt} ({x.get('detalle') or 'todas las terminaciones'})." for x in items if "931" in x["concepto"]), f"Las fechas de {mes_txt} se publican cuando las confirman dos fuentes.")},
+          {"p": f"¿Cuándo vence el Monotributo en {mes_txt} {y}?",
+           "r": next((f"El {int(x['fecha'][8:])} de {mes_txt}." for x in items if "monotribut" in x["concepto"].lower()), f"Las fechas de {mes_txt} se publican cuando las confirman dos fuentes.")}]
+    cuerpo = f"""<div class="grilla"><article class="nota calc"><p class="miga"><a href="herramientas.html">Vencimientos</a></p>
+<h1>Vencimientos ARCA {mes_txt} {y}</h1>
+<p class="firma">Redacción Ramacontable · Actualizado {fecha_larga(hoy)}</p>
+{intro}{tabla}{fer_html}
+<p><a class="btn" href="agenda-vencimientos.html">Armá tu agenda por terminación de CUIT →</a></p>
+{preguntas_html({"preguntas": qs})}
+<p class="aviso">Verificá siempre en la agenda oficial de ARCA según la terminación de tu CUIT.</p>
+</article>{lateral(notas)}</div>"""
+    ld = '<script type="application/ld+json">' + json.dumps({"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [
+        {"@type": "Question", "name": q["p"], "acceptedAnswer": {"@type": "Answer", "text": q["r"]}} for q in qs]}, ensure_ascii=False) + "</script>"
+    titulo = f"Vencimientos ARCA {mes_txt} {y}: calendario por terminación de CUIT"
+    desc = f"Vencimientos de ARCA de {mes_txt} {y} por terminación de CUIT: IVA, F.931, Monotributo, autónomos e Ingresos Brutos, con feriados del mes."
+    return ruta, pagina(titulo, cuerpo, "", desc[:160], ruta + ".html", ld, [("Vencimientos", "herramientas.html"), (f"Vencimientos {mes_txt} {y}", ruta + ".html")])
+
+
 def prox_semestral_urls():
     return [PROX_SEMESTRAL[k]["ruta"].format(mes=MESES[_proximo_semestral(PROX_SEMESTRAL[k]["meses"])[0][1] - 1],
                                              anio=_proximo_semestral(PROX_SEMESTRAL[k]["meses"])[0][0]) for k in PROX_SEMESTRAL]
@@ -1489,7 +1621,7 @@ def pagina_respuesta(t, r, notas, aportes=None, extra=""):
 {caja}{revisado}{hoy_blq}{rel_html}{cuerpo}{extra}{faq}{fuentes_html}
 <p class="aviso">Información de carácter general. Se recomienda verificar siempre en las fuentes oficiales. Cada profesional es responsable de su aplicación.</p>
 </div>
-{mes_links(t)}{"".join(f'<p class="dato-vigente">📅 <b>Próximo cambio:</b> <a href="{r}.html">{e(PROX_SEMESTRAL[k]["titulo"].format(mes=r.split("-")[-2], anio=r.split("-")[-1]))}</a></p>' for k, r in zip(PROX_SEMESTRAL, prox_semestral_urls()) if PROX_SEMESTRAL[k]["dato"] == t["slug"])}
+{mes_links(t)}{f'<p class="dato-vigente">🎁 <a href="{aguinaldo_jubilados_url()}.html">Aguinaldo de jubilados {aguinaldo_jubilados_url().split("-")[-2]} {aguinaldo_jubilados_url()[-4:]}: cuánto se cobra</a></p>' if t["slug"] == "jubilacion-minima-y-bono" else ""}{"".join(f'<p class="dato-vigente">📅 <b>Próximo cambio:</b> <a href="{r}.html">{e(PROX_SEMESTRAL[k]["titulo"].format(mes=r.split("-")[-2], anio=r.split("-")[-1]))}</a></p>' for k, r in zip(PROX_SEMESTRAL, prox_semestral_urls()) if PROX_SEMESTRAL[k]["dato"] == t["slug"])}
 <section class="relacionadas"><h2>Otros datos del día</h2><ul>{otros}</ul></section>
 {bloque_aportes(falsa_nota, aportes)}
 </article>{lateral(notas)}</div>"""
@@ -3476,6 +3608,11 @@ def main():
              ("embargo-sueldo.html", "Calculadora de embargo de sueldo 2026 (Decreto 484/87)", "Calculá cuánto se puede embargar de un sueldo según el salario mínimo vigente: inembargable hasta 1 SMVM, 10% y 20% del excedente.")]
     for k in PROX_SEMESTRAL:
         r_, h_ = pagina_proximo_semestral(k, notas)
+        escribir(r_ + ".html", h_)
+    r_, h_ = pagina_aguinaldo_jubilados(notas)
+    escribir(r_ + ".html", h_)
+    for m_ in _meses_paginas()[-2:]:  # el mes actual y el que viene
+        r_, h_ = pagina_vencimientos_mes(m_, notas)
         escribir(r_ + ".html", h_)
     h_facpce = pagina_indices_facpce(notas)
     if h_facpce:
