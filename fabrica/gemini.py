@@ -127,6 +127,20 @@ def gemini(sistema, usuario, temperatura=0.9, liviano=False):
             time.sleep(60 * (intento + 1))
 
 
+_ULTIMO = {}  # último pedido a cada modelo (para no pasar el límite por minuto)
+
+
+def _pausa(modelo):
+    """El nivel gratis permite 5 pedidos por minuto en Flash y 15 en Lite: se espera lo justo entre pedidos al mismo modelo.
+    Sin esto, el 429 por minuto hacía saltar a otro modelo y gastaba su cupo DIARIO."""
+    import time
+    hueco = 4.5 if "lite" in modelo else 13
+    falta = _ULTIMO.get(modelo, 0) + hueco - time.time()
+    if falta > 0:
+        time.sleep(falta)
+    _ULTIMO[modelo] = time.time()
+
+
 def _ordenar(modelos, liviano):
     """Flash para redactar y verificar (calidad); Lite primero para tareas livianas (agrupar, datos, vencimientos),
     que tiene mucho más cupo gratis por día. Siempre quedan los dos tipos como respaldo."""
@@ -161,6 +175,7 @@ def _gemini(sistema, usuario, temperatura=0.9, liviano=False):
         if modelo in probados:
             continue
         probados.add(modelo)
+        _pausa(modelo)
         texto, fin = "", ""
         # Si el modelo no acepta algún ajuste (pensamiento o filtros), pruebo sin él.
         for ajustes in ((True, True), (False, True), (False, False)):
